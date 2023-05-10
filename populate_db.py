@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed May  3 20:42:32 2023
-
-@author: keziah
+PopulateDatabase is a class that creates database entries for all films in a 
+list of filenames.
 """
 
 import warnings
@@ -473,7 +472,3 @@ if __name__ == "__main__":
         
     if args.update and args.patch is not None:
         pop_db.update(args.patch)
-    
-    
-    # pop_db.populate('films.txt', 'patch.csv')
-    # pop_db.update('patch.csv')
