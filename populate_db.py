@@ -15,7 +15,7 @@ from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 django.setup()
 
-from mediabrowser.models import MediaItem, MediaSeries, Genre, Keyword, Person
+from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person, Member
 
 from dataclasses import dataclass
 from imdb import Cinemagoer
@@ -23,7 +23,7 @@ from progressbar import ProgressBar
 
 @dataclass
 class MediaInfo:
-    """ Class to hold info from IMDb, from which `MediaItem` can be created in database """
+    """ Class to hold info from IMDb, from which `VisionItem` can be created in database """
     title: str
     image_url: str
     genre: list
@@ -74,7 +74,7 @@ class PopulateDatabase:
         self._direct_fields = []
         self._ref_fields = []
         
-        for field in MediaItem._meta.get_fields():
+        for field in VisionItem._meta.get_fields():
             if field.name == 'id':
                 continue
             if isinstance(field, (models.ManyToManyField, models.ForeignKey)):
@@ -86,7 +86,7 @@ class PopulateDatabase:
 
     def _add_to_db(self, filename, media_info):
         """ 
-        Create a `MediaItem` in the database for `media_info` 
+        Create a `VisionItem` in the database for `media_info` 
         
         Parameters
         ----------
@@ -97,10 +97,10 @@ class PopulateDatabase:
             
         Returns
         -------
-        item : MediaItem
-            MediaItem added to database.
+        item : VisionItem
+            VisionItem added to database.
         """
-        item = MediaItem(
+        item = VisionItem(
             title = media_info.title,
             filename = filename,
             img = media_info.image_url,
@@ -110,7 +110,8 @@ class PopulateDatabase:
             description = media_info.description,
             alt_title = media_info.as_string('alt_title'),
             language = media_info.as_string('langauge'),
-            colour = media_info.colour
+            colour = media_info.colour,
+            media_type = VisionItem.FILM,
         )
         item.save()
         
@@ -120,20 +121,20 @@ class PopulateDatabase:
         
         return item
         
-    def _add_refs(self, item, media_info) -> MediaItem:
+    def _add_refs(self, item, media_info) -> VisionItem:
         """ 
-        For genre, keywords, director and stars in `media_info`, add to MediaItem `item` 
+        For genre, keywords, director and stars in `media_info`, add to VisionItem `item` 
         
         Parameters
         ----------
-        item : MediaItem
-            MediaItem model
+        item : VisionItem
+            VisionItem model
         media_info : MediaInfo
             MediaInfo dataclass
             
         Returns
         -------
-        item : MediaItem
+        item : VisionItem
             Updated `item`
         """
         # iterate over list of genres, keywords etc
@@ -154,20 +155,26 @@ class PopulateDatabase:
                         # otherwise, make new
                         m = model_class(value)
                         m.save()
-                    # add to MediaItem
+                        
+                    if model_class == Person:
+                        # make member to preserve insertion order
+                        member = Member(person=m, mediaitem=item)
+                        member.save()
+                        
+                    # add to VisionItem
                     # e.g. item.genre.add(m)
                     attr = getattr(item, n)
                     attr.add(m)
                     item.save()
         return item
     
-    def _add_alt_versions(self, item, media_info) -> MediaItem:
+    def _add_alt_versions(self, item, media_info) -> VisionItem:
         """ Add references to any alternative versions """
         if len(media_info.alt_versions) == 0:
             return item
         else:
             for ref_film in media_info.alt_versions:
-                ref_items = MediaItem.objects.filter(filename=ref_film)
+                ref_items = VisionItem.objects.filter(filename=ref_film)
                 if len(ref_items) == 0:
                     # ref_film doesn't exist (yet) so add to _waiting_for_alt_versions
                     self._waiting_for_alt_versions.append((item, ref_film))
@@ -187,7 +194,7 @@ class PopulateDatabase:
         
         for n, (item, ref_film) in enumerate(self._waiting_for_alt_versions):
             
-            ref_items = MediaItem.objects.filter(filename=ref_film)
+            ref_items = VisionItem.objects.filter(filename=ref_film)
             if len(ref_items) == 0:
                 warnings.warn(f"No object with filename '{ref_film}' in database", UserWarning)
             elif len(ref_items) > 1:
@@ -422,7 +429,7 @@ class PopulateDatabase:
         progress = ProgressBar(len(patch))
         
         for file, dct in patch.items():
-            item = MediaItem.objects.filter(filename=file)
+            item = VisionItem.objects.filter(filename=file)
             if len(item) > 1:
                 warnings.warn(f"Multiple objects with filename '{file}' in database", UserWarning)
             else:
@@ -445,7 +452,7 @@ class PopulateDatabase:
         print(f"Updated {count} records")
         return count
     
-    def clear(self, model=MediaItem):
+    def clear(self, model=VisionItem):
         """ Remove all entries from the given `model` table """
         model.objects.all().delete()
         print("Cleared database")
@@ -458,7 +465,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--patch', help='Path to patch csv')
     parser.add_argument('-u', '--update', help='Call update with path to patch csv',
                         action='store_true')
-    parser.add_argument('-c', '--clear', help='Clear MediaItems', action='store_true')
+    parser.add_argument('-c', '--clear', help='Clear VisionItems', action='store_true')
 
     args = parser.parse_args()
     
