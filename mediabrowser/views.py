@@ -1,17 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
-from .models import MediaItem
+from .models import MediaItem, MediaSeries, Genre, Keyword, Person
 
-import random
-
-# def index(request):
-#     items = MediaItem.objects.all()
-#     num = len(items)
-#     idx = random.randint(0, num-1)
-#     item = items[idx]
-#     output = f"{item}"
-#     return HttpResponse(output)
+from itertools import chain
 
 def index(request):
     # see if the `request` object has a 'search' item
@@ -21,12 +13,18 @@ def index(request):
     except:
         search = ''
     
-    # search title, artist and year fields for the `search` string
-    results = MediaItem.objects.filter(title__icontains=search)
+    # search title, director, stars and keywords fields
+    r0 = MediaItem.objects.filter(title__icontains=search)
+    persons = Person.objects.filter(name__icontains=search)
+    r1 = []
+    for person in persons:
+        r1 += list(chain(person.stars.all(), person.director.all()))
+    r2 = Keyword.objects.filter(name__icontains=search)
     # merge the filtered datasets
-    # results = a1 | a2 | a3
-    # sort albums by rating, in descending order
-    # sorted_album_list = results.order_by('-rating')
+    results = list(chain(r0, r1, r2))# r0 | r1 | r2 
+    
+    ## to get all items with genre 'g'
+    ## g.mediaitem_set.all()
     
     # make string to display in search bar
     if search:
