@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
-from .models import MediaItem, MediaSeries, Genre, Keyword, Person
+from .models import VisionItem, MediaSeries, Genre, Keyword, Person
 
 from itertools import chain
 
@@ -14,14 +14,14 @@ def index(request):
         search = ''
     
     # search title, director, stars and keywords fields
-    results = list(MediaItem.objects.filter(title__icontains=search))
+    results = list(VisionItem.objects.filter(title__icontains=search))
     # r1 = []
     persons = Person.objects.filter(name__icontains=search)
     for person in persons:
         results += list(chain(person.stars.all(), person.director.all()))
     keywords = Keyword.objects.filter(name__icontains=search)
     for keyword in keywords:
-        for film in keyword.mediaitem_set.all():
+        for film in keyword.VisionItem_set.all():
             if film not in results:
                 results.append(film)
     
@@ -29,7 +29,7 @@ def index(request):
     # results = list(chain(r0, r1))
     
     ## to get all items with genre 'g'
-    ## g.mediaitem_set.all()
+    ## g.VisionItem_set.all()
     
     # make string to display in search bar
     if search:

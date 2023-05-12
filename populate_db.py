@@ -15,7 +15,10 @@ from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 django.setup()
 
-from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person, Member
+from mediabrowser.models import (
+    VisionItem, MediaSeries, Genre, Keyword, Person, 
+    # DirectorThrough, StarsThrough
+    )
 
 from dataclasses import dataclass
 from imdb import Cinemagoer
@@ -63,7 +66,10 @@ class PopulateDatabase:
     
     field_map = {'genre': Genre,
                  'keywords': Keyword,
-                 ('director','stars'): Person}
+                 ('director','stars'): Person,}
+    
+    # through_map = {'director':DirectorThrough,
+    #                'stars':StarsThrough,}
     
     ext = ['.avi', '.m4v', '.mkv', '.mov', '.mp4', '.wmv']
     
@@ -156,10 +162,11 @@ class PopulateDatabase:
                         m = model_class(value)
                         m.save()
                         
-                    if model_class == Person:
-                        # make member to preserve insertion order
-                        member = Member(person=m, mediaitem=item)
-                        member.save()
+                    # # make custom through table to preserve insertion order
+                    # through_class = self.through_map.get(n, None)
+                    # if through_class is not None:
+                    #     through = through_class(person=m, mediaitem=item)
+                    #     through.save()
                         
                     # add to VisionItem
                     # e.g. item.genre.add(m)
