@@ -1,0 +1,17 @@
+.column-img {
+  float: left;
+  width: 200px;
+  padding: 5px;
+}
+
+.column-details {
+  float: left;
+  padding: 5px;
+}
+
+/* Clear floats after image containers */
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+}

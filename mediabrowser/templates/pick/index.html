@@ -1,0 +1,40 @@
+{% load static %}
+
+<head>
+<link rel="stylesheet" type="text/css" href="{% static 'pick/style.css' %}">
+</head>
+
+<body>
+
+<form action="{% url 'pick:index' %}" method="get">
+<div align="center">
+    <input type="text" name="search" id="myInput" align="center" placeholder="{{ search_placeholder }}">
+    <input type="submit" value="search">
+</div>
+</form>
+
+{% if film_list %}
+    <table id="resultsTable" align="center">
+        {% for film in film_list %}
+            <tr>
+                <div class="row">
+                    <div class="column-img">
+                        <img src="{{ film.img }}" alt="{{ film.title }}"  width="200">
+                    </div>  
+                <div class="column-details">
+                  <p>{{ film.title }} ({{ film.year }}) </p>
+                  <p>
+                  {% for person in film.director.all %}
+                      <span>{{ person.name }}</span>
+                  {% endfor %}
+                  </p>  
+                </div>  
+            </div>  
+        </tr>
+    {% endfor %}
+    </table>
+{% else %}
+    <p>No results are available.</p>
+{% endif %}
+
+</body>
