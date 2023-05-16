@@ -12,21 +12,22 @@ def index(request):
     # if not, use empty string
     except:
         search = ''
+        
+    # TODO limit number of results
+    # i.e. paging
     
     # search title, director, stars and keywords fields
     results = list(VisionItem.objects.filter(title__icontains=search))
-    # r1 = []
-    persons = Person.objects.filter(name__icontains=search)
-    for person in persons:
-        results += list(chain(person.stars.all(), person.director.all()))
-    keywords = Keyword.objects.filter(name__icontains=search)
-    for keyword in keywords:
-        for film in keyword.VisionItem_set.all():
-            if film not in results:
-                results.append(film)
-    
-    # merge the filtered datasets
-    # results = list(chain(r0, r1))
+    if search:
+        # only search people and keywords if given a search string
+        persons = Person.objects.filter(name__icontains=search)
+        for person in persons:
+            results += list(chain(person.stars.all(), person.director.all()))
+        keywords = Keyword.objects.filter(name__icontains=search)
+        for keyword in keywords:
+            for film in keyword.visionitem_set.all():
+                if film not in results:
+                    results.append(film)
     
     ## to get all items with genre 'g'
     ## g.VisionItem_set.all()
@@ -41,4 +42,4 @@ def index(request):
     context = {'film_list':results,
                'search_placeholder':search_placeholder}
     
-    return render(request, 'pick/index.html', context)
+    return render(request, 'mediabrowser/index.html', context)
