@@ -20,7 +20,7 @@ def search(request, search_str):
     # i.e. paging
     
     # search title, director, stars and keywords fields
-    results = list(VisionItem.objects.filter(title__icontains=search))
+    results = list(VisionItem.objects.filter(title__icontains=search_str))
     if search_str:
         # only search people and keywords if given a search string
         persons = Person.objects.filter(name__icontains=search_str)
