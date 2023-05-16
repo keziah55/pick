@@ -30,7 +30,15 @@
                   <p>{{ film.title }} ({{ film.year }}) </p>
                   <p>
                   {% for person in film.director.all %}
-                      <span>{{ person.name }}</span>
+                      <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>
+                  {% endfor %}
+                  </p>  
+                  <p>
+                  {% for person in film.stars.all|slice:":2" %}
+                    <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
+                  {% endfor %}
+                  {% for person in film.stars.all|slice:"2:3" %}
+                      <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>...
                   {% endfor %}
                   </p>  
                 </div>  

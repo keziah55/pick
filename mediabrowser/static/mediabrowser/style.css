@@ -5,15 +5,36 @@ body {
   color: #f0b505;
 }
 
+a:link {
+  color: #f0b505;
+}
+
+a:visited {
+  color: #f05b05;
+}
+
+a:hover {
+  color: #056bf0;
+}
+
+a:active {
+  color: blue;
+} 
+
 .column-img {
   float: left;
   width: 200px;
-  padding: 5px;
+  padding: 10px;
+  padding-left: 100px;
 }
 
 .column-details {
   float: left;
   padding: 5px;
+}
+
+.row {
+  left: 100px;
 }
 
 /* Clear floats after image containers */
