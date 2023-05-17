@@ -3,9 +3,7 @@
 
 <head>
 
-
 <link rel="stylesheet" href="{% static 'mediabrowser/style.css' %}">
-
 
 </head>
 
@@ -16,6 +14,32 @@
     <input type="text" name="search" id="myInput" align="center" placeholder="{{ search_placeholder }}">
     <input type="submit" value="search">
 </div>
+
+<div class="slidercontainer">
+  <input type="range" min="1900" max="2023" value="1900" class="slider" id="minYear">
+  <span id="minYearLabel"></span>
+</div>
+
+<div class="slidercontainer">
+  <input type="range" min="1900" max="2023" value="2023" class="slider" id="maxYear">
+  <span id="maxYearLabel"></span>
+</div>
+
+<script>
+var minSlider = document.getElementById("minYear");
+var minOutput = document.getElementById("minYearLabel");
+minOutput.innerHTML = minSlider.value; 
+minSlider.oninput = function() {
+  minOutput.innerHTML = this.value;
+} 
+var maxSlider = document.getElementById("maxYear");
+var maxOutput = document.getElementById("maxYearLabel");
+maxOutput.innerHTML = maxSlider.value; 
+maxSlider.oninput = function() {
+  maxOutput.innerHTML = this.value;
+} 
+</script>
+
 </form>
 
 {% if film_list %}
