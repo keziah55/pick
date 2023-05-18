@@ -1,44 +1,38 @@
 
 {% load static %}
 
+<!DOCTYPE html>
+
 <head>
-
-<link rel="stylesheet" href="{% static 'mediabrowser/style.css' %}">
-
+    <link rel="stylesheet" href="{% static 'mediabrowser/style.css' %}">
+    <link rel="stylesheet" href="{% static 'mediabrowser/slider.css' %}">
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 </head>
 
 <body>
 
+<!-- search filters -->
 <form action="{% url 'pick:index' %}" method="get">
+<!-- search bar -->
 <div align="center">
-    <input type="text" name="search" id="myInput" align="center" placeholder="{{ search_placeholder }}">
+    <input type="text" name="search" id="searchbar" align="center" placeholder="{{ search_placeholder }}">
     <input type="submit" value="search">
 </div>
 
-<div class="slidercontainer">
-  <input type="range" min="1900" max="2023" value="1900" class="slider" id="minYear">
-  <span id="minYearLabel"></span>
+<!-- year -->
+
+<!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
+<div class="rangeslider", id="yearslider">
+    <input class="min" name="range_1" type="range" min="1900" max="2023" value="1900" />
+    <input class="max" name="range_1" type="range" min="1900" max="2023" value="2023" />
+    <span class="range_min light left">1900</span>
+    <span 
+    class="range_max light right">2032</span>
 </div>
 
-<div class="slidercontainer">
-  <input type="range" min="1900" max="2023" value="2023" class="slider" id="maxYear">
-  <span id="maxYearLabel"></span>
-</div>
+<script src="{% static 'mediabrowser/slider.js' %}"></script>
 
-<script>
-var minSlider = document.getElementById("minYear");
-var minOutput = document.getElementById("minYearLabel");
-minOutput.innerHTML = minSlider.value; 
-minSlider.oninput = function() {
-  minOutput.innerHTML = this.value;
-} 
-var maxSlider = document.getElementById("maxYear");
-var maxOutput = document.getElementById("maxYearLabel");
-maxOutput.innerHTML = maxSlider.value; 
-maxSlider.oninput = function() {
-  maxOutput.innerHTML = this.value;
-} 
-</script>
 
 </form>
 
