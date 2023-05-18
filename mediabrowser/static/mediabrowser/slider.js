@@ -17,7 +17,6 @@ function rangeInputChangeEventHandler(e){
     var minVal = parseInt($(minBtn).val());
     $(range_min).html(minVal);
 
-
     if(origin === 'max' && maxVal-5 < minVal){
         $(maxBtn).val(5+ minVal);
     }
