@@ -12,13 +12,24 @@ def index(request):
     # if not, use empty string
     except:
         search_str = ''
-    return search(request, search_str)
+        
+    context = _search(search_str)
     
+    years = set(VisionItem.objects.all().values_list('year', flat=True))
+    runtimes = set(VisionItem.objects.all().values_list('runtime', flat=True))
+    
+    context['year_min'] = min(years)
+    context['year_max'] = max(years)
+    context['runtime_min'] = min(runtimes)
+    context['runtime_max'] = max(runtimes)
+    
+    return render(request, 'mediabrowser/index.html', context)
     
 def search(request, search_str):
-    # TODO limit number of results
-    # i.e. paging
-    
+    context = _search(search_str)
+    return render(request, 'mediabrowser/index.html', context)
+
+def _search(search_str):
     # search title, director, stars and keywords fields
     results = list(VisionItem.objects.filter(title__icontains=search_str))
     if search_str:
@@ -44,5 +55,4 @@ def search(request, search_str):
     # args to be substituted into the templates    
     context = {'film_list':results,
                'search_placeholder':search_placeholder}
-    
-    return render(request, 'mediabrowser/index.html', context)
+    return context

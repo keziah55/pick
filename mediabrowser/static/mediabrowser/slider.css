@@ -44,11 +44,10 @@ input[type='range']:nth-child(1)::-webkit-slider-thumb{
     display: inline-block;
     margin-top: -5px;
     margin-left: 20px;
+    margin-bottom: 20px;
 }
+
 .rangeslider input{
-    position: absolute;
-}
-.rangeslider{
     position: absolute;
 }
 
