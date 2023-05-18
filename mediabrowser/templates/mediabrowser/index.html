@@ -20,62 +20,70 @@
     <input type="submit" value="search">
 </div>
 
-<!-- year -->
-<!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
-<div class="rangeslider", id="yearslider">
-    <input class="min" name="year_min" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_min }}"  />
-    <input class="max" name="year_max" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_max }}" />
-    <!-- <span class="range_min light left">1900</span> -->
-    <!-- <span class="range_max light right">2032</span> -->
-    <span>Years: </span>
-    <span class="slider_range light right">{{ year_min }} - {{ year_max }}</span>
+<div class="column side">
+    <!-- year -->
+    <!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
+    <div class="rangeslider", id="yearslider">
+        <input class="min" name="year_min" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_min }}"  />
+        <input class="max" name="year_max" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_max }}" />
+        <!-- <span class="range_min light left">1900</span> -->
+        <!-- <span class="range_max light right">2032</span> -->
+        <span>Years: </span>
+        <span class="slider_range light right">{{ year_min }} - {{ year_max }}</span>
+    </div>
+    
+    <!-- runtime -->
+    <div class="rangeslider", id="runtimeslider">
+        <input class="min" name="runtime_min" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_min }}" />
+        <input class="max" name="runtime_max" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_max }}" />
+        <span>Runtime: </span>
+        <span class="slider_range light right">{{ runtime_min }} - {{ runtime_max }}</span>
+    </div>
+    
+    <!-- for year and runtime sliders -->
+    <script src="{% static 'mediabrowser/slider.js' %}"></script>
+    
+    <!-- colour/black and white -->
+    <div class="colourbox", id="colourbox">
+        <input type="checkbox" id="colour" name="colour" value="True" {% if colour_checked %} checked {% endif %}> 
+        <label for="colour">Colour</label>
+    </div>
+    <div class="colourbox", id="blackwhitebox">
+        <input type="checkbox" id="black_and_white" name="black_and_white" value="True" {% if black_and_white_checked %} checked {% endif %}>
+        <label for="black_and_white">Black and White</label>
+    </div>
 </div>
-
-<!-- runtime -->
-<div class="rangeslider", id="runtimeslider">
-    <input class="min" name="runtime_min" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_min }}" />
-    <input class="max" name="runtime_max" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_max }}" />
-    <span>Runtime: </span>
-    <span class="slider_range light right">{{ runtime_min }} - {{ runtime_max }}</span>
-</div>
-
-<!-- for year and runtime sliders -->
-<script src="{% static 'mediabrowser/slider.js' %}"></script>
-
-<!-- colour/black and white -->
-<label for="colour">Colour: </label>
-<input type="checkbox" id="colour" name="colour" value="True" {% if colour_checked %} checked {% endif %}> 
-<label for="black_and_white">Black and White: </label>
-<input type="checkbox" id="black_and_white" name="black_and_white" value="True" {% if black_and_white_checked %} checked {% endif %}>
 
 </form>
 
-{% if film_list %}
-    {% for film in film_list %}
-        <div class="film-row">
-            <div class="film-column-img">
-                <img src="{{ film.img }}" alt="{{ film.title }}"  width="200">
+<div class="column middle">
+    {% if film_list %}
+        {% for film in film_list %}
+            <div class="film-row">
+                <div class="film-column-img">
+                    <img src="{{ film.img }}" alt="{{ film.title }}"  width="200">
+                </div>  
+                <div class="film-column-details">
+                    <p>{{ film.title }} ({{ film.year }}) </p>
+                    <p>
+                        {% for person in film.director.all %}
+                            <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>
+                        {% endfor %}
+                    </p>  
+                    <p>
+                        {% for person in film.stars.all|slice:":2" %}
+                            <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
+                        {% endfor %}
+                        {% for person in film.stars.all|slice:"2:3" %}
+                            <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>...
+                        {% endfor %}
+                    </p>  
+                </div>  
             </div>  
-            <div class="film-column-details">
-                <p>{{ film.title }} ({{ film.year }}) </p>
-                <p>
-                    {% for person in film.director.all %}
-                        <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>
-                    {% endfor %}
-                </p>  
-                <p>
-                    {% for person in film.stars.all|slice:":2" %}
-                        <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
-                    {% endfor %}
-                    {% for person in film.stars.all|slice:"2:3" %}
-                        <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>...
-                    {% endfor %}
-                </p>  
-            </div>  
-        </div>  
-    {% endfor %}
-{% else %}
-    <p>No results are available.</p>
-{% endif %}
+        {% endfor %}
+    {% else %}
+        <p>No results are available.</p>
+    {% endif %}
+</div>
 
 </body>
