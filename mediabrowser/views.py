@@ -78,13 +78,9 @@ def _search(search_str, **kwargs) -> dict:
             # get person's films, applying filters
             results += [film for film in person.stars.filter(**filter_kwargs) if film not in results]
             results += [film for film in person.director.filter(**filter_kwargs) if film not in results]
-            # results += list(chain(person.stars.filter(**filter_kwargs), person.director.filter(**filter_kwargs)))
         keywords = Keyword.objects.filter(name__icontains=search_str)
         for keyword in keywords:
             results += [film for film in keyword.visionitem_set.filter(**filter_kwargs) if film not in results]
-            # for film in keyword.visionitem_set.filter(**filter_kwargs):
-                # if film not in results:
-                    # results.append(film)
                     
     ## to get all items with genre 'g'
     ## g.VisionItem_set.all()
@@ -110,12 +106,18 @@ def _get_context_from_request(request) -> dict:
             
     return context
 
-def _get_search_kwargs():
-    return ['year_min', 'year_max', 'runtime_min', 'runtime_max', 'black_and_white', 'colour']
-
-def _get_kwarg(kwargs, key):
+def _get_search_kwarg_type_map():
     type_map = {'year_min':int, 'year_max':int, 'runtime_min':int, 'runtime_max':int, 
                 'black_and_white':bool, 'colour':bool}
+    return type_map
+
+def _get_search_kwargs():
+    """ Return list of kwarg names for search filters """
+    return list(_get_search_kwarg_type_map().keys())
+
+def _get_kwarg(kwargs, key):
+    """ Get `key` from `kwargs` and cast value according to `_get_search_kwarg_type_map` """
+    type_map = _get_search_kwarg_type_map()
     value = kwargs.get(key, None)
     if value is not None:
         t = type_map.get(key, None)
