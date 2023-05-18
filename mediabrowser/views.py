@@ -30,10 +30,11 @@ def index(request):
         context['runtime_min'] = context['runtime_range_min']
         context['runtime_max'] = context['runtime_range_max']
         
-    if 'colour' in context:
+    # colour/black and white: if unchecked, leave it. otheriwse, set checked
+    if context.get('colour', None) is not False:
         context['colour_checked'] = True
         
-    if 'black_and_white' in context:
+    if context.get('black_and_white', None) is not False:
         context['black_and_white_checked'] = True
     
     return render(request, 'mediabrowser/index.html', context)
