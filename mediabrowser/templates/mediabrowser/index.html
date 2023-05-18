@@ -23,8 +23,8 @@
 <!-- year -->
 <!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
 <div class="rangeslider", id="yearslider">
-    <input class="min" name="range_1" type="range" min="{{ year_min }}" max="{{ year_max }}" value="{{ year_min }}" />
-    <input class="max" name="range_1" type="range" min="{{ year_min }}" max="{{ year_max }}" value="{{ year_max }}" />
+    <input class="min" name="year_min" type="range" min="{{ year_min }}" max="{{ year_max }}" value="{{ year_min }}" />
+    <input class="max" name="year_max" type="range" min="{{ year_min }}" max="{{ year_max }}" value="{{ year_max }}" />
     <!-- <span class="range_min light left">1900</span> -->
     <!-- <span class="range_max light right">2032</span> -->
     <span>Years: </span>
@@ -33,8 +33,8 @@
 
 <!-- runtime -->
 <div class="rangeslider", id="runtimeslider">
-    <input class="min" name="range_1" type="range" min="{{ runtime_min }}" max="{{ runtime_max }}" value="{{ runtime_min }}" />
-    <input class="max" name="range_1" type="range" min="{{ runtime_min }}" max="{{ runtime_max }}" value="{{ runtime_max }}" />
+    <input class="min" name="runtime_min" type="range" min="{{ runtime_min }}" max="{{ runtime_max }}" value="{{ runtime_min }}" />
+    <input class="max" name="runtime_max" type="range" min="{{ runtime_min }}" max="{{ runtime_max }}" value="{{ runtime_max }}" />
     <span>Runtime: </span>
     <span class="slider_range light right">{{ runtime_min }} - {{ runtime_max }}</span>
 </div>

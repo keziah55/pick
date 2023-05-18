@@ -13,20 +13,18 @@ def index(request):
     except:
         search_str = ''
         
-    context = _search(search_str)
+    context = _get_context_from_request(request)
+    context.update(_search(search_str))
     
-    years = set(VisionItem.objects.all().values_list('year', flat=True))
-    runtimes = set(VisionItem.objects.all().values_list('runtime', flat=True))
-    
-    context['year_min'] = min(years)
-    context['year_max'] = max(years)
-    context['runtime_min'] = min(runtimes)
-    context['runtime_max'] = max(runtimes)
-    
+    if not search_str:
+        context.update(_year_range())
+        context.update(_runtime_range())
+        
     return render(request, 'mediabrowser/index.html', context)
     
 def search(request, search_str):
-    context = _search(search_str)
+    context = _get_context_from_request(request)
+    context.update(_search(search_str))
     return render(request, 'mediabrowser/index.html', context)
 
 def _search(search_str):
@@ -56,3 +54,29 @@ def _search(search_str):
     context = {'film_list':results,
                'search_placeholder':search_placeholder}
     return context
+
+def _get_context_from_request(request):
+    context = {}
+    
+    for key in ['year_min', 'year_max', 'runtime_min', 'runtime_max']:
+        try:
+            value = request.GET[key]
+            print(f"get '{key}' = {value}")
+        except:
+            print(f"could not get value for '{key}'")
+            pass
+        else:
+            context[key] = value
+            
+    return context
+
+def _year_range():
+    return _get_range("year")
+    
+def _runtime_range():
+    return _get_range("runtime")
+
+def _get_range(name, model_class=VisionItem):
+    values = set(model_class.objects.all().values_list(name, flat=True))
+    dct = {f"{name}_min":min(values), f"{name}_max":max(values)}
+    return dct
