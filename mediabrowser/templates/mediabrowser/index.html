@@ -51,33 +51,29 @@
 </form>
 
 {% if film_list %}
-    <table id="filmtable" align="center">
-        {% for film in film_list %}
-            <tr>
-                <div class="row">
-                    <div class="column-img">
-                        <img src="{{ film.img }}" alt="{{ film.title }}"  width="200">
-                    </div>  
-                    <div class="column-details">
-                        <p>{{ film.title }} ({{ film.year }}) </p>
-                        <p>
-                            {% for person in film.director.all %}
-                                <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>
-                            {% endfor %}
-                        </p>  
-                        <p>
-                            {% for person in film.stars.all|slice:":2" %}
-                                <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
-                            {% endfor %}
-                            {% for person in film.stars.all|slice:"2:3" %}
-                                <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>...
-                            {% endfor %}
-                        </p>  
-                    </div>  
-                </div>  
-            </tr>
-        {% endfor %}
-    </table>
+    {% for film in film_list %}
+        <div class="film-row">
+            <div class="film-column-img">
+                <img src="{{ film.img }}" alt="{{ film.title }}"  width="200">
+            </div>  
+            <div class="film-column-details">
+                <p>{{ film.title }} ({{ film.year }}) </p>
+                <p>
+                    {% for person in film.director.all %}
+                        <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>
+                    {% endfor %}
+                </p>  
+                <p>
+                    {% for person in film.stars.all|slice:":2" %}
+                        <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
+                    {% endfor %}
+                    {% for person in film.stars.all|slice:"2:3" %}
+                        <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>...
+                    {% endfor %}
+                </p>  
+            </div>  
+        </div>  
+    {% endfor %}
 {% else %}
     <p>No results are available.</p>
 {% endif %}

@@ -21,24 +21,25 @@ a:active {
   color: blue;
 } 
 
-.column-img {
+.film-column-img {
   float: left;
   width: 200px;
   padding: 10px;
   padding-left: 100px;
 }
 
-.column-details {
+.film-column-details {
   float: left;
   padding: 5px;
 }
 
-.row {
+.film-row {
   left: 100px;
+  /*width: 40%;*/
 }
 
 /* Clear floats after image containers */
-.row::after {
+.film-row::after {
   content: "";
   clear: both;
   display: table;
