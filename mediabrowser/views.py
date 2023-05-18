@@ -27,7 +27,13 @@ def search(request, search_str):
     context.update(_search(search_str))
     return render(request, 'mediabrowser/index.html', context)
 
-def _search(search_str):
+def _search(search_str) -> dict:
+    """ 
+    Search VisionItems for `search_str` 
+    
+    If `search_str` is empty string, return all VisionItems. 
+    Otherwise, also search Person and Keyword tables.
+    """
     # search title, director, stars and keywords fields
     results = list(VisionItem.objects.filter(title__icontains=search_str))
     if search_str:
@@ -55,7 +61,8 @@ def _search(search_str):
                'search_placeholder':search_placeholder}
     return context
 
-def _get_context_from_request(request):
+def _get_context_from_request(request) -> dict:
+    """ Try to get year and runtime min and max from request """
     context = {}
     
     for key in ['year_min', 'year_max', 'runtime_min', 'runtime_max']:
@@ -70,13 +77,16 @@ def _get_context_from_request(request):
             
     return context
 
-def _year_range():
+def _year_range() -> dict:
+    """ Return dict with 'year_min' and 'year_max' keys from all VisionItems """
     return _get_range("year")
     
-def _runtime_range():
+def _runtime_range() -> dict:
+    """ Return dict with 'runtime_min' and 'runtime_max' keys from all VisionItems """
     return _get_range("runtime")
 
-def _get_range(name, model_class=VisionItem):
+def _get_range(name, model_class=VisionItem) -> dict:
+    """ Return dict with min and max values of `name` in the given `model_class` """
     values = set(model_class.objects.all().values_list(name, flat=True))
     dct = {f"{name}_min":min(values), f"{name}_max":max(values)}
     return dct
