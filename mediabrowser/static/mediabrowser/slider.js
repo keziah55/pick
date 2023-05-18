@@ -10,13 +10,15 @@ function rangeInputChangeEventHandler(e){
         //origin = $(this).context.className;
         origin = e.originalEvent.target.className;
 
-    if(origin === 'min' && minVal > maxVal-5){
-        $(minBtn).val(maxVal-5);
+    var minValDistance = 1;
+
+    if(origin === 'min' && minVal > maxVal-minValDistance){
+        $(minBtn).val(maxVal-minValDistance);
     }
     var minVal = parseInt($(minBtn).val());
 
-    if(origin === 'max' && maxVal-5 < minVal){
-        $(maxBtn).val(5+ minVal);
+    if(origin === 'max' && maxVal-minValDistance < minVal){
+        $(maxBtn).val(minValDistance+ minVal);
     }
     var maxVal = parseInt($(maxBtn).val());
     

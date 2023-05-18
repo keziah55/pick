@@ -43,10 +43,10 @@ input[type='range']:nth-child(1)::-webkit-slider-thumb{
     width: 210px;
     display: inline-block;
     margin-top: -5px;
-    margin-left: 20px;
+    margin-left: 15px;
     margin-bottom: 20px;
-    padding-left :20px;
-    padding-right :20px;
+    padding-left: 15px;
+    
 }
 
 .rangeslider input{

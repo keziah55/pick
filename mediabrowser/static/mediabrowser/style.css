@@ -5,7 +5,7 @@ body {
   color: #f0b505;
 }
 
-
+/* three column layout from https://www.w3schools.com/css/css_website_layout.asp */
 .column {
   float: left;
 }
@@ -27,7 +27,7 @@ body {
   }
 }
 
-
+/* link style */
 a:link {
   color: #f0b505;
 }
@@ -44,24 +44,33 @@ a:active {
   color: blue;
 } 
 
-
-.colourbox{
-    position: relative;
-    height: 25px;
-    width: 210px;
-    display: inline-block;
-    margin-top: -5px;
-    margin-left: 20px;
-    margin-bottom: 20px;
-    padding-left :20px;
-    padding-right :20px;
+/* checkboxes for colour/black and white */
+.colourbox {
+  position: relative;
+  height: 25px;
+  width: 210px;
+  display: inline-block;
+  margin-top: -5px;
+  margin-left: 15px;
+  margin-bottom: 20px;
+  padding-left :20px;
+  padding-right :20px;
 }
 
+.rangelabel {
+  margin-left: 15px;
+}
+
+/* film details */
 .film-column-img {
   float: left;
   width: 200px;
   padding: 10px;
   padding-left: 100px;
+}
+
+.film-thumbnail {
+    width: 200px;
 }
 
 .film-column-details {
