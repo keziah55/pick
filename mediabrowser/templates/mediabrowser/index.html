@@ -2,6 +2,7 @@
 {% load static %}
 
 <!DOCTYPE html>
+<html>
 
 <head>
     <link rel="stylesheet" href="{% static 'mediabrowser/style.css' %}">
@@ -20,7 +21,7 @@
     <input type="submit" value="search">
 </div>
 
-<div class="column side">
+<div class="column left">
     <!-- year -->
     <!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
     <div class="rangeslider", id="yearslider">
@@ -82,10 +83,11 @@
 
 </form>
 
+
 <div class="column middle">
     {% if film_list %}
         {% for film in film_list %}
-            <div class="film-row">
+            <div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
                 <div class="film-column-img">
                     <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
                 </div>  
@@ -103,13 +105,36 @@
                         {% for person in film.stars.all|slice:"2:3" %}
                             <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>...
                         {% endfor %}
-                    </p>  
+                    </p>
                 </div>  
             </div>  
         {% endfor %}
     {% else %}
         <p>No results are available.</p>
     {% endif %}
+    
+
 </div>
 
+
+<div class="column right">
+    <span id="description-hover"></span>
+</div>
+
+<script>
+    function hover_film(s) {
+        p = document.getElementById("description-hover");
+        console.log(p.innerHTML);
+        p.innerHTML = s;
+        
+    }
+    function hover_film_leave() {
+        p = document.getElementById("description-hover");
+        console.log(p.innerHTML);
+        p.innerHTML = "";
+        
+    }
+</script>
+
 </body>
+</html>

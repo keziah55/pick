@@ -10,19 +10,25 @@ body {
   float: left;
 }
 
-/* Left and right column */
-.column.side {
+.column.left {
   width: 10%;
 }
 
-/* Middle column */
 .column.middle {
   width: 50%;
 }
 
+.column.right {
+  width: 30%;
+  left: 60%;
+  top: 100px;
+  padding-right: 20px;
+  position: fixed;
+}
+
 /* Responsive layout - makes the three columns stack on top of each other instead of next to each other */
 @media screen and (max-width: 600px) {
-  .column.side, .column.middle {
+  .column.left, .column.middle, .column.right {
     width: 100%;
   }
 }
