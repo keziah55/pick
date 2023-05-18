@@ -3,7 +3,6 @@ from django.http import HttpResponse
 
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
 
-from itertools import chain
 from pprint import pprint
 
 def index(request):
@@ -30,6 +29,12 @@ def index(request):
     if 'runtime_min' not in context:
         context['runtime_min'] = context['runtime_range_min']
         context['runtime_max'] = context['runtime_range_max']
+        
+    if 'colour' in context:
+        context['colour_checked'] = True
+        
+    if 'black_and_white' in context:
+        context['black_and_white_checked'] = True
     
     return render(request, 'mediabrowser/index.html', context)
     
@@ -49,10 +54,19 @@ def _search(search_str, **kwargs) -> dict:
     
     # filter values
     filter_kwargs = {}
-    if (year_min:=kwargs.get('year_min', None)) is not None and (year_max:=kwargs.get('year_max', None)) is not None:
-        filter_kwargs['year__range'] = (int(year_min), int(year_max))
-    if (runtime_min:=kwargs.get('runtime_min', None)) is not None and (runtime_max:=kwargs.get('runtime_max', None)) is not None:
-        filter_kwargs['runtime__range'] = (int(runtime_min), int(runtime_max))
+    if (year_min:=_get_kwarg(kwargs, 'year_min')) is not None and (year_max:=_get_kwarg(kwargs, 'year_max')) is not None:
+        filter_kwargs['year__range'] = (year_min, year_max)
+    if (runtime_min:=_get_kwarg(kwargs, 'runtime_min')) is not None and (runtime_max:=_get_kwarg(kwargs, 'runtime_max')) is not None:
+        filter_kwargs['runtime__range'] = (runtime_min, runtime_max)
+        
+    if (colour:=_get_kwarg(kwargs, 'colour')) is not None:
+        filter_kwargs['colour'] = colour
+    if (black_and_white:=_get_kwarg(kwargs, 'black_and_white')) is not None:
+        if filter_kwargs.get('colour', False) and black_and_white:
+            # if both colour and black and white selected, don't filter this
+            filter_kwargs.pop('colour')
+        elif black_and_white:
+            filter_kwargs['colour'] = False
     
     # always search VisionItem by title
     results = list(VisionItem.objects.filter(title__icontains=search_str, **filter_kwargs))
@@ -75,32 +89,39 @@ def _search(search_str, **kwargs) -> dict:
     ## to get all items with genre 'g'
     ## g.VisionItem_set.all()
     
-    # make string to display in search bar
-    if search_str:
-        search_placeholder = "Showing results for: '{}'".format(search_str)
-    else:
-        search_placeholder = 'Search...'
-    
     # args to be substituted into the templates    
     context = {'film_list':results,
-               'search_placeholder':search_placeholder}
+               'search_str':search_str}
     return context
 
 def _get_context_from_request(request) -> dict:
     """ Try to get year and runtime min and max from `request` """
     context = {}
     
-    for key in ['year_min', 'year_max', 'runtime_min', 'runtime_max']:
+    for key in _get_search_kwargs():
         try:
             value = request.GET[key]
-            print(f"get '{key}' = {value}")
+            # print(f"get '{key}' = {value}")
         except:
-            print(f"could not get value for '{key}'")
+            # print(f"could not get value for '{key}'")
             pass
         else:
             context[key] = value
             
     return context
+
+def _get_search_kwargs():
+    return ['year_min', 'year_max', 'runtime_min', 'runtime_max', 'black_and_white', 'colour']
+
+def _get_kwarg(kwargs, key):
+    type_map = {'year_min':int, 'year_max':int, 'runtime_min':int, 'runtime_max':int, 
+                'black_and_white':bool, 'colour':bool}
+    value = kwargs.get(key, None)
+    if value is not None:
+        t = type_map.get(key, None)
+        if t is not None:
+            value = t(value)
+    return value
 
 def _year_range() -> dict:
     """ Return dict with 'year_range_min' and 'year_range_max' keys from all VisionItems """

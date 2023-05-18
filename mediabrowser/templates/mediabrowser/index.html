@@ -16,7 +16,7 @@
 <form action="{% url 'pick:index' %}" method="get">
 <!-- search bar -->
 <div align="center">
-    <input type="text" name="search" id="searchbar" align="center" placeholder="{{ search_placeholder }}">
+    <input type="text" name="search" id="searchbar" align="center" value="{{ search_str }}" placeholder="Search..." >
     <input type="submit" value="search">
 </div>
 
@@ -42,6 +42,11 @@
 <!-- for year and runtime sliders -->
 <script src="{% static 'mediabrowser/slider.js' %}"></script>
 
+<!-- colour/black and white -->
+<label for="colour">Colour: </label>
+<input type="checkbox" id="colour" name="colour" value="True" {% if colour_checked %} checked {% endif %}> 
+<label for="black_and_white">Black and White: </label>
+<input type="checkbox" id="black_and_white" name="black_and_white" value="True" {% if black_and_white_checked %} checked {% endif %}>
 
 </form>
 
