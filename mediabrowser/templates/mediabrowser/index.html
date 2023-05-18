@@ -44,13 +44,39 @@
     <script src="{% static 'mediabrowser/slider.js' %}"></script>
     
     <!-- colour/black and white -->
-    <div class="colourbox", id="colourbox">
+    <div class="checkbox", id="colourbox">
         <input type="checkbox" id="colour" name="colour" value="True" {% if colour_checked %} checked {% endif %}> 
         <label for="colour">Colour</label>
     </div>
-    <div class="colourbox", id="blackwhitebox">
+    <div class="checkbox", id="blackwhitebox">
         <input type="checkbox" id="black_and_white" name="black_and_white" value="True" {% if black_and_white_checked %} checked {% endif %}>
         <label for="black_and_white">Black and White</label>
+    </div>
+    
+    <!-- genres -->
+    <script>
+        function toggle(source) {
+            checkboxes = document.getElementsByClassName('genrebox');
+            for(var i=0, n=checkboxes.length;i<n;i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        }
+    </script>
+    
+    <span class="genrelabel">Genres</span>
+    <div>
+        <div class="checkbox">
+            <input type="checkbox" id="all-genre-box" name="all-genre-box" onClick="toggle(this)" value="True" {% if all_genre_checked %} checked {% endif %}>
+            <label for="all-genre-box">All</label>
+        </div>
+    
+        {% for genre, checked in genres.items %}
+            <div class="checkbox">
+                <input type="checkbox" class="genrebox" name="genre-{{ genre.lower }}" id="genre-{{ genre }}-box" value="True" {% if checked %} checked {% endif %}>
+                <label for="genre-{{ genre }}-box"> {{ genre }}</label>
+            </div>
+        {% endfor %}
+    
     </div>
 </div>
 
