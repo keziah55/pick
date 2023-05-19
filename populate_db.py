@@ -6,7 +6,6 @@ list of filenames.
 """
 
 import warnings
-import argparse
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
 
@@ -465,6 +464,8 @@ class PopulateDatabase:
         print("Cleared database")
             
 if __name__ == "__main__":
+    
+    import argparse
     
     parser = argparse.ArgumentParser(description=__doc__)
     

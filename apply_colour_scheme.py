@@ -3,7 +3,6 @@
 """
 Read chosen colours from config file and prepend to style.css
 """
-import argparse
 import os.path
 import re
 import configparser
@@ -53,6 +52,8 @@ def main(scheme_name, static_path):
     _write_css(css, static_path)
     
 if __name__ == '__main__':
+    
+    import argparse
     
     parser = argparse.ArgumentParser(description=__doc__)
     
