@@ -19,35 +19,7 @@ def index(request):
     search_results = _search(search_str, **context)
     context.update(search_results)
     
-    # add min and max values for the sliders (not the selected min and max vals)
-    context.update(_year_range())
-    context.update(_runtime_range())
-    
-    if 'year_min' not in context:
-        context['year_min'] = context['year_range_min']
-        context['year_max'] = context['year_range_max']
-        
-    if 'runtime_min' not in context:
-        context['runtime_min'] = context['runtime_range_min']
-        context['runtime_max'] = context['runtime_range_max']
-        
-    # colour/black and white: if unchecked, leave it. otheriwse, set checked
-    if context.get('colour', None) is not False:
-        context['colour_checked'] = True
-        
-    if context.get('black_and_white', None) is not False:
-        context['black_and_white_checked'] = True
-        
-    genres = {g.name:g.name.lower() in context.get('genres', []) for g in Genre.objects.all()}
-    if all([value is False for value in genres.values()]):
-        # don't allow all genres unchecked
-        for key in genres:
-            genres[key] = True
-    context['genres'] = genres
-    
-    if 'all_genre_checked' not in context:
-        all_genres = all(genres.values()) 
-        context['all_genre_checked'] = request.GET.get('all-genre-box', all_genres)
+    context = _set_search_filters(context, request)
     
     return render(request, 'mediabrowser/index.html', context)
     
@@ -55,6 +27,7 @@ def search(request, search_str):
     context = _get_context_from_request(request)
     search_results = _search(search_str, **context)
     context.update(search_results)
+    context = _set_search_filters(context, request)
     return render(request, 'mediabrowser/index.html', context)
 
 def _search(search_str, **kwargs) -> dict:
@@ -106,6 +79,7 @@ def _search(search_str, **kwargs) -> dict:
     # args to be substituted into the templates    
     context = {'film_list':results,
                'search_str':search_str}
+    
     return context
 
 def _check_include_film(film, results, genres) -> bool:
@@ -171,3 +145,40 @@ def _get_range(name, model_class=VisionItem) -> dict:
     values = set(model_class.objects.all().values_list(name, flat=True))
     dct = {f"{name}_range_min":min(values), f"{name}_range_max":max(values)}
     return dct
+
+def _set_search_filters(context, request=None) -> dict:
+    
+    # add min and max values for the sliders (not the selected min and max vals)
+    if 'year_range_min' not in context:
+        context.update(_year_range())
+    if 'runtime_range_min' not in context:
+        context.update(_runtime_range())
+    
+    
+    if 'year_min' not in context:
+        context['year_min'] = context['year_range_min']
+        context['year_max'] = context['year_range_max']
+        
+    if 'runtime_min' not in context:
+        context['runtime_min'] = context['runtime_range_min']
+        context['runtime_max'] = context['runtime_range_max']
+        
+    # colour/black and white: if unchecked, leave it. otheriwse, set checked
+    if context.get('colour', None) is not False:
+        context['colour_checked'] = True
+        
+    if context.get('black_and_white', None) is not False:
+        context['black_and_white_checked'] = True
+        
+    genres = {g.name:g.name.lower() in context.get('genres', []) for g in Genre.objects.all()}
+    if all([value is False for value in genres.values()]):
+        # don't allow all genres unchecked
+        for key in genres:
+            genres[key] = True
+    context['genres'] = genres
+    
+    if 'all_genre_checked' not in context and request is not None:
+        all_genres = all(genres.values()) 
+        context['all_genre_checked'] = request.GET.get('all-genre-box', all_genres)
+    
+    return context
