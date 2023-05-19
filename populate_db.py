@@ -14,10 +14,7 @@ from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 django.setup()
 
-from mediabrowser.models import (
-    VisionItem, MediaSeries, Genre, Keyword, Person, 
-    # DirectorThrough, StarsThrough
-    )
+from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person
 
 from dataclasses import dataclass
 from imdb import Cinemagoer

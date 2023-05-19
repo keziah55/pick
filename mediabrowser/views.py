@@ -154,7 +154,6 @@ def _set_search_filters(context, request=None) -> dict:
     if 'runtime_range_min' not in context:
         context.update(_runtime_range())
     
-    
     if 'year_min' not in context:
         context['year_min'] = context['year_range_min']
         context['year_max'] = context['year_range_max']

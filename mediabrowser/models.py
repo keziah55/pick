@@ -8,6 +8,7 @@ class MediaSeries(models.Model):
     
 class Person(models.Model):
     name = models.CharField(max_length=200, primary_key=True, unique=True)
+    # TODO aka, e.g. Charlie Chaplin?
     def __str__(self):
         return self.name
     

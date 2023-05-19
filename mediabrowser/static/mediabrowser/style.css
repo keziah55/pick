@@ -99,17 +99,12 @@ a:active {
 }
 
 .film-thumbnail {
-    width: 200px;
+  width: 200px;
 }
 
 .film-column-details {
   float: left;
   padding: 5px;
-}
-
-.film-row {
-  left: 100px;
-  /*width: 40%;*/
 }
 
 /* Clear floats after image containers */
