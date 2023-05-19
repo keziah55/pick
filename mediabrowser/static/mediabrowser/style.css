@@ -1,8 +1,16 @@
+:root {
+  --background: #1e222a;
+  --foreground: #558cd0;
+  --foreground-2: #f0b505;
+  --foreground-3: #056bf0;
+  --foreground-4: #00f;
+}
+
 body {
   font-family: 'Lato', 'Calibri', 'sans-serif';
   font-size: 16pt;
-  background-color: #0d151f;
-  color: #f0b505;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 /* three column layout from https://www.w3schools.com/css/css_website_layout.asp */
@@ -35,19 +43,19 @@ body {
 
 /* link style */
 a:link {
-  color: #f0b505;
+  color: var(--foreground);
 }
 
 a:visited {
-  color: #f05b05;
+  color: var(--foreground-3);
 }
 
 a:hover {
-  color: #ff0000;
+  color: var(--foreground-4);
 }
 
 a:active {
-  color: #a70000;
+  color: var(--foreground-3);
 } 
 
 /* checkboxes for colour/black and white */
@@ -61,6 +69,10 @@ a:active {
   margin-bottom: 20px;
   padding-left: 20px;
   padding-right: 20px;
+}
+
+.checklabel, .slider_range, .rangelabel, .genrelabel {
+  color: var(--foreground-2);
 }
 
 .rangelabel {
@@ -109,7 +121,8 @@ a:active {
 
 .description-hover {
   font-size: 14pt;
-  color: #f0de77;
+  color: var(--foreground-2);
+  /* color: #f0de77;*/
   /*color: #056bf0;*/
 }
 
