@@ -59,7 +59,7 @@ a:active {
 } 
 
 /* checkboxes for colour/black and white */
-.checkbox {
+.checkbox, .tristatebox {
   position: relative;
   height: 25px;
   width: 210px;
@@ -73,6 +73,17 @@ a:active {
 
 .checklabel, .slider_range, .rangelabel, .genrelabel {
   color: var(--foreground-2);
+}
+
+.tristate, .genrebox {
+  background-color: orange;
+  --include-color: green;
+  --neutral-color: orange;
+  --exclude-color: red;
+  width: 15px;
+  height: 15px;
+  margin-right: 5px;
+  vertical-align: -3px;
 }
 
 .rangelabel {
@@ -128,3 +139,13 @@ a:active {
   position: absolute;
   bottom: 0px;
 }
+
+/*
+.more-actors {
+  display: none;
+}
+
+.ellipsis:hover + .more-actors {
+  display: block;
+  color: red;
+}*/

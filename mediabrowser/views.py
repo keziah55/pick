@@ -4,7 +4,6 @@ from django.http import HttpResponse
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
 
 import re
-from pprint import pprint
 
 def index(request):
     # see if the `request` object has a 'search' item
@@ -163,10 +162,10 @@ def _set_search_filters(context, request=None) -> dict:
         context['runtime_max'] = context['runtime_range_max']
         
     # colour/black and white: if unchecked, leave it. otheriwse, set checked
-    if context.get('colour', None) is not False:
+    if context.get('colour', False) is not False:
         context['colour_checked'] = True
         
-    if context.get('black_and_white', None) is not False:
+    if context.get('black_and_white', False) is not False:
         context['black_and_white_checked'] = True
         
     genres = {g.name:g.name.lower() in context.get('genres', []) for g in Genre.objects.all()}

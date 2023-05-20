@@ -41,9 +41,6 @@
         <span class="slider_range light right">{{ runtime_min }} - {{ runtime_max }}</span>
     </div>
     
-    <!-- for year and runtime sliders -->
-    <script src="{% static 'mediabrowser/slider.js' %}"></script>
-    
     <!-- colour/black and white -->
     <div class="checkbox", id="colourbox">
         <input type="checkbox" id="colour" name="colour" value="True" {% if colour_checked %} checked {% endif %}> 
@@ -55,25 +52,21 @@
     </div>
     
     <!-- genres -->
-    <script>
-        function toggle(source) {
-            checkboxes = document.getElementsByClassName('genrebox');
-            for(var i=0, n=checkboxes.length;i<n;i++) {
-                checkboxes[i].checked = source.checked;
-            }
-        }
-    </script>
-    
     <span class="genrelabel">Genres</span>
     <div>
-        <div class="checkbox">
-            <input type="checkbox" id="all-genre-box" name="all-genre-box" onClick="toggle(this)" value="True" {% if all_genre_checked %} checked {% endif %}>
+    
+        <div class="tristatebox">
+        <!-- data-custom-state="0" {{ all_genre_checked }}-->
+            <input class="tristate" onclick="tri_state_changed(this)" data-custom-state="0" type="button"
+                   id="all-genre-box" name="all-genre-box" >
             <label class="checklabel" for="all-genre-box">All</label>
         </div>
     
         {% for genre, checked in genres.items %}
-            <div class="checkbox">
-                <input type="checkbox" class="genrebox" name="genre-{{ genre.lower }}" id="genre-{{ genre }}-box" value="True" {% if checked %} checked {% endif %}>
+        <!-- {% if checked %} checked {% endif %} -->
+            <div class="tristatebox">
+                <input class="genrebox" onclick="tri_state_changed(this)" data-custom-state="0" type="button"
+                       id="genre-{{ genre }}-box" name="genre-{{ genre.lower }}">
                 <label class="checklabel" for="genre-{{ genre }}-box"> {{ genre }}</label>
             </div>
         {% endfor %}
@@ -82,7 +75,6 @@
 </div>
 
 </form>
-
 
 <div class="column middle">
     {% if film_list %}
@@ -94,9 +86,22 @@
                 <div class="film-column-details">
                     <p>{{ film.title }} ({{ film.year }}) </p>
                     <p>
-                        {% for person in film.director.all %}
-                            <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>
-                        {% endfor %}
+                        Dir. 
+                         <!-- this is horrible, but not sure how better to make sure that, -->
+                         <!-- if there are multiple directors, they are displayed with comma separators -->
+                         <!-- and if there are more than 3 directors, add an ellipsis -->
+                        {% if film.director.all.0 %}
+                            <a href="{% url 'pick:search' film.director.all.0.name %}">{{ film.director.all.0.name }}
+                        {% endif %}
+                        {% if film.director.all.1 %}
+                            , <a href="{% url 'pick:search' film.director.all.1.name %}">{{ film.director.all.1.name }}</a>
+                        {% endif %}
+                        {% if film.director.all.2 %}
+                            , <a href="{% url 'pick:search' film.director.all.2.name %}">{{ film.director.all.2.name }}</a>
+                        {% endif %}
+                        {% if film.director.all|length > 3 %}
+                            ...
+                        {% endif %}
                     </p>  
                     <p>
                         {% for person in film.stars.all|slice:":2" %}
@@ -106,6 +111,7 @@
                             <a href="{% url 'pick:search' film.stars.all.2.name %}">{{ film.stars.all.2.name }}</a>...
                         {% endif %}
                     </p>
+                    <p>{{ film.runtime }} minutes</p>
                     <p class="imdb-link"><a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a></p>
                 </div>  
             </div>  
@@ -117,22 +123,16 @@
     {% endif %}
 </div>
 
-
-
 <div class="column right">
     <p class="description-hover" id="description-hover"></p>
 </div>
 
-<script>
-    function hover_film(s) {
-        p = document.getElementById("description-hover");
-        p.innerHTML = s;
-    }
-    function hover_film_leave() {
-        p = document.getElementById("description-hover");
-        p.innerHTML = "";
-    }
-</script>
+<!-- for year and runtime sliders -->
+<script src="{% static 'mediabrowser/slider.js' %}"></script>
+<!-- for tri-state genre boxes -->
+<script src="{% static 'mediabrowser/tristate.js' %}"></script>
+<!-- for showing and hiding film description on hover -->
+<script src="{% static 'mediabrowser/deschover.js' %}"></script>
 
 </body>
 </html>
