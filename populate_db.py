@@ -72,7 +72,9 @@ class PopulateDatabase:
     
     sep = "\t"
     
-    def __init__(self):
+    def __init__(self, quiet=False):
+        
+        self._quiet = quiet
         
         self._direct_fields = []
         self._ref_fields = []
@@ -86,6 +88,10 @@ class PopulateDatabase:
                 self._direct_fields.append(field.name)
                 
         self._waiting_for_alt_versions = []
+        
+    def _write(self, s):
+        if not self._quiet:
+            print(s)
 
     def _add_to_db(self, filename, media_info):
         """ 
@@ -395,7 +401,8 @@ class PopulateDatabase:
             
         patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
             
-        progress = ProgressBar(len(files))
+        if not self._quiet:
+            progress = ProgressBar(len(files))
             
         for n, file in enumerate(files):
             title = os.path.splitext(os.path.basename(file))[0]
@@ -407,9 +414,11 @@ class PopulateDatabase:
                 continue
             else:
                 self._add_to_db(file, media_info)
-            progress.progress(n+1)
                 
-        print("Checking for remaining references...")
+            if not self._quiet:
+                progress.progress(n+1)
+                
+        self._write("Checking for remaining references...")
         self._check_alt_verions()
 
     def update(self, patch_csv) -> int:
@@ -429,8 +438,9 @@ class PopulateDatabase:
         count = 0
         patch = self._read_patch_csv(patch_csv)
         
-        progress_count = 0
-        progress = ProgressBar(len(patch))
+        if not self._quiet:
+            progress_count = 0
+            progress = ProgressBar(len(patch))
         
         for file, dct in patch.items():
             item = VisionItem.objects.filter(filename=file)
@@ -450,16 +460,17 @@ class PopulateDatabase:
                     self._add_to_db(file, media_info)
                     count += 1
                     
-            progress_count += 1
-            progress.progress(progress_count)
+            if not self._quiet:
+                progress_count += 1
+                progress.progress(progress_count)
                  
-        print(f"Updated {count} records")
+        self._write(f"Updated {count} records")
         return count
     
     def clear(self, model=VisionItem):
         """ Remove all entries from the given `model` table """
         model.objects.all().delete()
-        print("Cleared database")
+        self._write("Cleared database")
             
 if __name__ == "__main__":
     
@@ -473,11 +484,13 @@ if __name__ == "__main__":
     parser.add_argument('-u', '--update', help='Call update with path to patch csv',
                         action='store_true')
     parser.add_argument('-c', '--clear', help='Clear VisionItems', action='store_true')
+    parser.add_argument('-q', '--quiet', help='Dont write anything to stdout', action='store_true')
 
     args = parser.parse_args()
+    print(args)
     
     t0 = time()
-    pop_db = PopulateDatabase()
+    pop_db = PopulateDatabase(quiet=args.quiet)
     
     if args.clear:
         pop_db.clear()
@@ -488,11 +501,12 @@ if __name__ == "__main__":
     if args.update and args.patch is not None:
         pop_db.update(args.patch)
         
-    t = (time() - t0) / 60 # time in minutes
-    hours, minssecs = divmod(t, 60)
-    mins, secs = divmod((minssecs*60), 60)
-    if hours > 0:
-        s = f"{hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
-    else:
-        s = f"{mins:02.0f}m{secs:02.0f}s"
-    print(f"Completed in {s}")
+    if not args.quiet:
+        t = (time() - t0) / 60 # time in minutes
+        hours, minssecs = divmod(t, 60)
+        mins, secs = divmod((minssecs*60), 60)
+        if hours > 0:
+            s = f"{hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
+        else:
+            s = f"{mins:02.0f}m{secs:02.0f}s"
+        print(f"Completed in {s}")
