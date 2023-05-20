@@ -102,7 +102,9 @@
                         {% for person in film.stars.all|slice:":2" %}
                             <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
                         {% endfor %}
-                        <a href="{% url 'pick:search' film.stars.all.2.name %}">{{ film.stars.all.2.name }}</a>...
+                        {% if film.stars.all.2 %}
+                            <a href="{% url 'pick:search' film.stars.all.2.name %}">{{ film.stars.all.2.name }}</a>...
+                        {% endif %}
                     </p>
                     <p class="imdb-link"><a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a></p>
                 </div>  

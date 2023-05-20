@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-PopulateDatabase is a class that creates database entries for all films in a 
-list of filenames.
+For creating and updating database entries for all films in a list of filenames.
 """
 
 import warnings
@@ -202,7 +201,8 @@ class PopulateDatabase:
         if len(self._waiting_for_alt_versions) == 0:
             return
         
-        progress = ProgressBar(len(self._waiting_for_alt_versions))
+        if not self._quiet:
+            progress = ProgressBar(len(self._waiting_for_alt_versions))
         
         for n, (item, ref_film) in enumerate(self._waiting_for_alt_versions):
             
@@ -215,7 +215,8 @@ class PopulateDatabase:
                 item.alt_versions.add(ref_items[0])
                 item.save()
                 
-            progress.progress(n+1)
+            if not self._quiet:
+                progress.progress(n+1)
                 
         self._waiting_for_alt_versions = []
     
@@ -264,7 +265,6 @@ class PopulateDatabase:
         info : MediaInfo
             Dataclass of info about the given film
         """
-        # TODO bonus features
         if patch is None:
             patch = {}
         
