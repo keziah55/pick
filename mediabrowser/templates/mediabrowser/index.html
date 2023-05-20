@@ -102,19 +102,19 @@
                         {% for person in film.stars.all|slice:":2" %}
                             <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
                         {% endfor %}
-                        {% for person in film.stars.all|slice:"2:3" %}
-                            <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>...
-                        {% endfor %}
+                        <a href="{% url 'pick:search' film.stars.all.2.name %}">{{ film.stars.all.2.name }}</a>...
                     </p>
+                    <p class="imdb-link"><a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a></p>
                 </div>  
             </div>  
         {% endfor %}
     {% else %}
         <div class="film-row"
-            <span>No results are available.</span>
+            <p>No films found.<p>
         </div>
     {% endif %}
 </div>
+
 
 
 <div class="column right">
@@ -124,15 +124,11 @@
 <script>
     function hover_film(s) {
         p = document.getElementById("description-hover");
-        console.log(p.innerHTML);
         p.innerHTML = s;
-        
     }
     function hover_film_leave() {
         p = document.getElementById("description-hover");
-        console.log(p.innerHTML);
         p.innerHTML = "";
-        
     }
 </script>
 

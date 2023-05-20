@@ -38,6 +38,7 @@ class MediaInfo:
     langauge: str
     colour: bool
     alt_versions: list
+    bonus_features: bool
     
     def __getitem__(self, key):
         value = getattr(self, key)
@@ -121,6 +122,7 @@ class PopulateDatabase:
             language = media_info.as_string('langauge'),
             colour = media_info.colour,
             media_type = VisionItem.FILM,
+            bonus_features = media_info.bonus_features,
         )
         item.save()
         
@@ -262,7 +264,7 @@ class PopulateDatabase:
         info : MediaInfo
             Dataclass of info about the given film
         """
-        
+        # TODO bonus features
         if patch is None:
             patch = {}
         
@@ -318,9 +320,11 @@ class PopulateDatabase:
         alt_versions = patch.get('alt_versions', '')
         alt_versions = [fname for fname in alt_versions.split(',') if fname]
         
+        bonus_features = patch.get('bonus_features', False)
+        
         info = MediaInfo(
             title, image_url, genre, keywords, year, runtime, stars, director, 
-            desc, media_id, alt_title, language, colour, alt_versions
+            desc, media_id, alt_title, language, colour, alt_versions, bonus_features
         )
         
         return info

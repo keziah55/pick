@@ -19,15 +19,15 @@ body {
 }
 
 .column.left {
-  width: 10%;
+  width: 15%;
 }
 
 .column.middle {
-  width: 50%;
+  width: 45%;
 }
 
 .column.right {
-  width: 30%;
+  width: 25%;
   left: 60%;
   top: 100px;
   padding-right: 20px;
@@ -94,8 +94,6 @@ a:active {
 .film-column-img {
   float: left;
   width: 200px;
-  padding: 10px;
-  padding-left: 100px;
 }
 
 .film-thumbnail {
@@ -104,7 +102,12 @@ a:active {
 
 .film-column-details {
   float: left;
-  padding: 5px;
+  padding-left: 15px;
+}
+
+.film-row {
+  position: relative;
+  padding-top: 10px;
 }
 
 /* Clear floats after image containers */
@@ -121,3 +124,7 @@ a:active {
   /*color: #056bf0;*/
 }
 
+.imdb-link {
+  position: absolute;
+  bottom: 0px;
+}
