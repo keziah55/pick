@@ -83,6 +83,7 @@ class VisionItem(models.Model):
     genre = models.ManyToManyField(Genre)
     keywords = models.ManyToManyField(Keyword)
     description = models.TextField()
+    alt_description = models.TextField()
     alt_versions = models.ManyToManyField('self', symmetrical=False)
     
 # class SoundItem(MediaItem):

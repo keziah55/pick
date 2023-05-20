@@ -7,6 +7,7 @@ list of filenames.
 
 import warnings
 import os
+from datetime import datetime
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
 
 import django
@@ -346,21 +347,21 @@ class PopulateDatabase:
             
             if len(movies) == 0:
                 with open("errors.txt", "a") as fileobj:
-                    fileobj.write(f"{title}; search_movie\n")
+                    fileobj.write(f"[{datetime.now().isoformat()}] {title}; search_movie\n")
                 return None
             
             movie = movies[0]
         
         if movie is None:
             with open("errors.txt", "a") as fileobj:
-                fileobj.write(f"{title}; update\n")
+                fileobj.write(f"[{datetime.now().isoformat()}] {title}; no imdb results\n")
             return None
         
         try:
             cinemagoer.update(movie, infoset)
         except Exception as err:
             with open("errors.txt", "a") as fileobj:
-                fileobj.write(f"{title}; update: {err}\n")
+                fileobj.write(f"[{datetime.now().isoformat()}] {title}; update: {err}\n")
             return None
         
         try:
@@ -368,7 +369,7 @@ class PopulateDatabase:
         except Exception as err:
             info = None
             with open("errors.txt", "a") as fileobj:
-                fileobj.write(f"{title}; _get_media_info: {err}\n")
+                fileobj.write(f"[{datetime.now().isoformat()}]{title}; _get_media_info: {err}\n")
         return info
         
     def populate(self, films_txt, patch_csv=None) -> int:
@@ -463,6 +464,7 @@ class PopulateDatabase:
 if __name__ == "__main__":
     
     import argparse
+    from time import time
     
     parser = argparse.ArgumentParser(description=__doc__)
     
@@ -474,6 +476,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
+    t0 = time()
     pop_db = PopulateDatabase()
     
     if args.clear:
@@ -484,3 +487,12 @@ if __name__ == "__main__":
         
     if args.update and args.patch is not None:
         pop_db.update(args.patch)
+        
+    t = (time() - t0) / 60 # time in minutes
+    hours, minssecs = divmod(t, 60)
+    mins, secs = divmod((minssecs*60), 60)
+    if hours > 0:
+        s = f"{hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
+    else:
+        s = f"{mins:02.0f}m{secs:02.0f}s"
+    print(f"Completed in {s}")
