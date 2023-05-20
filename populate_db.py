@@ -286,9 +286,13 @@ class PopulateDatabase:
                 image_url = head + "_V1_FMjpg_UX1000_.jpg"
         
         genre = cls._get_patched(movie, patch, 'genres', 'genre', default=[])
+        if isinstance(genre, str):
+            genre = [s.strip() for s in genre.split(',') if s]
         
         # list of keywords
         keywords = cls._get_patched(movie, patch, 'keywords', default=[])
+        if isinstance(keywords, str):
+            keywords = [s.strip() for s in keywords.split(',') if s]
         
         # get release year
         year = patch.get('year', int(movie.get('year', 0)))
@@ -487,7 +491,6 @@ if __name__ == "__main__":
     parser.add_argument('-q', '--quiet', help='Dont write anything to stdout', action='store_true')
 
     args = parser.parse_args()
-    print(args)
     
     t0 = time()
     pop_db = PopulateDatabase(quiet=args.quiet)

@@ -64,7 +64,7 @@ def _search(search_str, **kwargs) -> dict:
     
     if search_str:
         # only search people and keywords if given a search string
-        persons = Person.objects.filter(name__icontains=search_str)
+        persons = Person.objects.filter(name__icontains=search_str) | Person.objects.filter(alias__icontains=search_str)
         for person in persons:
             # get person's films, applying filters
             results += [film for film in person.stars.filter(**filter_kwargs) 

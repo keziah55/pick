@@ -8,7 +8,8 @@ class MediaSeries(models.Model):
     
 class Person(models.Model):
     name = models.CharField(max_length=200, primary_key=True, unique=True)
-    # TODO aka, e.g. Charlie Chaplin?
+    alias = models.CharField(max_length=200)
+    
     def __str__(self):
         return self.name
     
@@ -84,6 +85,7 @@ class VisionItem(models.Model):
     description = models.TextField()
     alt_description = models.TextField()
     alt_versions = models.ManyToManyField('self', symmetrical=False)
+    bonus_features = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.title} ({int(self.year)})"
