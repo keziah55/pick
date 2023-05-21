@@ -67,6 +67,7 @@ class VisionItem(models.Model):
     filename = models.CharField(max_length=200)
     year = models.PositiveSmallIntegerField()
     img = models.CharField(max_length=500) # url to image
+    # local_img = models.ImageField() ## TODO TG-61
     media_type = models.CharField(
         max_length=50,
         choices=MEDIA_TYPE_CHOICES)
@@ -86,6 +87,7 @@ class VisionItem(models.Model):
     alt_description = models.TextField()
     alt_versions = models.ManyToManyField('self', symmetrical=False)
     bonus_features = models.BooleanField(default=False)
+    # imdb_rating = models.FloatField() # TODO TG-57
     
     def __str__(self):
         return f"{self.title} ({int(self.year)})"
