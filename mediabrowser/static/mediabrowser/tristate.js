@@ -2,32 +2,34 @@ function tri_state_changed(element) {
     // set next state of tristate button `element`
     // cycle through states: 0:neutral, 1:include, 2:neutral, 3:exclude
     
-    cStyle = window.getComputedStyle(element);
-    colors = [cStyle.getPropertyValue("--neutral-color"),
-              cStyle.getPropertyValue("--include-color"),
-              cStyle.getPropertyValue("--neutral-color"),
-              cStyle.getPropertyValue("--exclude-color")]
+    style = window.getComputedStyle(element);
+    colors = [style.getPropertyValue("--neutral-color"),
+              style.getPropertyValue("--include-color"),
+              style.getPropertyValue("--neutral-color"),
+              style.getPropertyValue("--exclude-color")]
               
-    var newState = parseInt(element.dataset.customState) + 1;
-    if (newState >= 4)
+    var dataElement = document.getElementById(element.id + "-data");
+    var newState = parseInt(dataElement.value) + 1;
+    if (newState >= colors.length)
         newState = 0;
-    
-    element.style.backgroundColor = colors[newState];
-    element.style.color = colors[newState];
-    element.dataset.customState = newState.toString();
-    element.value = newState.toString();
+        
+    set_tristate_state(element, newState.toString(), colors[newState]);
     
     if (element.name == "all-genre-box")
-        set_all_genres(element.dataset.customState, colors[newState]);
+        set_all_genres(dataElement.value, colors[newState]);
 }
 
 function set_all_genres(state, color) {
-    // set state (and background colur) of all genre boxes
+    // set state (and background colour) of all genre boxes
     checkboxes = document.getElementsByClassName('genrebox');
     for (var i=0, n=checkboxes.length;i<n;i++) {
-        checkboxes[i].dataset.customState = state;
-        checkboxes[i].style.backgroundColor = color;
-        checkboxes[i].style.color = color;
-        checkboxes[i].value = state;
+        set_tristate_state(checkboxes[i], state, color)
     }
+}
+
+function set_tristate_state(element, state, color) {
+    // set `element` background colour and corresponding hidden data element `state`
+    var dataElement = document.getElementById(element.id + "-data");
+    element.style.backgroundColor = color;
+    dataElement.value = state;
 }
