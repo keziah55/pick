@@ -18,7 +18,6 @@ function tri_state_changed(element) {
     
     if (element.name == "all-genre-box")
         set_all_genres(dataElement.value, colors[newState]);
-    
 }
 
 function set_all_genres(state, color) {
