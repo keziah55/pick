@@ -1,6 +1,6 @@
 from django.test import TestCase
 from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person
-from populate_db import PopulateDatabase
+from scripts.populate_db import PopulateDatabase
 import os.path
 
 class VisionModelTest(TestCase):

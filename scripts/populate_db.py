@@ -2,24 +2,69 @@
 # -*- coding: utf-8 -*-
 """
 For creating and updating database entries for all films in a list of filenames.
+
+Either import `PopulateDatabase` class or run as script. In the latter case,
+see `populate_db.py -h` for options.
 """
 
-import warnings
 import os
+import shutil
+import warnings
 from datetime import datetime
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
 
-import django
+if __name__ == "__main__":
+    # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
+    import sys
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
+    import django
+    django.setup()
+
 from django.db import models
-from django.core.exceptions import ObjectDoesNotExist
-django.setup()
-
+from django.core.exceptions import ObjectDoesNotExist    
 from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person
 
 from dataclasses import dataclass
 from imdb import Cinemagoer
-from progressbar import ProgressBar
 
+class ProgressBar:
+    """ Simple ProgressBar object, going up to `maximum` """
+    def __init__(self, maximum):
+        self.mx = maximum
+        try:
+            # get width of terminal
+            width = shutil.get_terminal_size().columns
+            # width of progress bar
+            # 9 characters are needed for percentage etc.
+            self.width = int(width)-9
+            self.show_bar = True
+        except ValueError:
+            # if we can't get terminal size, show only the percentage
+            self.show_bar = False
+        self.progress(0)
+        
+    def progress(self, value):
+        """ Update the progress bar
+        
+            Parameters
+            ----------
+            value : float
+                Progress value
+        """
+        # calculate percentage progress
+        p = value/self.mx
+        show = f'{100*p:5.1f}%'
+        
+        # make bar, if required
+        if self.show_bar:
+            progress = int(self.width*p)
+            remaining = self.width-progress
+            show += ' [' + '#'*progress + '-'*remaining + ']'
+        
+        # set line ending to either carriage return or new line
+        end = '\r' if p < 1 else '\n'
+        print(show, end=end, flush=True)
+        
 @dataclass
 class MediaInfo:
     """ Class to hold info from IMDb, from which `VisionItem` can be created in database """
@@ -479,12 +524,12 @@ class PopulateDatabase:
         """ Remove all entries from the given `model` table """
         model.objects.all().delete()
         self._write("Cleared database")
-            
+        
 if __name__ == "__main__":
     
     import argparse
     from time import time
-    
+
     parser = argparse.ArgumentParser(description=__doc__)
     
     parser.add_argument('-f', '--films', help='Path to films text file')
@@ -493,7 +538,7 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument('-c', '--clear', help='Clear VisionItems', action='store_true')
     parser.add_argument('-q', '--quiet', help='Dont write anything to stdout', action='store_true')
-
+    
     args = parser.parse_args()
     
     t0 = time()

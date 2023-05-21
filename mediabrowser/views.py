@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
-
 import re
+
+from pprint import pprint
 
 def index(request):
     # see if the `request` object has a 'search' item
@@ -12,6 +12,8 @@ def index(request):
     # if not, use empty string
     except:
         search_str = ''
+        
+    pprint(request)
         
     context = _get_context_from_request(request)
     

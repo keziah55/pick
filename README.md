@@ -9,3 +9,9 @@ Pick is a media browser, built using django.
 ./manage.py migrate
 ./populate_db.py -f films.txt -p patch.csv
 ```
+
+## Test
+
+```
+./manage.py test mediabrowser -v 2
+```

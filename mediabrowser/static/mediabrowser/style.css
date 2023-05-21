@@ -4,6 +4,9 @@
   --foreground-2: #f0b505;
   --foreground-3: #056bf0;
   --foreground-4: #00f;
+  --include-color: #3584e4;
+  --neutral-color: #fff;
+  --exclude-color: #000;
 }
 
 body {
@@ -76,10 +79,8 @@ a:active {
 }
 
 .tristate, .genrebox {
-  background-color: orange;
-  --include-color: green;
-  --neutral-color: orange;
-  --exclude-color: red;
+  background-color: var(--neutral-color);
+  color: var(--neutral-color);
   width: 15px;
   height: 15px;
   margin-right: 5px;
