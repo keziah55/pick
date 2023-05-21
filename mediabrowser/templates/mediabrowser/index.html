@@ -63,12 +63,13 @@
             <label class="checklabel" for="all-genre-box">All</label>
         </div>
     
-        {% for genre, checked in genres.items %}
+        {% for genre, value in genres.items %}
         <!-- {% if checked %} checked {% endif %} -->
             <div class="tristatebox">
                 <input type="button" class="genrebox" onclick="tri_state_changed(this)" 
-                       id="genre-{{ genre }}-box" name="genre-{{ genre.lower }}" >
-                <input type="hidden" id="genre-{{ genre }}-box-data" name="genre-{{ genre.lower }}-data" value="0">
+                       id="genre-{{ genre }}-box" name="genre-{{ genre.lower }}" 
+                       style="background-color:{{ value.1 }}">
+                <input type="hidden" id="genre-{{ genre }}-box-data" name="genre-{{ genre.lower }}-data" value="{{ value.0 }}">
                 <label class="checklabel" for="genre-{{ genre }}-box"> {{ genre }}</label>
             </div>
         {% endfor %}

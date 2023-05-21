@@ -19,6 +19,19 @@ function tri_state_changed(element) {
         set_all_genres(dataElement.value, colors[newState]);
 }
 
+function set_tristate_current_state(element) {
+    console.log("set_tristate_current_state");
+    style = window.getComputedStyle(element);
+    colors = [style.getPropertyValue("--neutral-color"),
+              style.getPropertyValue("--include-color"),
+              style.getPropertyValue("--neutral-color"),
+              style.getPropertyValue("--exclude-color")]
+    
+     var dataElement = document.getElementById(element.id + "-data");
+     var currentState = parseInt(dataElement.value);
+     set_tristate_state(element, state, colors[currentState]);
+}
+
 function set_all_genres(state, color) {
     // set state (and background colour) of all genre boxes
     checkboxes = document.getElementsByClassName('genrebox');

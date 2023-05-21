@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
+import os.path
 import re
 
 from pprint import pprint
@@ -12,8 +13,6 @@ def index(request):
     # if not, use empty string
     except:
         search_str = ''
-        
-    pprint(request)
         
     context = _get_context_from_request(request)
     
@@ -55,13 +54,14 @@ def _search(search_str, **kwargs) -> dict:
         elif black_and_white:
             filter_kwargs['colour'] = False
             
-    genres = set(kwargs.get('genres', []))
+    genre_include = set(kwargs.get('genre-include', []))
+    genre_exclude = set(kwargs.get('genre-exclude', []))
             
     results = []
     
     # always search VisionItem by title
     results = [film for film in VisionItem.objects.filter(title__icontains=search_str, **filter_kwargs)
-               if _check_include_film(film, results, genres)]
+               if _check_include_film(film, results, genre_include, genre_exclude)]
     
     if search_str:
         # only search people and keywords if given a search string
@@ -69,13 +69,13 @@ def _search(search_str, **kwargs) -> dict:
         for person in persons:
             # get person's films, applying filters
             results += [film for film in person.stars.filter(**filter_kwargs) 
-                        if _check_include_film(film, results, genres)]
+                        if _check_include_film(film, results, genre_include, genre_exclude)]
             results += [film for film in person.director.filter(**filter_kwargs) 
-                        if _check_include_film(film, results, genres)]
+                        if _check_include_film(film, results, genre_include, genre_exclude)]
         keywords = Keyword.objects.filter(name__icontains=search_str)
         for keyword in keywords:
             results += [film for film in keyword.visionitem_set.filter(**filter_kwargs) 
-                        if _check_include_film(film, results, genres)]
+                        if _check_include_film(film, results, genre_include, genre_exclude)]
     
     # args to be substituted into the templates    
     context = {'film_list':results,
@@ -83,7 +83,7 @@ def _search(search_str, **kwargs) -> dict:
     
     return context
 
-def _check_include_film(film, results, genres) -> bool:
+def _check_include_film(film, results, genre_include, genre_exclude=None) -> bool:
     """ 
     Return True if `film` not already in `results` and any of its genres are in `genres` set.
     
@@ -93,12 +93,30 @@ def _check_include_film(film, results, genres) -> bool:
         Film to check
     results : list
         List of VisionItems
-    genres : set
-        Set of genre names (as lower case strings)
+    genre_include : set, optional
+        Set of genre names to include (as lower case strings)
+    genre_exclude : set, optional
+        Set of genre names to exclude (as lower case strings)
     """
+    film_is_new = film not in results
     film_genres = set([g.name.lower() for g in film.genre.all()])
-    not_disjoint = True if len(genres)==0 else not genres.isdisjoint(film_genres)
-    return film not in results and not_disjoint
+    
+    if genre_include is None:
+        genre_include = set()
+    if genre_exclude is None:
+        genre_exclude = set()
+    
+    if len(genre_include) == 0 and len(genre_exclude)==0:
+        return film_is_new
+    
+    # include if no include genres specified or if there's any overlap in genres
+    include = True if len(genre_include)==0 else not genre_include.isdisjoint(film_genres)
+    # exclude if there's any overlap in genres
+    not_exclude = True if len(genre_exclude)==0 else genre_exclude.isdisjoint(film_genres)
+    
+    # print(f"{film} {film_genres}; {genre_include=}, {genre_exclude=}; {include=}, {not_exclude=}")
+    
+    return film_is_new and include and not_exclude
 
 def _get_context_from_request(request) -> dict:
     """ Try to get year and runtime min and max from `request` """
@@ -108,10 +126,23 @@ def _get_context_from_request(request) -> dict:
         if key in _get_search_kwargs():
             context[key] = value
         elif key.startswith('genre-'):
-            if 'genres' not in context:
-                context['genres'] = []
-            if (m:=re.match(r"genre-(?P<genre>.+)", key)) is not None:
-                context['genres'].append(m.group('genre'))
+            value = int(value)
+            if value == 1:
+                k = 'genre-include'
+            elif value == 3:
+                k = 'genre-exclude'
+            else:
+                # do nothing for neutral filter
+                continue
+            if k not in context:
+                context[k] = []
+            if (m:=re.match(r"genre-(?P<genre>.+)-data", key)) is not None:
+                # print(k, value, m.group('genre'))
+                context[k].append(m.group('genre'))
+                
+    # print(f"include: {context.get('genre-include', 'none')}")
+    # print(f"exclude: {context.get('genre-exclude', 'none')}")
+            
     return context
 
 def _get_search_kwarg_type_map():
@@ -163,22 +194,47 @@ def _set_search_filters(context, request=None) -> dict:
         context['runtime_min'] = context['runtime_range_min']
         context['runtime_max'] = context['runtime_range_max']
         
-    # colour/black and white: if unchecked, leave it. otheriwse, set checked
+    # colour/black and white: if unchecked, leave it. otherwise, set checked
     if context.get('colour', False) is not False:
         context['colour_checked'] = True
         
     if context.get('black_and_white', False) is not False:
         context['black_and_white_checked'] = True
         
-    genres = {g.name:g.name.lower() in context.get('genres', []) for g in Genre.objects.all()}
-    if all([value is False for value in genres.values()]):
-        # don't allow all genres unchecked
-        for key in genres:
-            genres[key] = True
+    genres = {}
+    genre_colours = _get_tristate_colours()
+    for g in Genre.objects.all():
+        if g.name.lower() in context.get('genre-include', []):
+            value = "1"
+            colour = genre_colours['include']
+        elif g.name.lower() in context.get('genre-exclude', []):
+            value = "3"
+            colour = genre_colours['exclude']
+        else:
+            value = "0"
+            colour = genre_colours['neutral']
+        genres[g.name] = (value, colour)
     context['genres'] = genres
     
-    if 'all_genre_checked' not in context and request is not None:
-        all_genres = all(genres.values()) 
-        context['all_genre_checked'] = request.GET.get('all-genre-box', all_genres)
+    pprint(context['genres'])
+    
+    # if 'all_genre_checked' not in context and request is not None:
+    #     all_genres = all(genres.values()) 
+    #     context['all_genre_checked'] = request.GET.get('all-genre-box', all_genres)
     
     return context
+
+def _get_tristate_colours():
+    p = os.path.join(os.path.dirname(__file__), 'static', 'mediabrowser', 'style.css')
+    with open(p) as fileobj:
+        text = fileobj.read()
+    dct = {}
+    keys = ['include', 'exclude', 'neutral']
+        
+    if (m:=re.search(r":root *\{(?P<content>.*?)\}", text, re.DOTALL)) is not None:
+        for line in m.group('content').split("\n"):
+            for key in keys:
+                if (m2:=re.match(f"\s*--{key}-color: (?P<colour>#\w+)", line)) is not None:
+                    dct[key] = m2.group('colour')
+    return dct
+        
