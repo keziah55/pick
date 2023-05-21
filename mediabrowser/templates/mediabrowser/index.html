@@ -56,15 +56,14 @@
     <div>
         <!-- set all genres state -->
         <div class="tristatebox">
-        <!-- data-custom-state="0" {{ all_genre_checked }}-->
             <input type="button" class="tristate" onclick="tri_state_changed(this)"  
-                   id="all-genre-box" name="all-genre-box">
-            <input type="hidden" id="all-genre-box-data" name="all-genre-box-data" value="0">
+                   id="all-genre-box" name="all-genre-box"
+                   style="background-color:{{ all_genre_data.1 }}">
+            <input type="hidden" id="all-genre-box-data" name="all-genre-box-data" value="{{ all_genre_data.0 }}">
             <label class="checklabel" for="all-genre-box">All</label>
         </div>
     
         {% for genre, value in genres.items %}
-        <!-- {% if checked %} checked {% endif %} -->
             <div class="tristatebox">
                 <input type="button" class="genrebox" onclick="tri_state_changed(this)" 
                        id="genre-{{ genre }}-box" name="genre-{{ genre.lower }}" 

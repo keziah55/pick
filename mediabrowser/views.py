@@ -137,12 +137,8 @@ def _get_context_from_request(request) -> dict:
             if k not in context:
                 context[k] = []
             if (m:=re.match(r"genre-(?P<genre>.+)-data", key)) is not None:
-                # print(k, value, m.group('genre'))
                 context[k].append(m.group('genre'))
                 
-    # print(f"include: {context.get('genre-include', 'none')}")
-    # print(f"exclude: {context.get('genre-exclude', 'none')}")
-            
     return context
 
 def _get_search_kwarg_type_map():
@@ -201,6 +197,7 @@ def _set_search_filters(context, request=None) -> dict:
     if context.get('black_and_white', False) is not False:
         context['black_and_white_checked'] = True
         
+    # have to manually get the background colour from style.css and pass it into the template
     genres = {}
     genre_colours = _get_tristate_colours()
     for g in Genre.objects.all():
@@ -214,17 +211,25 @@ def _set_search_filters(context, request=None) -> dict:
             value = "0"
             colour = genre_colours['neutral']
         genres[g.name] = (value, colour)
-    context['genres'] = genres
+        context['genres'] = genres
     
-    pprint(context['genres'])
-    
-    # if 'all_genre_checked' not in context and request is not None:
-    #     all_genres = all(genres.values()) 
-    #     context['all_genre_checked'] = request.GET.get('all-genre-box', all_genres)
+    if 'all-genre-box-data' not in context and request is not None:
+        values = set([value[0] for value in genres.values()])
+        if len(values) == 1:
+            value = values.pop()
+            if value == "1":
+                colour = genre_colours['include']
+            elif value == "3":
+                colour = genre_colours['exclude']
+        else:
+            value = "0"
+            colour = genre_colours['neutral']
+        context['all_genre_data'] = (request.GET.get('all-genre-box-data', value), colour)
     
     return context
 
-def _get_tristate_colours():
+def _get_tristate_colours() -> dict:
+    """ Get dict of include, exclude and neutral colours from style.css """
     p = os.path.join(os.path.dirname(__file__), 'static', 'mediabrowser', 'style.css')
     with open(p) as fileobj:
         text = fileobj.read()
