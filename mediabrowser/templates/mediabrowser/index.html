@@ -5,6 +5,7 @@
 <html>
 
 <head>
+    <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/favicon.ico' %}"/>
     <link rel="stylesheet" href="{% static 'mediabrowser/style.css' %}">
     <link rel="stylesheet" href="{% static 'mediabrowser/slider.css' %}">
     
@@ -13,72 +14,78 @@
 
 <body>
 
-<!-- search filters -->
-<form action="{% url 'pick:index' %}" method="get">
-<!-- search bar -->
-<div align="center">
-    <input type="text" name="search" id="searchbar" align="center" value="{{ search_str }}" placeholder="Search..." >
-    <input type="submit" value="search">
-</div>
 
-<div class="column left">
-    <!-- year -->
-    <!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
-    <div class="rangeslider", id="yearslider">
-        <input class="min" name="year_min" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_min }}"  />
-        <input class="max" name="year_max" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_max }}" />
-        <!-- <span class="range_min light left">1900</span> -->
-        <!-- <span class="range_max light right">2032</span> -->
-        <span class="rangelabel">Years</span>
-        <span class="slider_range light right">{{ year_min }} - {{ year_max }}</span>
+<form action="{% url 'pick:index' %}" method="get">
+
+    <!-- search bar -->
+    <div align="center">
+        <input type="text" name="search" id="searchbar" align="center" value="{{ search_str }}" placeholder="Search..." >
+        <input type="submit" value="search">
     </div>
+
+    <!-- search filters -->
+    <div class="column left">
     
-    <!-- runtime -->
-    <div class="rangeslider", id="runtimeslider">
-        <input class="min" name="runtime_min" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_min }}" />
-        <input class="max" name="runtime_max" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_max }}" />
-        <span class="rangelabel">Runtime</span>
-        <span class="slider_range light right">{{ runtime_min }} - {{ runtime_max }}</span>
-    </div>
+        <img class="logo" src="{% static 'mediabrowser/logo.png' %}" alt="Pick">
     
-    <!-- colour/black and white -->
-    <div class="checkbox", id="colourbox">
-        <input type="checkbox" id="colour" name="colour" value="True" {% if colour_checked %} checked {% endif %}> 
-        <label class="checklabel" for="colour">Colour</label>
-    </div>
-    <div class="checkbox", id="blackwhitebox">
-        <input type="checkbox" id="black_and_white" name="black_and_white" value="True" {% if black_and_white_checked %} checked {% endif %}>
-        <label class="checklabel" for="black_and_white">Black and White</label>
-    </div>
-    
-    <!-- genres -->
-    <span class="genrelabel">Genres</span>
-    <div>
-        <!-- set all genres state -->
-        <div class="tristatebox">
-            <input type="button" class="tristate" onclick="tri_state_changed(this)"  
-                   id="all-genre-box" name="all-genre-box"
-                   style="background-color:{{ all_genre_data.1 }}">
-            <input type="hidden" id="all-genre-box-data" name="all-genre-box-data" value="{{ all_genre_data.0 }}">
-            <label class="checklabel" for="all-genre-box">All</label>
+        <!-- year -->
+        <!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
+        <div class="rangeslider", id="yearslider">
+            <input class="min" name="year_min" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_min }}"  />
+            <input class="max" name="year_max" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_max }}" />
+            <!-- <span class="range_min light left">1900</span> -->
+            <!-- <span class="range_max light right">2032</span> -->
+            <span class="rangelabel">Years</span>
+            <span class="slider_range light right">{{ year_min }} - {{ year_max }}</span>
         </div>
-    
-        {% for genre, value in genres.items %}
+        
+        <!-- runtime -->
+        <div class="rangeslider", id="runtimeslider">
+            <input class="min" name="runtime_min" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_min }}" />
+            <input class="max" name="runtime_max" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_max }}" />
+            <span class="rangelabel">Runtime</span>
+            <span class="slider_range light right">{{ runtime_min }} - {{ runtime_max }}</span>
+        </div>
+        
+        <!-- colour/black and white -->
+        <div class="checkbox", id="colourbox">
+            <input type="checkbox" id="colour" name="colour" value="True" {% if colour_checked %} checked {% endif %}> 
+            <label class="checklabel" for="colour">Colour</label>
+        </div>
+        <div class="checkbox", id="blackwhitebox">
+            <input type="checkbox" id="black_and_white" name="black_and_white" value="True" {% if black_and_white_checked %} checked {% endif %}>
+            <label class="checklabel" for="black_and_white">Black and White</label>
+        </div>
+        
+        <!-- genres -->
+        <span class="genrelabel">Genres</span>
+        <div>
+            <!-- set all genres state -->
             <div class="tristatebox">
-                <input type="button" class="genrebox" onclick="tri_state_changed(this)" 
-                       id="genre-{{ genre }}-box" name="genre-{{ genre.lower }}" 
-                       style="background-color:{{ value.1 }}">
-                <input type="hidden" id="genre-{{ genre }}-box-data" name="genre-{{ genre.lower }}-data" value="{{ value.0 }}">
-                <label class="checklabel" for="genre-{{ genre }}-box"> {{ genre }}</label>
+                <input type="button" class="tristate" onclick="tri_state_changed(this)"  
+                       id="all-genre-box" name="all-genre-box"
+                       style="background-color:{{ all_genre_data.1 }}">
+                <input type="hidden" id="all-genre-box-data" name="all-genre-box-data" value="{{ all_genre_data.0 }}">
+                <label class="checklabel" for="all-genre-box">All</label>
             </div>
-        {% endfor %}
-    
+        
+            {% for genre, value in genres.items %}
+                <div class="tristatebox">
+                    <input type="button" class="genrebox" onclick="tri_state_changed(this)" 
+                           id="genre-{{ genre }}-box" name="genre-{{ genre.lower }}" 
+                           style="background-color:{{ value.1 }}">
+                    <input type="hidden" id="genre-{{ genre }}-box-data" name="genre-{{ genre.lower }}-data" value="{{ value.0 }}">
+                    <label class="checklabel" for="genre-{{ genre }}-box"> {{ genre }}</label>
+                </div>
+            {% endfor %}
+        
+        </div>
     </div>
-</div>
 
 </form>
 
 <div class="column middle">
+
     {% if film_list %}
         {% for film in film_list %}
             <div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">

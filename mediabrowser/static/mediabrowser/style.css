@@ -16,6 +16,11 @@ body {
   color: var(--foreground);
 }
 
+.logo {
+  width: 200px;
+  margin-left: 38px;
+}
+
 /* three column layout from https://www.w3schools.com/css/css_website_layout.asp */
 .column {
   float: left;
