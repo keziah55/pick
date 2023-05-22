@@ -16,7 +16,7 @@ def index(request):
         
     context = _get_context_from_request(request)
     
-    search_results = _search(search_str, **context)
+    search_results = _search(search_str, search_keywords=False, **context)
     context.update(search_results)
     
     context = _set_search_filters(context, request)
@@ -25,12 +25,12 @@ def index(request):
     
 def search(request, search_str):
     context = _get_context_from_request(request)
-    search_results = _search(search_str, **context)
+    search_results = _search(search_str, search_keywords=False, **context)
     context.update(search_results)
     context = _set_search_filters(context, request)
     return render(request, 'mediabrowser/index.html', context)
 
-def _search(search_str, **kwargs) -> dict:
+def _search(search_str, search_keywords=True, **kwargs) -> dict:
     """ 
     Search VisionItems for `search_str` 
     
@@ -72,10 +72,11 @@ def _search(search_str, **kwargs) -> dict:
                         if _check_include_film(film, results, genre_include, genre_exclude)]
             results += [film for film in person.director.filter(**filter_kwargs) 
                         if _check_include_film(film, results, genre_include, genre_exclude)]
-        keywords = Keyword.objects.filter(name__icontains=search_str)
-        for keyword in keywords:
-            results += [film for film in keyword.visionitem_set.filter(**filter_kwargs) 
-                        if _check_include_film(film, results, genre_include, genre_exclude)]
+        if search_keywords:
+            keywords = Keyword.objects.filter(name__icontains=search_str)
+            for keyword in keywords:
+                results += [film for film in keyword.visionitem_set.filter(**filter_kwargs) 
+                            if _check_include_film(film, results, genre_include, genre_exclude)]
     
     # args to be substituted into the templates    
     context = {'film_list':results,
