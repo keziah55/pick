@@ -110,8 +110,8 @@ def _check_include_film(film, results, genre_include, genre_exclude=None) -> boo
     if len(genre_include) == 0 and len(genre_exclude)==0:
         return film_is_new
     
-    # include if no include genres specified or if there's any overlap in genres
-    include = True if len(genre_include)==0 else not genre_include.isdisjoint(film_genres)
+    # include if no include genres specified or if all include genres are in film_genres
+    include = True if len(genre_include)==0 else genre_include.issubset(film_genres)
     # exclude if there's any overlap in genres
     not_exclude = True if len(genre_exclude)==0 else genre_exclude.isdisjoint(film_genres)
     
@@ -130,7 +130,7 @@ def _get_context_from_request(request) -> dict:
             value = int(value)
             if value == 1:
                 k = 'genre-include'
-            elif value == 3:
+            elif value == 2:
                 k = 'genre-exclude'
             else:
                 # do nothing for neutral filter
@@ -206,7 +206,7 @@ def _set_search_filters(context, request=None) -> dict:
             value = "1"
             colour = genre_colours['include']
         elif g.name.lower() in context.get('genre-exclude', []):
-            value = "3"
+            value = "2"
             colour = genre_colours['exclude']
         else:
             value = "0"
@@ -220,7 +220,7 @@ def _set_search_filters(context, request=None) -> dict:
             value = values.pop()
             if value == "1":
                 colour = genre_colours['include']
-            elif value == "3":
+            elif value == "2":
                 colour = genre_colours['exclude']
         else:
             value = "0"

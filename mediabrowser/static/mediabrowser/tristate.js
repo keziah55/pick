@@ -5,7 +5,6 @@ function tri_state_changed(element) {
     style = window.getComputedStyle(element);
     colors = [style.getPropertyValue("--neutral-color"),
               style.getPropertyValue("--include-color"),
-              style.getPropertyValue("--neutral-color"),
               style.getPropertyValue("--exclude-color")]
               
     var dataElement = document.getElementById(element.id + "-data");
