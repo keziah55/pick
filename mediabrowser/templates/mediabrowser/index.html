@@ -5,7 +5,9 @@
 <html>
 
 <head>
+    <title>Pick</title>
     <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/favicon.ico' %}"/>
+    
     <link rel="stylesheet" href="{% static 'mediabrowser/style.css' %}">
     <link rel="stylesheet" href="{% static 'mediabrowser/slider.css' %}">
     
@@ -26,7 +28,9 @@
     <!-- search filters -->
     <div class="column left">
     
-        <img class="logo" src="{% static 'mediabrowser/logo.png' %}" alt="Pick">
+        <a href="{% url 'pick:index' %}">
+            <img class="logo" src="{% static 'mediabrowser/logo.png' %}" alt="Pick">
+        </a>
     
         <!-- year -->
         <!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
@@ -58,8 +62,8 @@
         </div>
         
         <!-- genres -->
-        <span class="genrelabel">Genres</span>
         <div>
+            <span class="genrelabel">Genres</span>
             <!-- set all genres state -->
             <div class="tristatebox">
                 <input type="button" class="tristate" onclick="tri_state_changed(this)"  

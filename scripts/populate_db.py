@@ -83,6 +83,8 @@ class MediaInfo:
     colour: bool
     alt_versions: list
     bonus_features: bool
+    digital: bool
+    physical: bool
     
     def __getitem__(self, key):
         value = getattr(self, key)
@@ -167,6 +169,8 @@ class PopulateDatabase:
             colour = media_info.colour,
             media_type = VisionItem.FILM,
             bonus_features = media_info.bonus_features,
+            # digital = media_info.digital,
+            # physical = media_info.physical,
         )
         item.save()
         
@@ -366,10 +370,13 @@ class PopulateDatabase:
         alt_versions = [fname for fname in alt_versions.split(',') if fname]
         
         bonus_features = patch.get('bonus_features', False)
+        digital = patch.get('digital', True)
+        physical = patch.get('physical', False)
         
         info = MediaInfo(
             title, image_url, genre, keywords, year, runtime, stars, director, 
-            desc, media_id, alt_title, language, colour, alt_versions, bonus_features
+            desc, media_id, alt_title, language, colour, alt_versions, bonus_features,
+            digital, physical
         )
         
         return info
