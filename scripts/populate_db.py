@@ -122,7 +122,7 @@ class PopulateDatabase:
     
     sep = "\t"
     
-    def __init__(self, quiet=False):
+    def __init__(self, quiet=False, physical_media=None):
         
         self._quiet = quiet
         
@@ -138,6 +138,8 @@ class PopulateDatabase:
                 self._direct_fields.append(field.name)
                 
         self._waiting_for_alt_versions = []
+        
+        self._physical_media = self._read_physical_media_csv(physical_media) if physical_media is not None else []
         
     def _write(self, s):
         if not self._quiet:
@@ -291,6 +293,25 @@ class PopulateDatabase:
             patch[key] = {header[i]:value for i, value in enumerate(values) if value}
         
         return patch
+    
+    @classmethod
+    def _read_physical_media_csv(cls, media_csv) -> list:
+        """ Return list of films that are available on physical media """
+        with open(media_csv) as fileobj:
+            header, *lines = fileobj.readlines()
+            
+        header = header.lower().strip().split(cls.sep)
+        title_idx = header.index('Title')
+        media_type_idx = header.index('Media Type')
+        
+        physical = []
+        for line in lines:
+            line = line.lower()
+            row = line.strip().split(cls.sep)
+            if row[media_type_idx].strip() == "film":
+                physical.append(row[title_idx])
+                
+        return physical
         
     @staticmethod
     def _get_patched(movie, patch, imdb_key, patch_key=None, default=None):
@@ -303,8 +324,7 @@ class PopulateDatabase:
             value = default
         return value
     
-    @classmethod
-    def _get_media_info(cls, movie, patch=None) -> MediaInfo:
+    def _get_media_info(self, movie, patch=None) -> MediaInfo:
         """ 
         Return dataclass of info about the film from the given `movie` 
         
@@ -323,31 +343,31 @@ class PopulateDatabase:
         if patch is None:
             patch = {}
         
-        title = cls._get_patched(movie, patch, 'title', default='') 
+        title = self._get_patched(movie, patch, 'title', default='') 
         
         alt_title_fields = ['original title', 'localized title']
-        alt_title = set([cls._get_patched(movie, patch, field, 'alt_title', default=title) for field in alt_title_fields])
+        alt_title = set([self._get_patched(movie, patch, field, 'alt_title', default=title) for field in alt_title_fields])
         if title in alt_title:
             alt_title.remove(title)
         alt_title = list(alt_title)
         
-        language = cls._get_patched(movie, patch, 'languages', 'language', default=[])
+        language = self._get_patched(movie, patch, 'languages', 'language', default=[])
         
-        colour = cls._get_patched(movie, patch, 'color info', 'colour', default=['Color'])
+        colour = self._get_patched(movie, patch, 'color info', 'colour', default=['Color'])
         colour = any(['color' in item.lower() for item in colour]) # boolean
         
-        image_url = cls._get_patched(movie, patch, 'cover url', 'image_url', default='')
+        image_url = self._get_patched(movie, patch, 'cover url', 'image_url', default='')
         if '_V1_' in image_url:
             head, tail = image_url.split('_V1_')
             if tail:
                 image_url = head + "_V1_FMjpg_UX1000_.jpg"
         
-        genre = cls._get_patched(movie, patch, 'genres', 'genre', default=[])
+        genre = self._get_patched(movie, patch, 'genres', 'genre', default=[])
         if isinstance(genre, str):
             genre = [s.strip() for s in genre.split(',') if s]
         
         # list of keywords
-        keywords = cls._get_patched(movie, patch, 'keywords', default=[])
+        keywords = self._get_patched(movie, patch, 'keywords', default=[])
         if isinstance(keywords, str):
             keywords = [s.strip() for s in keywords.split(',') if s]
         
@@ -377,12 +397,12 @@ class PopulateDatabase:
         alt_versions = patch.get('alt_versions', '')
         alt_versions = [fname for fname in alt_versions.split(',') if fname]
         
-        imdb_rating = cls._get_patched(movie, patch, 'rating', 'imdb_rating', default=0)
+        imdb_rating = self._get_patched(movie, patch, 'rating', 'imdb_rating', default=0)
         user_rating = patch.get('user_rating', 0)
         
         bonus_features = patch.get('bonus_features', False)
         digital = patch.get('digital', True)
-        physical = patch.get('physical', False)
+        physical = patch.get('physical', title.lower() in self._physical_media)
         
         info = MediaInfo(
             title, image_url, genre, keywords, year, runtime, stars, director, 
@@ -552,6 +572,7 @@ if __name__ == "__main__":
     
     parser.add_argument('-f', '--films', help='Path to films text file')
     parser.add_argument('-p', '--patch', help='Path to patch csv')
+    parser.add_argument('-m', '--physical-media', help='Path to physical media csv')
     parser.add_argument('-u', '--update', help='Call update with path to patch csv',
                         action='store_true')
     parser.add_argument('-c', '--clear', help='Clear VisionItems', action='store_true')
@@ -560,7 +581,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     t0 = time()
-    pop_db = PopulateDatabase(quiet=args.quiet)
+    pop_db = PopulateDatabase(quiet=args.quiet, physical_media=args.physical_media)
     
     if args.clear:
         pop_db.clear()
