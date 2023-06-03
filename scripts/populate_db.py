@@ -77,14 +77,15 @@ class MediaInfo:
     stars: list
     director: list
     description: str
+    alt_description: str
     media_id: str
     alt_title: list
     langauge: str
     colour: bool
     alt_versions: list
-    bonus_features: bool
     imdb_rating: float
     user_rating: float
+    bonus_features: bool
     digital: bool
     physical: bool
     
@@ -166,13 +167,14 @@ class PopulateDatabase:
             runtime = media_info.runtime,
             imdb_id = media_info.media_id,
             description = media_info.description,
+            alt_description = media_info.alt_description,
             alt_title = media_info.as_string('alt_title'),
             language = media_info.as_string('langauge'),
             colour = media_info.colour,
             media_type = VisionItem.FILM,
-            bonus_features = media_info.bonus_features,
             imdb_rating = media_info.imdb_rating,
             user_rating = media_info.user_rating,
+            bonus_features = media_info.bonus_features,
             digital = media_info.digital,
             physical = media_info.physical,
         )
@@ -368,21 +370,24 @@ class PopulateDatabase:
         
         desc = patch.get('description', movie.get('plot', movie.get('plot outline', '')))
         
+        alt_desc = patch.get('alt_description', '')
+        
         media_id = patch.get('media_id', movie.getID())
         
         alt_versions = patch.get('alt_versions', '')
         alt_versions = [fname for fname in alt_versions.split(',') if fname]
         
-        bonus_features = patch.get('bonus_features', False)
         imdb_rating = cls._get_patched(movie, patch, 'rating', 'imdb_rating', default=0)
         user_rating = patch.get('user_rating', 0)
+        
+        bonus_features = patch.get('bonus_features', False)
         digital = patch.get('digital', True)
         physical = patch.get('physical', False)
         
         info = MediaInfo(
             title, image_url, genre, keywords, year, runtime, stars, director, 
-            desc, media_id, alt_title, language, colour, alt_versions, bonus_features,
-            imdb_rating, user_rating, digital, physical
+            desc, alt_desc, media_id, alt_title, language, colour, alt_versions, 
+            imdb_rating, user_rating, bonus_features, digital, physical
         )
         
         return info
