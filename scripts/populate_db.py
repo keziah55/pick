@@ -70,6 +70,7 @@ class MediaInfo:
     """ Class to hold info from IMDb, from which `VisionItem` can be created in database """
     title: str
     image_url: str
+    local_img_url: str
     genre: list
     keywords: list
     year: int
@@ -180,6 +181,9 @@ class PopulateDatabase:
             digital = media_info.digital,
             physical = media_info.physical,
         )
+        
+        if media_info.local_img_url is not None:
+            item.local_img = media_info.local_img_url
         item.save()
         
         self._add_refs(item, media_info)
@@ -301,13 +305,15 @@ class PopulateDatabase:
             header, *lines = fileobj.readlines()
             
         header = header.lower().strip().split(cls.sep)
-        title_idx = header.index('Title')
-        media_type_idx = header.index('Media Type')
+        title_idx = header.index('title')
+        media_type_idx = header.index('media type')
         
         physical = []
         for line in lines:
             line = line.lower()
             row = line.strip().split(cls.sep)
+            if len(row) < len(header):
+                break
             if row[media_type_idx].strip() == "film":
                 physical.append(row[title_idx])
                 
@@ -361,6 +367,8 @@ class PopulateDatabase:
             head, tail = image_url.split('_V1_')
             if tail:
                 image_url = head + "_V1_FMjpg_UX1000_.jpg"
+                
+        local_img_url = patch.get('local_img', None)
         
         genre = self._get_patched(movie, patch, 'genres', 'genre', default=[])
         if isinstance(genre, str):
@@ -405,15 +413,14 @@ class PopulateDatabase:
         physical = patch.get('physical', title.lower() in self._physical_media)
         
         info = MediaInfo(
-            title, image_url, genre, keywords, year, runtime, stars, director, 
+            title, image_url, local_img_url, genre, keywords, year, runtime, stars, director, 
             desc, alt_desc, media_id, alt_title, language, colour, alt_versions, 
             imdb_rating, user_rating, bonus_features, digital, physical
         )
         
         return info
         
-    @classmethod
-    def _get_movie(cls, title=None, patch=None, item_type='film') -> MediaInfo:
+    def _get_movie(self, title=None, patch=None, item_type='film') -> MediaInfo:
         """ 
         Return `MediaInfo` dataclass with data from either title or patch dict.
     
@@ -462,7 +469,7 @@ class PopulateDatabase:
             return None
         
         try:
-            info = cls._get_media_info(movie, patch)
+            info = self._get_media_info(movie, patch)
         except Exception as err:
             info = None
             with open("errors.txt", "a") as fileobj:

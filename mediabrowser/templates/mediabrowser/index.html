@@ -94,7 +94,11 @@
         {% for film in film_list %}
             <div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
                 <div class="film-column-img">
-                    <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
+                    {% if film.local_img %}
+                        <img class="film-thumbnail" src="{{ film.local_img }}" alt="{{ film.title }}">
+                    {% else %}
+                        <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
+                    {% endif %}
                 </div>  
                 <div class="film-column-details">
                     <p>{{ film.title }} ({{ film.year }}) </p>

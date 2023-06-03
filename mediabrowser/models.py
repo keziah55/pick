@@ -67,7 +67,7 @@ class VisionItem(models.Model):
     filename = models.CharField(max_length=200)
     year = models.PositiveSmallIntegerField()
     img = models.CharField(max_length=500) # url to image
-    local_img = models.ImageField() # TODO TG-61
+    local_img = models.ImageField(null=True) # TODO TG-61
     media_type = models.CharField(
         max_length=50,
         choices=MEDIA_TYPE_CHOICES)
@@ -86,8 +86,8 @@ class VisionItem(models.Model):
     description = models.TextField()
     alt_description = models.TextField()
     alt_versions = models.ManyToManyField('self', symmetrical=False)
-    imdb_rating = models.FloatField()
-    user_rating = models.FloatField()
+    imdb_rating = models.FloatField(default=0)
+    user_rating = models.FloatField(default=0)
     bonus_features = models.BooleanField(default=False)
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)
