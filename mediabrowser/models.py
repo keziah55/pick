@@ -87,9 +87,10 @@ class VisionItem(models.Model):
     alt_description = models.TextField()
     alt_versions = models.ManyToManyField('self', symmetrical=False)
     bonus_features = models.BooleanField(default=False)
-    # imdb_rating = models.FloatField() # TODO TG-57
-    # digital = models.BooleanField(default=True)
-    # physical = models.BooleanField(default=False)
+    imdb_rating = models.FloatField()
+    user_rating = models.FloatField()
+    digital = models.BooleanField(default=True)
+    physical = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.title} ({int(self.year)})"
