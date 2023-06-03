@@ -1,11 +1,13 @@
 
-{% load static %}
-
 <!DOCTYPE html>
 <html>
 
+{% load static %}
+{% get_media_prefix as MEDIA_PREFIX %}
+
 <head>
     <title>Pick</title>
+    
     <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/favicon.ico' %}"/>
     
     <link rel="stylesheet" href="{% static 'mediabrowser/style.css' %}">
@@ -95,7 +97,8 @@
             <div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
                 <div class="film-column-img">
                     {% if film.local_img %}
-                        <img class="film-thumbnail" src="{{ film.local_img }}" alt="{{ film.title }}">
+                        <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
+                        <!-- <img class="film-thumbnail" src="{{ film.local_img }}" alt="{{ film.title }}"> -->
                     {% else %}
                         <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
                     {% endif %}
