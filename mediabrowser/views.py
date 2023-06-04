@@ -1,10 +1,16 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.views.generic.list import ListView
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
 import os.path
 import re
 
 from pprint import pprint
+
+class VisionItemList(ListView):
+    mode = VisionItem
+    
+    paginate_by = 20
 
 def index(request):
     # see if the `request` object has a 'search' item
