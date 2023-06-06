@@ -3,15 +3,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
-# from . import views
-from .views import VisionItemList
+from . import views
+# from .views import VisionItemList
 
 app_name = "pick"
 
 urlpatterns = [
-    path("", VisionItemList.as_view())
-    # path("", views.index, name="index"),
-    # path("<str:search_str>/", views.search, name="search")
+    # path("", VisionItemList.as_view(), name="scroll")
+    path("", views.index, name="index"),
+    path("<str:search_str>/", views.search, name="search")
 ]
 
 # Serving the media files in development mode
