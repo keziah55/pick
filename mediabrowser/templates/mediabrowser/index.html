@@ -3,6 +3,7 @@
 <html>
 
 {% load static %}
+{% load el_pagination_tags %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
 <head>
@@ -93,6 +94,7 @@
 <div class="column middle">
 
     {% if film_list %}
+        {% paginate film_list %}
         {% for film in film_list %}
             <div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
                 <div class="film-column-img">
@@ -136,6 +138,7 @@
                 </div>  
             </div>  
         {% endfor %}
+        {% show_pages %}
     {% else %}
         <div class="film-row"
             <p>No films found.<p>
