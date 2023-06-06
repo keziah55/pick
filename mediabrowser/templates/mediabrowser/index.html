@@ -132,7 +132,7 @@
                         {% endif %}
                     </p>
                     <p>{{ film.runtime }} minutes</p>
-                    <p class="imdb-link"><a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a></p>
+                    <p class="imdb-link">{{ film.imdb_rating }} &middot <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a></p>
                 </div>  
             </div>  
         {% endfor %}
