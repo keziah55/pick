@@ -39,6 +39,15 @@
                     <a href="{% url 'pick:search' film.stars.all.2.name %}">{{ film.stars.all.2.name }}</a>...
                 {% endif %}
             </p>
+            
+            <!-- list genres for manual verification -->
+            <p>
+                {% for genre in film.genre.all %}
+                    {{ genre.name }}
+                {% endfor %}
+            </p>
+            <!-- -->
+            
             <p>{{ film.runtime }} minutes</p>
             <p class="imdb-link">{{ film.imdb_rating }} &middot <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a></p>
         </div>  
