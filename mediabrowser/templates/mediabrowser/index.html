@@ -3,15 +3,16 @@
 <html>
 
 {% load static %}
+{% load el_pagination_tags %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
 <head>
     <title>Pick</title>
     
-    <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/favicon.ico' %}"/>
+    <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/img/favicon.ico' %}"/>
     
-    <link rel="stylesheet" href="{% static 'mediabrowser/style.css' %}">
-    <link rel="stylesheet" href="{% static 'mediabrowser/slider.css' %}">
+    <link rel="stylesheet" href="{% static 'mediabrowser/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'mediabrowser/css/slider.css' %}">
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 </head>
@@ -31,7 +32,7 @@
     <div class="column left">
     
         <a href="{% url 'pick:index' %}">
-            <img class="logo" src="{% static 'mediabrowser/logo.png' %}" alt="Pick">
+            <img class="logo" src="{% static 'mediabrowser/img/logo.png' %}" alt="Pick">
         </a>
     
         <!-- year -->
@@ -93,6 +94,7 @@
 <div class="column middle">
 
     {% if film_list %}
+        {% paginate film_list %}
         {% for film in film_list %}
             <div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
                 <div class="film-column-img">
@@ -136,6 +138,7 @@
                 </div>  
             </div>  
         {% endfor %}
+        {% show_pages %}
     {% else %}
         <div class="film-row"
             <p>No films found.<p>
@@ -148,11 +151,11 @@
 </div>
 
 <!-- for year and runtime sliders -->
-<script src="{% static 'mediabrowser/slider.js' %}"></script>
+<script src="{% static 'mediabrowser/js/slider.js' %}"></script>
 <!-- for tri-state genre boxes -->
-<script src="{% static 'mediabrowser/tristate.js' %}"></script>
+<script src="{% static 'mediabrowser/js/tristate.js' %}"></script>
 <!-- for showing and hiding film description on hover -->
-<script src="{% static 'mediabrowser/hover_description.js' %}"></script>
+<script src="{% static 'mediabrowser/js/hover_description.js' %}"></script>
 
 </body>
 </html>

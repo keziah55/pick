@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     'sortedm2m',
+    'el_pagination',
 ]
 
 MIDDLEWARE = [
@@ -63,6 +64,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                'django.template.context_processors.request', ## For EL-pagination
             ],
         },
     },
@@ -133,3 +135,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # https://stackoverflow.com/a/22777773 
 NOSE_ARGS = ['--nocapture',
               '--nologcapture',]
+
+
+EL_PAGINATION_PER_PAGE = 20

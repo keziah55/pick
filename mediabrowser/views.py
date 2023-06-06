@@ -1,10 +1,22 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.views.generic.list import ListView
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
 import os.path
 import re
 
 from pprint import pprint
+
+# class VisionItemList(ListView):
+    # model = VisionItem
+    # paginate_by = 20
+    
+    # context_object_name = 'scroll'
+    # # template_name = 'scroll.html'
+    # ordering = ['title']
+    
+    # # def get_queryset(self):
+    # #     return self.model.objects.all()
 
 def index(request):
     # see if the `request` object has a 'search' item
@@ -231,7 +243,7 @@ def _set_search_filters(context, request=None) -> dict:
 
 def _get_tristate_colours() -> dict:
     """ Get dict of include, exclude and neutral colours from style.css """
-    p = os.path.join(os.path.dirname(__file__), 'static', 'mediabrowser', 'style.css')
+    p = os.path.join(os.path.dirname(__file__), 'static', 'mediabrowser', 'css', 'style.css')
     with open(p) as fileobj:
         text = fileobj.read()
     dct = {}
