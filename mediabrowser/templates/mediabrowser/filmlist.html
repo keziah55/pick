@@ -1,0 +1,47 @@
+{% load el_pagination_tags %}
+
+{% paginate film_list %}
+{% for film in film_list %}
+    <div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
+        <div class="film-column-img">
+            {% if film.local_img %}
+                <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
+                <!-- <img class="film-thumbnail" src="{{ film.local_img }}" alt="{{ film.title }}"> -->
+            {% else %}
+                <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
+            {% endif %}
+        </div>  
+        <div class="film-column-details">
+            <p>{{ film.title }} ({{ film.year }}) </p>
+            <p>
+                Dir. 
+                 <!-- this is horrible, but not sure how better to make sure that, -->
+                 <!-- if there are multiple directors, they are displayed with comma separators -->
+                 <!-- and if there are more than 3 directors, add an ellipsis -->
+                {% if film.director.all.0 %}
+                    <a href="{% url 'pick:search' film.director.all.0.name %}">{{ film.director.all.0.name }}
+                {% endif %}
+                {% if film.director.all.1 %}
+                    , <a href="{% url 'pick:search' film.director.all.1.name %}">{{ film.director.all.1.name }}</a>
+                {% endif %}
+                {% if film.director.all.2 %}
+                    , <a href="{% url 'pick:search' film.director.all.2.name %}">{{ film.director.all.2.name }}</a>
+                {% endif %}
+                {% if film.director.all|length > 3 %}
+                    ...
+                {% endif %}
+            </p>  
+            <p>
+                {% for person in film.stars.all|slice:":2" %}
+                    <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
+                {% endfor %}
+                {% if film.stars.all.2 %}
+                    <a href="{% url 'pick:search' film.stars.all.2.name %}">{{ film.stars.all.2.name }}</a>...
+                {% endif %}
+            </p>
+            <p>{{ film.runtime }} minutes</p>
+            <p class="imdb-link">{{ film.imdb_rating }} &middot <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a></p>
+        </div>  
+    </div>  
+{% endfor %}
+{% show_more %}

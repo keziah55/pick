@@ -18,7 +18,7 @@ from pprint import pprint
     # # def get_queryset(self):
     # #     return self.model.objects.all()
 
-def index(request):
+def index(request, template='mediabrowser/index.html', filmlist_template='mediabrowser/filmlist.html'):
     # see if the `request` object has a 'search' item
     try:
         search_str = request.GET['search']
@@ -33,14 +33,23 @@ def index(request):
     
     context = _set_search_filters(context, request)
     
-    return render(request, 'mediabrowser/index.html', context)
+    context['filmlist_template'] = filmlist_template
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
+        template = filmlist_template
     
-def search(request, search_str):
+    return render(request, template, context)
+    
+def search(request, search_str, template='mediabrowser/index.html', 
+           filmlist_template='mediabrowser/filmlist.html'):
     context = _get_context_from_request(request)
     search_results = _search(search_str, search_keywords=False, **context)
     context.update(search_results)
     context = _set_search_filters(context, request)
-    return render(request, 'mediabrowser/index.html', context)
+    
+    context['filmlist_template'] = filmlist_template
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
+        template = filmlist_template
+    return render(request, template, context)
 
 def _search(search_str, search_keywords=True, **kwargs) -> dict:
     """ 
