@@ -99,6 +99,8 @@ def _search(search_str, search_keywords=True, **kwargs) -> dict:
                 results += [film for film in keyword.visionitem_set.filter(**filter_kwargs) 
                             if _check_include_film(film, results, genre_include, genre_exclude)]
     
+    results = sorted(results, key=_sort_rating, reverse=True)
+    
     # args to be substituted into the templates    
     context = {'film_list':results,
                'search_str':search_str}
@@ -265,3 +267,5 @@ def _get_tristate_colours() -> dict:
                     dct[key] = m2.group('colour')
     return dct
         
+def _sort_rating(item):
+    return item.user_rating, item.imdb_rating
