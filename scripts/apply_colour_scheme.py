@@ -31,7 +31,7 @@ def _make_css(dct):
     return css
 
 def _write_css(css, static_path):
-    css_file = os.path.join(static_path, 'style.css')
+    css_file = os.path.join(static_path, 'css', 'style.css')
     with open(css_file) as fileobj:
         text = fileobj.read()
 
