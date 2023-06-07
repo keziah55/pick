@@ -46,6 +46,8 @@
             <span class="slider_range light right">{{ year_min }} - {{ year_max }}</span>
         </div>
         
+        <hr class="filterdivider">
+        
         <!-- runtime -->
         <div class="rangeslider", id="runtimeslider">
             <input class="min" name="runtime_min" type="range" min="{{ runtime_range_min }}" max="{{ runtime_range_max }}" value="{{ runtime_min }}" />
@@ -53,6 +55,8 @@
             <span class="rangelabel">Runtime</span>
             <span class="slider_range light right">{{ runtime_min }} - {{ runtime_max }}</span>
         </div>
+        
+        <hr class="filterdivider">
         
         <!-- colour/black and white -->
         <div class="checkbox", id="colourbox">
@@ -64,6 +68,8 @@
             <label class="checklabel" for="black_and_white">Black and White</label>
         </div>
         
+        <hr class="filterdivider">
+        
         <!-- digital/physical -->
         <div class="checkbox", id="digitalbox">
             <input type="checkbox" id="digital" name="digital" value="True" {% if digital_checked %} checked {% endif %}> 
@@ -73,6 +79,8 @@
             <input type="checkbox" id="physical" name="physical" value="True" {% if physical_checked %} checked {% endif %}>
             <label class="checklabel" for="physical">Physical</label>
         </div>
+        
+        <hr class="filterdivider">
         
         <!-- genres -->
         <div>
