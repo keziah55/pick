@@ -75,7 +75,6 @@ def _search(search_str, **kwargs) -> dict:
             filter_kwargs['digital'] = False
             
     search_keywords = kwargs.get('keyword', False)
-    print(f"{search_keywords=}")
             
     genre_include = set(kwargs.get('genre-include', []))
     genre_exclude = set(kwargs.get('genre-exclude', []))
