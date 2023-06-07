@@ -85,8 +85,8 @@
         <!-- genres -->
         <div>
             <!-- set all genres state -->
-            <div class="tristatebox">
-                <input type="button" class="tristate" onclick="tri_state_changed(this)"  
+            <div class="multistatebox">
+                <input type="button" class="multistate" onclick="tri_state_changed(this)"  
                        id="all-genre-box" name="all-genre-box"
                        style="background-color:{{ all_genre_data.1 }}">
                 <input type="hidden" id="all-genre-box-data" name="all-genre-box-data" value="{{ all_genre_data.0 }}">
@@ -94,7 +94,7 @@
             </div>
         
             {% for genre, value in genres.items %}
-                <div class="tristatebox">
+                <div class="multistatebox">
                     <input type="button" class="genrebox" onclick="tri_state_changed(this)" 
                            id="genre-{{ genre }}-box" name="genre-{{ genre.lower }}" 
                            style="background-color:{{ value.1 }}">
@@ -138,7 +138,7 @@
 <!-- for year and runtime sliders -->
 <script src="{% static 'mediabrowser/js/slider.js' %}"></script>
 <!-- for tri-state genre boxes -->
-<script src="{% static 'mediabrowser/js/tristate.js' %}"></script>
+<script src="{% static 'mediabrowser/js/multistate.js' %}"></script>
 <!-- for showing and hiding film description on hover -->
 <script src="{% static 'mediabrowser/js/hover_description.js' %}"></script>
 

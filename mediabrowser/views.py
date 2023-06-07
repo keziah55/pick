@@ -224,7 +224,7 @@ def _set_search_filters(context, request=None) -> dict:
             
     # have to manually get the background colour from style.css and pass it into the template
     genres = {}
-    genre_colours = _get_tristate_colours()
+    genre_colours = _get_multistate_colours()
     for g in Genre.objects.all():
         if g.name.lower() in context.get('genre-include', []):
             value = "1"
@@ -253,7 +253,7 @@ def _set_search_filters(context, request=None) -> dict:
     
     return context
 
-def _get_tristate_colours() -> dict:
+def _get_multistate_colours() -> dict:
     """ Get dict of include, exclude and neutral colours from style.css """
     p = os.path.join(os.path.dirname(__file__), 'static', 'mediabrowser', 'css', 'style.css')
     with open(p) as fileobj:
