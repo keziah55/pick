@@ -42,9 +42,9 @@ input[type='range']:nth-child(1)::-webkit-slider-thumb{
     height: 60px;
     width: 210px;
     display: inline-block;
-    margin-top: -5px;
+    margin-top: 10px;
     margin-left: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     padding-left: 15px;
     
 }
