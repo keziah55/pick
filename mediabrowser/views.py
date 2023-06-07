@@ -18,7 +18,7 @@ def index(request, template='mediabrowser/index.html', filmlist_template='mediab
         
     context = _get_context_from_request(request)
     
-    search_results = _search(search_str, search_keywords=False, **context)
+    search_results = _search(search_str, **context)
     context.update(search_results)
     
     context = _set_search_filters(context, request)
@@ -32,7 +32,7 @@ def index(request, template='mediabrowser/index.html', filmlist_template='mediab
 def search(request, search_str, template='mediabrowser/index.html', 
            filmlist_template='mediabrowser/filmlist.html'):
     context = _get_context_from_request(request)
-    search_results = _search(search_str, search_keywords=False, **context)
+    search_results = _search(search_str, **context)
     context.update(search_results)
     context = _set_search_filters(context, request)
     
@@ -41,7 +41,7 @@ def search(request, search_str, template='mediabrowser/index.html',
         template = filmlist_template
     return render(request, template, context)
 
-def _search(search_str, search_keywords=True, **kwargs) -> dict:
+def _search(search_str, **kwargs) -> dict:
     """ 
     Search VisionItems for `search_str` 
     
@@ -73,6 +73,9 @@ def _search(search_str, search_keywords=True, **kwargs) -> dict:
             filter_kwargs.pop('digital')
         elif physical:
             filter_kwargs['digital'] = False
+            
+    search_keywords = kwargs.get('keyword', False)
+    print(f"{search_keywords=}")
             
     genre_include = set(kwargs.get('genre-include', []))
     genre_exclude = set(kwargs.get('genre-exclude', []))
@@ -165,9 +168,11 @@ def _get_context_from_request(request) -> dict:
     return context
 
 def _get_search_kwarg_type_map():
-    type_map = {'year_min':int, 'year_max':int, 'runtime_min':int, 'runtime_max':int, 
-                'black_and_white':bool, 'colour':bool,
-                'digital':bool, 'physical':bool}
+    type_map = {'year_min': int, 'year_max': int, 
+                'runtime_min': int, 'runtime_max': int, 
+                'keyword': bool,
+                'black_and_white': bool, 'colour': bool,
+                'digital': bool, 'physical': bool}
     return type_map
 
 def _get_search_kwargs():
@@ -216,7 +221,7 @@ def _set_search_filters(context, request=None) -> dict:
         
     # colour/black and white and digital/physical: if unchecked, leave it. Otherwise, set checked
     tmp_dct = {}
-    names = ['colour', 'black_and_white', 'digital', 'physical']
+    names = ['keyword', 'colour', 'black_and_white', 'digital', 'physical']
     for name in names:
         if context.get(name, False) is not False:
             tmp_dct[f'{name}_checked'] = True # assigning to context directly here didn't work
