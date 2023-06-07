@@ -294,7 +294,13 @@ class PopulateDatabase:
             line = line.strip().split(cls.sep)
             key, *values = line
             # key is filename; make dict of any other info
-            patch[key] = {header[i]:value for i, value in enumerate(values) if value}
+            dct = {header[i]:value for i, value in enumerate(values) if value}
+            # in case a file is entered twice in the csv, merge the two dics
+            current = patch.get(key, None)
+            if current is None:
+                patch[key] = dct
+            else:
+                current.update(dct)
         
         return patch
     
