@@ -16,8 +16,6 @@ def index(request, template='mediabrowser/index.html', filmlist_template='mediab
     except:
         search_str = ''
         
-    pprint(request.GET)
-        
     context = _get_context_from_request(request)
     
     search_results = _search(search_str, search_keywords=False, **context)
@@ -81,8 +79,6 @@ def _search(search_str, search_keywords=True, **kwargs) -> dict:
             
     results = []
     
-    pprint(filter_kwargs)
-    
     # always search VisionItem by title
     results = [film for film in VisionItem.objects.filter(
                  Q(title__icontains=search_str) | Q(alt_title__icontains=search_str), 
@@ -143,15 +139,11 @@ def _check_include_film(film, results, genre_include, genre_exclude=None) -> boo
     # exclude if there's any overlap in genres
     not_exclude = True if len(genre_exclude)==0 else genre_exclude.isdisjoint(film_genres)
     
-    # print(f"{film} {film_genres}; {genre_include=}, {genre_exclude=}; {include=}, {not_exclude=}")
-    
     return film_is_new and include and not_exclude
 
 def _get_context_from_request(request) -> dict:
     """ Try to get year and runtime min and max from `request` """
     context = {}
-    
-    print(request.GET.keys())
     
     for key, value in request.GET.items():
         if key in _get_search_kwargs():
@@ -222,12 +214,14 @@ def _set_search_filters(context, request=None) -> dict:
         context['runtime_min'] = context['runtime_range_min']
         context['runtime_max'] = context['runtime_range_max']
         
-    # colour/black and white, and digital/physical: if unchecked, leave it. otherwise, set checked
+    # colour/black and white and digital/physical: if unchecked, leave it. Otherwise, set checked
+    tmp_dct = {}
     names = ['colour', 'black_and_white', 'digital', 'physical']
     for name in names:
         if context.get(name, False) is not False:
-            context[f'{name}_checked'] = True
-        
+            tmp_dct[f'{name}_checked'] = True # assigning to context directly here didn't work
+    context.update(tmp_dct)
+            
     # have to manually get the background colour from style.css and pass it into the template
     genres = {}
     genre_colours = _get_tristate_colours()
