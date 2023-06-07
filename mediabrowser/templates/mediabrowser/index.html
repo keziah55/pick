@@ -56,12 +56,22 @@
         
         <!-- colour/black and white -->
         <div class="checkbox", id="colourbox">
-            <input type="checkbox" id="colour" name="colour" value="True" {% if colour_checked %} checked {% endif %}> 
+            <input type="checkbox" id="colour" name="colour" value="True" checked > 
             <label class="checklabel" for="colour">Colour</label>
         </div>
         <div class="checkbox", id="blackwhitebox">
-            <input type="checkbox" id="black_and_white" name="black_and_white" value="True" {% if black_and_white_checked %} checked {% endif %}>
+            <input type="checkbox" id="black_and_white" name="black_and_white" value="True" checked>
             <label class="checklabel" for="black_and_white">Black and White</label>
+        </div>
+        
+        <!-- digital/physical -->
+        <div class="checkbox", id="digitalbox">
+            <input type="checkbox" id="digital" name="digital" value="True"  checked> 
+            <label class="checklabel" for="digital">Digital</label>
+        </div>
+        <div class="checkbox", id="physicalbox">
+            <input type="checkbox" id="physical" name="physical" value="True" checked >
+            <label class="checklabel" for="physical">Physical</label>
         </div>
         
         <!-- genres -->

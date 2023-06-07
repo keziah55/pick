@@ -1,22 +1,12 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic.list import ListView
+from django.db.models import Q
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
 import os.path
 import re
 
 from pprint import pprint
-
-# class VisionItemList(ListView):
-    # model = VisionItem
-    # paginate_by = 20
-    
-    # context_object_name = 'scroll'
-    # # template_name = 'scroll.html'
-    # ordering = ['title']
-    
-    # # def get_queryset(self):
-    # #     return self.model.objects.all()
 
 def index(request, template='mediabrowser/index.html', filmlist_template='mediabrowser/filmlist.html'):
     # see if the `request` object has a 'search' item
@@ -25,6 +15,8 @@ def index(request, template='mediabrowser/index.html', filmlist_template='mediab
     # if not, use empty string
     except:
         search_str = ''
+        
+    pprint(request.GET)
         
     context = _get_context_from_request(request)
     
@@ -75,13 +67,26 @@ def _search(search_str, search_keywords=True, **kwargs) -> dict:
         elif black_and_white:
             filter_kwargs['colour'] = False
             
+    if (digital:=_get_kwarg(kwargs, 'digital')) is not None:
+        filter_kwargs['digital'] = digital
+    if (physical:=_get_kwarg(kwargs, 'physical')) is not None:
+        if filter_kwargs.get('digital', False) and physical:
+            # if both digital and physical selected, don't filter this
+            filter_kwargs.pop('digital')
+        elif physical:
+            filter_kwargs['digital'] = False
+            
     genre_include = set(kwargs.get('genre-include', []))
     genre_exclude = set(kwargs.get('genre-exclude', []))
             
     results = []
     
+    pprint(filter_kwargs)
+    
     # always search VisionItem by title
-    results = [film for film in VisionItem.objects.filter(title__icontains=search_str, **filter_kwargs)
+    results = [film for film in VisionItem.objects.filter(
+                 Q(title__icontains=search_str) | Q(alt_title__icontains=search_str), 
+                 **filter_kwargs)
                if _check_include_film(film, results, genre_include, genre_exclude)]
     
     if search_str:
@@ -146,6 +151,8 @@ def _get_context_from_request(request) -> dict:
     """ Try to get year and runtime min and max from `request` """
     context = {}
     
+    print(request.GET.keys())
+    
     for key, value in request.GET.items():
         if key in _get_search_kwargs():
             context[key] = value
@@ -167,7 +174,8 @@ def _get_context_from_request(request) -> dict:
 
 def _get_search_kwarg_type_map():
     type_map = {'year_min':int, 'year_max':int, 'runtime_min':int, 'runtime_max':int, 
-                'black_and_white':bool, 'colour':bool}
+                'black_and_white':bool, 'colour':bool,
+                'digital':bool, 'physical':bool}
     return type_map
 
 def _get_search_kwargs():
@@ -214,12 +222,11 @@ def _set_search_filters(context, request=None) -> dict:
         context['runtime_min'] = context['runtime_range_min']
         context['runtime_max'] = context['runtime_range_max']
         
-    # colour/black and white: if unchecked, leave it. otherwise, set checked
-    if context.get('colour', False) is not False:
-        context['colour_checked'] = True
-        
-    if context.get('black_and_white', False) is not False:
-        context['black_and_white_checked'] = True
+    # colour/black and white, and digital/physical: if unchecked, leave it. otherwise, set checked
+    names = ['colour', 'black_and_white', 'digital', 'physical']
+    for name in names:
+        if context.get(name, False) is not False:
+            context[f'{name}_checked'] = True
         
     # have to manually get the background colour from style.css and pass it into the template
     genres = {}

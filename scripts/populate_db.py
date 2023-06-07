@@ -123,6 +123,8 @@ class PopulateDatabase:
     
     sep = "\t"
     
+    _error_file = "errors.txt"
+    
     def __init__(self, quiet=False, physical_media=None):
         
         self._quiet = quiet
@@ -141,6 +143,8 @@ class PopulateDatabase:
         self._waiting_for_alt_versions = []
         
         self._physical_media = self._read_physical_media_csv(physical_media) if physical_media is not None else []
+        
+        self._clear_error_log()
         
     def _write(self, s):
         if not self._quiet:
@@ -456,30 +460,26 @@ class PopulateDatabase:
             movies = cinemagoer.search_movie(title)
             
             if len(movies) == 0:
-                with open("errors.txt", "a") as fileobj:
-                    fileobj.write(f"[{datetime.now().isoformat()}] {title}; search_movie\n")
+                self._log_error(f"{title}; search_movie")
                 return None
             
             movie = movies[0]
         
         if movie is None:
-            with open("errors.txt", "a") as fileobj:
-                fileobj.write(f"[{datetime.now().isoformat()}] {title}; no imdb results\n")
+            self._log_error(f"{title}; no imdb results")
             return None
         
         try:
             cinemagoer.update(movie, infoset)
         except Exception as err:
-            with open("errors.txt", "a") as fileobj:
-                fileobj.write(f"[{datetime.now().isoformat()}] {title}; update: {err}\n")
+            self._log_error(f"{title}; update: {err}")
             return None
         
         try:
             info = self._get_media_info(movie, patch)
         except Exception as err:
             info = None
-            with open("errors.txt", "a") as fileobj:
-                fileobj.write(f"[{datetime.now().isoformat()}]{title}; _get_media_info: {err}\n")
+            self._log_error(f"{title}; _get_media_info: {err}")
         return info
         
     def populate(self, films_txt, patch_csv=None) -> int:
@@ -575,6 +575,15 @@ class PopulateDatabase:
         """ Remove all entries from the given `model` table """
         model.objects.all().delete()
         self._write("Cleared database")
+        
+    @classmethod
+    def _log_error(cls, msg):
+        with open(cls._error_file, "a") as fileobj:
+            fileobj.write(f"[{datetime.now().isoformat()}] {msg}\n")
+            
+    def _clear_error_log(cls):
+        if os.path.exists(cls._error_file):
+            os.remove(cls._error_file)
         
 if __name__ == "__main__":
     
