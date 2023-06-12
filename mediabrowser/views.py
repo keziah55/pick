@@ -131,29 +131,31 @@ def _check_include_film(film, results, genre_and=None, genre_or=None, genre_not=
     film_is_new = film not in results
     film_genres = set([g.name.lower() for g in film.genre.all()])
     
+    # this is all very complicated, but it seems to work
     genre_and = _make_set(genre_and)
     genre_or = _make_set(genre_or)
     genre_not = _make_set(genre_not)
     
-    if genre_and is None:
-        genre_and = set()
-    if genre_or is None:
-        genre_or = set()
-    if genre_not is None:
-        genre_not = set()
+    conditions = [] # list of AND and/or OR
     
-    if all([len(s)==0 for s in (genre_and, genre_or, genre_not)]):
-        return film_is_new
+    include = None
+    dont_exclude = None
     
-    # include if no include genres specified or if all include genres are in film_genres
-    include_and = True if len(genre_and)==0 else genre_and.issubset(film_genres)
-    include_or = True if len(genre_or)==0 else not genre_or.isdisjoint(film_genres)
-    include = include_and or include_or
-    # exclude if there's any overlap in genres
-    dont_exclude = True if len(genre_not)==0 else genre_not.isdisjoint(film_genres)
-    
-    return film_is_new and include and dont_exclude
-
+    if genre_and is not None:
+        conditions.append(genre_and.issubset(film_genres))
+    if genre_or is not None:
+        conditions.append(not genre_or.isdisjoint(film_genres))
+    if genre_not is not None:
+        dont_exclude = genre_not.isdisjoint(film_genres)
+        
+    if len(conditions) >= 1:
+        # if both AND and OR, 'or' them
+        # otherwise whichever one is present
+        include = any(conditions)
+        
+    ret = [value for value in (include, dont_exclude, film_is_new) if value is not None]
+    return all(ret)
+        
 def _get_context_from_request(request) -> dict:
     """ Try to get year and runtime min and max from `request` """
     context = {}
@@ -272,7 +274,6 @@ def _set_search_filters(context, request=None) -> dict:
             value = values.pop()
         else:
             value = "0"
-            
         context['all_genre_data'] = (request.GET.get('all-genre-box-data', value), genre_text[int(value)])
     
     return context
