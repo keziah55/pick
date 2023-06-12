@@ -2,6 +2,7 @@ from django.test import TestCase
 from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person
 from scripts.populate_db import PopulateDatabase
 from pathlib import Path
+import unittest
 
 class VisionModelTest(TestCase):
     
@@ -52,3 +53,9 @@ class VisionModelTest(TestCase):
                 db_value = getattr(item, key)
                 fail_msg = f"{fname} '{key}' expected {exp_value} got {db_value}"
                 self.assertEqual(db_value, exp_value, fail_msg)
+         
+    @unittest.skip("not written yet")
+    def test_aliases(self):
+        # check that can add aliases for people and query
+        ...
+        
