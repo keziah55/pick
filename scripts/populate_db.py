@@ -9,13 +9,14 @@ see `populate_db.py -h` for options.
 
 import os
 import shutil
+from pathlib import Path
 import warnings
 from datetime import datetime
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
     import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    sys.path.append(Path(__file__).parents[1])
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
     import django
     django.setup()
@@ -123,7 +124,7 @@ class PopulateDatabase:
     
     sep = "\t"
     
-    _error_file = "errors.txt"
+    _error_file = Path("errors.txt")
     
     def __init__(self, quiet=False, physical_media=None):
         
@@ -501,7 +502,7 @@ class PopulateDatabase:
         
         # read file names
         with open(films_txt) as fileobj:
-            files = [file.strip() for file in list(fileobj) if os.path.splitext(file.strip())[-1] in self.ext]
+            files = [Path(file.strip()) for file in list(fileobj) if Path(file.strip()).suffix in self.ext]
             
         patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
             
@@ -509,11 +510,10 @@ class PopulateDatabase:
             progress = ProgressBar(len(files))
             
         for n, file in enumerate(files):
-            title = os.path.splitext(os.path.basename(file))[0]
+
+            info = patch.get(str(file), None)
             
-            info = patch.get(file, None)
-            
-            media_info = self._get_movie(title, patch=info)
+            media_info = self._get_movie(file.stem, patch=info)
             if media_info is None:
                 continue
             else:
@@ -582,7 +582,7 @@ class PopulateDatabase:
             fileobj.write(f"[{datetime.now().isoformat()}] {msg}\n")
             
     def _clear_error_log(cls):
-        if os.path.exists(cls._error_file):
+        if cls._error_file.exists():
             os.remove(cls._error_file)
         
 if __name__ == "__main__":

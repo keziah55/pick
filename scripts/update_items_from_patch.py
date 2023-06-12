@@ -6,10 +6,12 @@ only updates when IMDb ID doesn't match).
 
 You can specify start and stop row numbers, to only update from those rows.
 """
+
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
     import sys, os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    from pathlib import Path
+    sys.path.append(Path(__file__).parents[1])
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
     import django
     django.setup()

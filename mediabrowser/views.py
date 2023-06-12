@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.views.generic.list import ListView
 from django.db.models import Q
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
-import os.path
+from pathlib import Path
 import re
 
 from pprint import pprint
@@ -259,7 +259,7 @@ def _set_search_filters(context, request=None) -> dict:
 
 def _get_multistate_colours() -> dict:
     """ Get dict of include, exclude and neutral colours from style.css """
-    p = os.path.join(os.path.dirname(__file__), 'static', 'mediabrowser', 'css', 'style.css')
+    p = Path(__file__).parent.joinpath('static', 'mediabrowser', 'css', 'style.css')
     with open(p) as fileobj:
         text = fileobj.read()
     dct = {}

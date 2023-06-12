@@ -3,13 +3,13 @@
 """
 Read chosen colours from config file and prepend to style.css
 """
-import os.path
+from pathlib import Path
 import re
 import configparser
 
 def _get_config(static_path):
     config = configparser.ConfigParser()
-    config.read(os.path.join(static_path, 'colour.ini'))
+    config.read(static_path.joinpath('colour.ini'))
     return config
 
 def _read_scheme(name, static_path):
@@ -31,14 +31,14 @@ def _make_css(dct):
     return css
 
 def _write_css(css, static_path):
-    css_file = os.path.join(static_path, 'css', 'style.css')
+    css_file = static_path.joinpath('css', 'style.css')
     with open(css_file) as fileobj:
         text = fileobj.read()
 
     # if there already is a :root element in text, replace it
     # otherwise, add it at beginning       
     regex = re.compile(r":root *\{(?P<content>.*?)\}", re.DOTALL)
-    if (m:=regex.search(text)) is not None:
+    if regex.search(text) is not None:
         text = regex.sub(css, text)
     else:
         text = css + "\n" + text
@@ -64,11 +64,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     
+    p = Path(args.path)
+    
     if args.list:
-        lst = get_color_schemes(args.path)
+        lst = get_color_schemes(p)
         print("Schemes:")
         for name in lst:
             print(f"  {name}")
         
     if args.name is not None:
-        main(args.name, args.path)
+        main(args.name, p)
