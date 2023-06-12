@@ -7,7 +7,6 @@ Either import `PopulateDatabase` class or run as script. In the latter case,
 see `populate_db.py -h` for options.
 """
 
-import os
 import shutil
 from pathlib import Path
 import warnings
@@ -15,7 +14,7 @@ from datetime import datetime
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
-    import sys
+    import sys, os
     sys.path.append(Path(__file__).parents[1])
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
     import django
@@ -583,7 +582,7 @@ class PopulateDatabase:
             
     def _clear_error_log(cls):
         if cls._error_file.exists():
-            os.remove(cls._error_file)
+            cls._error_file.unlink()
         
 if __name__ == "__main__":
     
