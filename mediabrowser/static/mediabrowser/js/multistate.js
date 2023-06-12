@@ -1,11 +1,12 @@
 function tri_state_changed(element) {
     // set next state of multistate button `element`
-    // cycle through states: 0:neutral, 1:include, 2:neutral, 3:exclude
+    // cycle through states: 0:neutral, 1:AND, 2:OR, 3:NOT
     
     style = window.getComputedStyle(element);
     colors = [style.getPropertyValue("--neutral-color"),
-              style.getPropertyValue("--include-color"),
-              style.getPropertyValue("--exclude-color")]
+              style.getPropertyValue("--and-color"),
+              style.getPropertyValue("--or-color"),
+              style.getPropertyValue("--not-color")]
               
     var dataElement = document.getElementById(element.id + "-data");
     var newState = parseInt(dataElement.value) + 1;
