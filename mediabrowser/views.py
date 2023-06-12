@@ -253,53 +253,30 @@ def _set_search_filters(context, request=None) -> dict:
     # have to manually get the background colour from style.css and pass it into the template
     # 0:neutral, 1:AND, 2:OR, 3:NOT
     genres = {}
-    genre_colours = _get_multistate_colours()
+    genre_text = ["\u2015", "AND", "OR", "NOT"]
     for g in Genre.objects.all():
         if g.name.lower() in context.get('genre-and', []):
             value = "1"
-            colour = genre_colours['and']
         elif g.name.lower() in context.get('genre-or', []):
             value = "2"
-            colour = genre_colours['or']
         elif g.name.lower() in context.get('genre-not', []):
             value = "3"
-            colour = genre_colours['not']
         else:
             value = "0"
-            colour = genre_colours['neutral']
-        genres[g.name] = (value, colour)
+        genres[g.name] = (value, genre_text[int(value)])
         context['genres'] = genres
     
     if 'all-genre-box-data' not in context and request is not None:
         values = set([value[0] for value in genres.values()])
         if len(values) == 1:
             value = values.pop()
-            if value == "1":
-                colour = genre_colours['include']
-            elif value == "2":
-                colour = genre_colours['exclude']
         else:
             value = "0"
-            colour = genre_colours['neutral']
-        context['all_genre_data'] = (request.GET.get('all-genre-box-data', value), colour)
+            
+        context['all_genre_data'] = (request.GET.get('all-genre-box-data', value), genre_text[int(value)])
     
     return context
 
-def _get_multistate_colours() -> dict:
-    """ Get dict of include, exclude and neutral colours from style.css """
-    p = Path(__file__).parent.joinpath('static', 'mediabrowser', 'css', 'style.css')
-    with open(p) as fileobj:
-        text = fileobj.read()
-    dct = {}
-    keys = ['and', 'or', 'not', 'neutral']
-        
-    if (m:=re.search(r":root *\{(?P<content>.*?)\}", text, re.DOTALL)) is not None:
-        for line in m.group('content').split("\n"):
-            for key in keys:
-                if (m2:=re.match(f"\s*--{key}-color: (?P<colour>#\w+)", line)) is not None:
-                    dct[key] = m2.group('colour')
-    return dct
-        
 def _sort_rating(item):
     return item.user_rating, item.imdb_rating
 

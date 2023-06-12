@@ -94,7 +94,9 @@
             <div class="multistatebox">
                 <input type="button" class="multistate" onclick="tri_state_changed(this)"  
                        id="all-genre-box" name="all-genre-box"
-                       style="background-color:{{ all_genre_data.1 }}">
+                       value="{{ all_genre_data.1 }}">
+                       <!-- style="background-color:{{ all_genre_data.1 }}"> -->
+                       
                 <input type="hidden" id="all-genre-box-data" name="all-genre-box-data" value="{{ all_genre_data.0 }}">
                 <label class="checklabel" for="all-genre-box">All Genres</label>
             </div>
@@ -103,7 +105,8 @@
                 <div class="multistatebox">
                     <input type="button" class="genrebox" onclick="tri_state_changed(this)" 
                            id="genre-{{ genre }}-box" name="genre-{{ genre.lower }}" 
-                           style="background-color:{{ value.1 }}">
+                           value="{{ value.1 }}">
+                           <!-- style="background-color:{{ value.1 }}"> -->
                     <input type="hidden" id="genre-{{ genre }}-box-data" name="genre-{{ genre.lower }}-data" value="{{ value.0 }}">
                     <label class="checklabel" for="genre-{{ genre }}-box"> {{ genre }}</label>
                 </div>

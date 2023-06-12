@@ -81,6 +81,7 @@ a:active {
 
 /* checkboxes for colour/black and white */
 .checkbox, .multistatebox {
+  color: var(--foreground);
   position: relative;
   height: 25px;
   width: 210px;
@@ -97,12 +98,15 @@ a:active {
 }
 
 .multistate, .genrebox {
-  background-color: var(--neutral-color);
-  color: var(--neutral-color);
-  width: 15px;
-  height: 15px;
+  width: 35px;
+  height: 25px;
   margin-right: 5px;
-  vertical-align: -3px;
+  color: var(--foreground);
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 10pt;
+  font-weight: bold;
 }
 
 .rangelabel {
