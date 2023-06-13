@@ -3,7 +3,10 @@ from django.views.generic.list import ListView
 from django.db.models import Q
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
 import re
+from collections import namedtuple
 from pprint import pprint
+
+Result = namedtuple('Result', ['match', 'film'])
 
 def index(request, template='mediabrowser/index.html', filmlist_template='mediabrowser/filmlist.html'):
     # see if the `request` object has a 'search' item
@@ -90,7 +93,7 @@ def _search(search_str, **kwargs) -> dict:
                 intersect.append(_get_intersect_size(search_lst, _get_words(film.alt_title)))
             match = max(intersect) / len(search_lst)
         if match > 0:
-            results.append((match, film))
+            results.append(Result(match, film))
     
     if search_str:
         # only search people and keywords if given a search string
@@ -107,9 +110,9 @@ def _search(search_str, **kwargs) -> dict:
             
             if match > 0:
                 # get person's films, applying filters
-                results += [(match, film) for film in person.stars.filter(**filter_kwargs) 
+                results += [Result(match, film) for film in person.stars.filter(**filter_kwargs) 
                             if _check_include_film(film, results, genre_and, genre_or, genre_not)]
-                results += [(match, film) for film in person.director.filter(**filter_kwargs) 
+                results += [Result(match, film) for film in person.director.filter(**filter_kwargs) 
                             if _check_include_film(film, results, genre_and, genre_or, genre_not)]
         if search_keywords:
             keywords = Keyword.objects.filter(name__iregex=search_regex)
@@ -119,11 +122,11 @@ def _search(search_str, **kwargs) -> dict:
                 else:
                     match = _get_intersect_size(search_lst, _get_words(keyword.name))
                 if match > 0:
-                    results += [(match, film) for film in keyword.visionitem_set.filter(**filter_kwargs) 
+                    results += [Result(match, film) for film in keyword.visionitem_set.filter(**filter_kwargs) 
                                 if _check_include_film(film, results, genre_and, genre_or, genre_not)]
     
     results = sorted(results, key=_sort_search, reverse=True)
-    results = [result[1] for result in results]
+    results = [result.film for result in results]
     
     # args to be substituted into the templates    
     context = {'film_list':results,
@@ -148,7 +151,7 @@ def _check_include_film(film, results, genre_and=None, genre_or=None, genre_not=
     genre_not : {set, list, tuple}, optional
         Set of genre names to exclude (as lower case strings)
     """
-    film_is_new = film not in [result[1] for result in results]
+    film_is_new = film not in [result.film for result in results]
     film_genres = set([g.name.lower() for g in film.genre.all()])
     
     # this is all very complicated, but it seems to work
@@ -299,8 +302,7 @@ def _set_search_filters(context, request=None) -> dict:
     return context
 
 def _sort_search(item):
-    match, item = item
-    return match, item.user_rating, item.imdb_rating
+    return item.match, item.film.user_rating, item.film.imdb_rating
 
 def _make_set(item):
     """ 
