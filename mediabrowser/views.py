@@ -82,10 +82,13 @@ def _search(search_str, **kwargs) -> dict:
         if not _check_include_film(film, results, genre_and, genre_or, genre_not):
             continue
         # check how closely matched titles were
-        intersect = [_get_intersect_size(search_lst, _get_words(film.title))]
-        if film.alt_title:
-            intersect.append(_get_intersect_size(search_lst, _get_words(film.alt_title)))
-        match = max(intersect) / len(search_lst)
+        if len(search_lst) == 0:
+            match = 1
+        else:
+            intersect = [_get_intersect_size(search_lst, _get_words(film.title))]
+            if film.alt_title:
+                intersect.append(_get_intersect_size(search_lst, _get_words(film.alt_title)))
+            match = max(intersect) / len(search_lst)
         if match > 0:
             results.append((match, film))
     
@@ -94,10 +97,13 @@ def _search(search_str, **kwargs) -> dict:
         persons = Person.objects.filter(name__iregex=search_regex) | Person.objects.filter(alias__iregex=search_regex)
         for person in persons:
             
-            intersect = [_get_intersect_size(search_lst, _get_words(person.name))]
-            if person.alias:
-                intersect.append(_get_intersect_size(search_lst, _get_words(person.alias)))
-            match = max(intersect) / len(search_lst)
+            if len(search_lst) == 0:
+                match = 1
+            else:
+                intersect = [_get_intersect_size(search_lst, _get_words(person.name))]
+                if person.alias:
+                    intersect.append(_get_intersect_size(search_lst, _get_words(person.alias)))
+                match = max(intersect) / len(search_lst)
             
             if match > 0:
                 # get person's films, applying filters
@@ -108,7 +114,10 @@ def _search(search_str, **kwargs) -> dict:
         if search_keywords:
             keywords = Keyword.objects.filter(name__iregex=search_regex)
             for keyword in keywords:
-                match = _get_intersect_size(search_lst, _get_words(keyword.name))
+                if len(search_lst) == 0:
+                    match = 1
+                else:
+                    match = _get_intersect_size(search_lst, _get_words(keyword.name))
                 if match > 0:
                     results += [(match, film) for film in keyword.visionitem_set.filter(**filter_kwargs) 
                                 if _check_include_film(film, results, genre_and, genre_or, genre_not)]
