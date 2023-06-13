@@ -82,11 +82,9 @@ def _search(search_str, **kwargs) -> dict:
         if not _check_include_film(film, results, genre_and, genre_or, genre_not):
             continue
         # check how closely matched titles were
-        title_words = set(_get_words(film.title))
-        intersect = [len(set(search_lst) & title_words)]
+        intersect = [_get_intersect_size(search_lst, _get_words(film.title))]
         if film.alt_title:
-            alt_title_words = set(_get_words(film.alt_title))
-            intersect.append(len(set(search_lst) & alt_title_words))
+            intersect.append(_get_intersect_size(search_lst, _get_words(film.alt_title)))
         match = max(intersect) / len(search_lst)
         results.append((match, film))
     
@@ -95,11 +93,9 @@ def _search(search_str, **kwargs) -> dict:
         persons = Person.objects.filter(name__iregex=search_regex) | Person.objects.filter(alias__iregex=search_regex)
         for person in persons:
             
-            name_words = set(_get_words(person.name))
-            intersect = [len(set(search_lst) & name_words)]
+            intersect = [_get_intersect_size(search_lst, _get_words(person.name))]
             if person.alias:
-                alias_words = set(_get_words(person.alias))
-                intersect.append(len(set(search_lst) & alias_words))
+                intersect.append(_get_intersect_size(search_lst, _get_words(person.alias)))
             match = max(intersect) / len(search_lst)
             
             # get person's films, applying filters
@@ -314,3 +310,16 @@ def _make_set(item):
 def _get_words(s):
     """ Return list of words in string, as lower case, with non-alphnumeric characters removed """
     return [re.sub(r"\W", "", _s.lower()) for _s in s.split(" ") if _s]
+
+def _get_intersect_size(item, other):
+    """ 
+    Return the size of the intersection between the two given sets. 
+    
+    Args are cast to sets if given as list or tuple.
+    """
+    item = _make_set(item)
+    other = _make_set(other)
+    if item is None or other is None:
+        raise TypeError("_get_intersect_size args should be set, list or tuple")
+    return len(item & other)
+    
