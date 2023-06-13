@@ -71,31 +71,52 @@ def _search(search_str, **kwargs) -> dict:
     results = []
     
     # search words independently
-    search_lst = [re.sub(r"\W", "", s) for s in search_str.split(" ") if s]
+    search_lst = _get_words(search_str)
     search_regex = "|".join(search_lst)
     
+    results = []
     # always search VisionItem by title
-    results = [film for film in VisionItem.objects.filter(
-                 Q(title__iregex=search_regex) | Q(alt_title__iregex=search_regex), 
-                 **filter_kwargs)
-               if _check_include_film(film, results, genre_and, genre_or, genre_not)]
+    for film in VisionItem.objects.filter(
+            Q(title__iregex=search_regex) | Q(alt_title__iregex=search_regex), 
+            **filter_kwargs):
+        if not _check_include_film(film, results, genre_and, genre_or, genre_not):
+            continue
+        # check how closely matched titles were
+        title_words = set(_get_words(film.title))
+        intersect = [len(set(search_lst) & title_words)]
+        if film.alt_title:
+            alt_title_words = set(_get_words(film.alt_title))
+            intersect.append(len(set(search_lst) & alt_title_words))
+        match = max(intersect) / len(search_lst)
+        results.append((match, film))
     
     if search_str:
         # only search people and keywords if given a search string
         persons = Person.objects.filter(name__iregex=search_regex) | Person.objects.filter(alias__iregex=search_regex)
         for person in persons:
+            
+            name_words = set(_get_words(person.name))
+            intersect = [len(set(search_lst) & name_words)]
+            if person.alias:
+                alias_words = set(_get_words(person.alias))
+                intersect.append(len(set(search_lst) & alias_words))
+            match = max(intersect) / len(search_lst)
+            
             # get person's films, applying filters
-            results += [film for film in person.stars.filter(**filter_kwargs) 
+            results += [(match, film) for film in person.stars.filter(**filter_kwargs) 
                         if _check_include_film(film, results, genre_and, genre_or, genre_not)]
-            results += [film for film in person.director.filter(**filter_kwargs) 
+            results += [(match, film) for film in person.director.filter(**filter_kwargs) 
                         if _check_include_film(film, results, genre_and, genre_or, genre_not)]
         if search_keywords:
             keywords = Keyword.objects.filter(name__iregex=search_regex)
             for keyword in keywords:
-                results += [film for film in keyword.visionitem_set.filter(**filter_kwargs) 
+                name_words = set(_get_words(keyword.name))
+                match = len(set(search_lst) & name_words)
+                results += [(match, film) for film in keyword.visionitem_set.filter(**filter_kwargs) 
                             if _check_include_film(film, results, genre_and, genre_or, genre_not)]
     
-    results = sorted(results, key=_sort_rating, reverse=True)
+    results = sorted(results, key=_sort_search, reverse=True)
+    results = [result[1] for result in results]
     
     # args to be substituted into the templates    
     context = {'film_list':results,
@@ -270,8 +291,9 @@ def _set_search_filters(context, request=None) -> dict:
     
     return context
 
-def _sort_rating(item):
-    return item.user_rating, item.imdb_rating
+def _sort_search(item):
+    match, item = item
+    return match, item.user_rating, item.imdb_rating
 
 def _make_set(item):
     """ 
@@ -288,3 +310,7 @@ def _make_set(item):
         return set(item)
     else:
         raise TypeError(f"Cannot cast type {type(item)} to set")
+        
+def _get_words(s):
+    """ Return list of words in string, as lower case, with non-alphnumeric characters removed """
+    return [re.sub(r"\W", "", _s.lower()) for _s in s.split(" ") if _s]
