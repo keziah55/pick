@@ -46,10 +46,20 @@ def _write_css(css, static_path):
     with open(css_file, 'w') as fileobj:
         fileobj.write(text)
         
+def _write_svg(fill_colour, static_path):
+    image_path = static_path.joinpath("img")
+    for p in image_path.glob("search*.svg"):
+        with open(p) as fileobj:
+            text = fileobj.read()
+        text = re.sub(r'fill="#\w+"', f'fill="{fill_colour}"', text)
+        with open(p, 'w') as fileobj:
+            fileobj.write(text)
+        
 def main(scheme_name, static_path):
     colours = _read_scheme(scheme_name, static_path)
     css = _make_css(colours)
     _write_css(css, static_path)
+    _write_svg(colours['background-2'], static_path)
     
 if __name__ == '__main__':
     

@@ -75,6 +75,28 @@ a:active {
   color: var(--foreground-3);
 } 
 
+input[type=text] {
+  background-color: var(--background2);
+  color: var(--foreground);
+  width: 40%;
+  font-size: 16pt;
+  border: var(--foreground3);
+  border-radius: 5px;
+  outline: none;
+  box-shadow: none;
+}
+
+input[type=submit] {
+  border: none;
+  background: none;
+  color: var(--foreground2);
+  font-size: 12pt;
+}
+
+input[type=image] {
+  height: 20px;
+}
+
 /* checkboxes for colour/black and white */
 .checkbox, .multistatebox {
   color: var(--foreground);
