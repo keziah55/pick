@@ -166,21 +166,43 @@ input[type=image] {
 .description-hover {
   font-size: 14pt;
   color: var(--foreground-2);
-  /* color: #f0de77;*/
-  /*color: #056bf0;*/
 }
 
-.imdb-link {
+.rating {
   position: absolute;
   bottom: 0px;
+  width: 400px;
 }
 
-/*
-.more-actors {
-  display: none;
+.userrating {
+  width: 130px;
+  float: left;
+  left: 0px;
+  margin-right: 10px;
 }
 
-.ellipsis:hover + .more-actors {
-  display: block;
-  color: red;
-}*/
+.star {
+  border: 0;
+  background: none;
+  font-size: 1.5em;
+  margin: 0;
+  padding: 0;
+  float: right;
+}
+
+.star:hover,
+.star:hover + .star,
+.star:hover + .star + .star,
+.star:hover + .star + .star + .star,
+.star:hover + .star + .star + .star + .star {
+  color: var(--foreground-2);
+}
+
+.imdbrating {
+  margin: 0;
+  left: 135px;
+  position: absolute;
+  top: 56%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}

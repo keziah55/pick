@@ -51,7 +51,22 @@
             <!-- -->
             
             <p>{{ film.runtime }} minutes</p>
-            <p class="imdb-link">{{ film.imdb_rating }} &middot <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a></p>
+            
+            <div class="rating">
+                <div class="userrating">
+                    <form action="" method="POST">
+                        <input type="hidden" name="rating[post_id]" value="3">
+                        <button class="star" type="submit" name="rating[rating]" value="5">&#9733;</button>
+                        <button class="star" type="submit" name="rating[rating]" value="4">&#9733;</button>
+                        <button class="star" type="submit" name="rating[rating]" value="3">&#9733;</button>
+                        <button class="star" type="submit" name="rating[rating]" value="2">&#9733;</button>
+                        <button class="star" type="submit" name="rating[rating]" value="1">&#9733;</button>
+                    </form>
+                </div>  
+                <div class="imdbrating">
+                    &middot {{ film.imdb_rating }} <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a>
+                </div>
+            </div>  
         </div>  
     </div>  
 {% endfor %}
