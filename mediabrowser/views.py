@@ -14,8 +14,6 @@ def index(request, template='mediabrowser/index.html', filmlist_template='mediab
         search_str = ''
         
     return search(request, search_str, template=template, filmlist_template=filmlist_template)
-
-    return render(request, template, context)
     
 def search(request, search_str, template='mediabrowser/index.html', 
             filmlist_template='mediabrowser/filmlist.html'):
