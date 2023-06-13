@@ -86,13 +86,6 @@ input[type=text] {
   box-shadow: none;
 }
 
-input[type=submit] {
-  border: none;
-  background: none;
-  color: var(--foreground2);
-  font-size: 12pt;
-}
-
 input[type=image] {
   height: 20px;
 }

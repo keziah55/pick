@@ -31,20 +31,21 @@ def _make_css(dct):
     return css
 
 def _write_css(css, static_path):
-    css_file = static_path.joinpath('css', 'style.css')
-    with open(css_file) as fileobj:
-        text = fileobj.read()
-
-    # if there already is a :root element in text, replace it
-    # otherwise, add it at beginning       
-    regex = re.compile(r":root *\{(?P<content>.*?)\}", re.DOTALL)
-    if regex.search(text) is not None:
-        text = regex.sub(css, text)
-    else:
-        text = css + "\n" + text
+    for css_file in static_path.glob("css/*.css"):
+    # css_file = static_path.joinpath('css', 'style.css')
+        with open(css_file) as fileobj:
+            text = fileobj.read()
     
-    with open(css_file, 'w') as fileobj:
-        fileobj.write(text)
+        # if there already is a :root element in text, replace it
+        # otherwise, add it at beginning       
+        regex = re.compile(r":root *\{(?P<content>.*?)\}", re.DOTALL)
+        if regex.search(text) is not None:
+            text = regex.sub(css, text)
+        else:
+            text = css + "\n" + text
+        
+        with open(css_file, 'w') as fileobj:
+            fileobj.write(text)
         
 def _write_svg(fill_colour, static_path):
     image_path = static_path.joinpath("img")
