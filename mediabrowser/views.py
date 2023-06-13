@@ -1,10 +1,7 @@
 from django.shortcuts import render
-from django.http import HttpResponse
 from django.views.generic.list import ListView
 from django.db.models import Q
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
-from pathlib import Path
-import re
 
 from pprint import pprint
 
@@ -16,20 +13,13 @@ def index(request, template='mediabrowser/index.html', filmlist_template='mediab
     except:
         search_str = ''
         
-    context = _get_context_from_request(request)
-    
-    search_results = _search(search_str, **context)
-    context.update(search_results)
-    context = _set_search_filters(context, request)
-    
-    context['filmlist_template'] = filmlist_template
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
-        template = filmlist_template
-    
+    return search(request, search_str, template=template, filmlist_template=filmlist_template)
+
     return render(request, template, context)
     
 def search(request, search_str, template='mediabrowser/index.html', 
             filmlist_template='mediabrowser/filmlist.html'):
+    
     context = _get_context_from_request(request)
     
     search_results = _search(search_str, **context)
