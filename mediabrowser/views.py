@@ -15,11 +15,10 @@ def index(request, template='mediabrowser/index.html', filmlist_template='mediab
     # if not, use empty string
     except:
         search_str = ''
-        
     return search(request, search_str, template=template, filmlist_template=filmlist_template)
     
 def search(request, search_str, template='mediabrowser/index.html', 
-            filmlist_template='mediabrowser/filmlist.html'):
+           filmlist_template='mediabrowser/filmlist.html'):
     
     context = _get_context_from_request(request)
     
@@ -28,6 +27,22 @@ def search(request, search_str, template='mediabrowser/index.html',
     context = _set_search_filters(context, request)
     
     context['filmlist_template'] = filmlist_template
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
+        template = filmlist_template
+    return render(request, template, context)
+
+def set_user_rating(request, template='mediabrowser/index.html', 
+                    filmlist_template='mediabrowser/filmlist.html'):
+    
+    for key, value in request.POST.items():
+        if (m:=re.match(r"rating\[(?P<pk>\d+)\]", key)) is not None:
+            pk = int(m.group('pk'))
+            film = VisionItem.objects.get(pk=pk)
+            film.user_rating = int(value)
+            film.save()
+            break
+    
+    context = _set_search_filters({})
     if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
         template = filmlist_template
     return render(request, template, context)
