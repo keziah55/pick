@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.views.generic.list import ListView
 from django.db.models import Q
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
-
+import re
 from pprint import pprint
 
 def index(request, template='mediabrowser/index.html', filmlist_template='mediabrowser/filmlist.html'):
@@ -70,15 +70,19 @@ def _search(search_str, **kwargs) -> dict:
     
     results = []
     
+    # search words independently
+    search_lst = [re.sub(r"\W", "", s) for s in search_str.split(" ") if s]
+    search_regex = "|".join(search_lst)
+    
     # always search VisionItem by title
     results = [film for film in VisionItem.objects.filter(
-                 Q(title__icontains=search_str) | Q(alt_title__icontains=search_str), 
+                 Q(title__iregex=search_regex) | Q(alt_title__iregex=search_regex), 
                  **filter_kwargs)
                if _check_include_film(film, results, genre_and, genre_or, genre_not)]
     
     if search_str:
         # only search people and keywords if given a search string
-        persons = Person.objects.filter(name__icontains=search_str) | Person.objects.filter(alias__icontains=search_str)
+        persons = Person.objects.filter(name__iregex=search_regex) | Person.objects.filter(alias__iregex=search_regex)
         for person in persons:
             # get person's films, applying filters
             results += [film for film in person.stars.filter(**filter_kwargs) 
@@ -86,7 +90,7 @@ def _search(search_str, **kwargs) -> dict:
             results += [film for film in person.director.filter(**filter_kwargs) 
                         if _check_include_film(film, results, genre_and, genre_or, genre_not)]
         if search_keywords:
-            keywords = Keyword.objects.filter(name__icontains=search_str)
+            keywords = Keyword.objects.filter(name__iregex=search_regex)
             for keyword in keywords:
                 results += [film for film in keyword.visionitem_set.filter(**filter_kwargs) 
                             if _check_include_film(film, results, genre_and, genre_or, genre_not)]
