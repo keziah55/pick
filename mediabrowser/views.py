@@ -148,7 +148,7 @@ def _check_include_film(film, results, genre_and=None, genre_or=None, genre_not=
     genre_not : {set, list, tuple}, optional
         Set of genre names to exclude (as lower case strings)
     """
-    film_is_new = film not in results
+    film_is_new = film not in [result[1] for result in results]
     film_genres = set([g.name.lower() for g in film.genre.all()])
     
     # this is all very complicated, but it seems to work
