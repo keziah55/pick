@@ -284,6 +284,12 @@ class PopulateDatabase:
                 progress.progress(n+1)
                 
         self._waiting_for_alt_versions = []
+        
+    @classmethod
+    def _read_films_file(cls, films_txt) -> list:
+        with open(films_txt) as fileobj:
+            files = [Path(file.strip()) for file in list(fileobj) if Path(file.strip()).suffix in cls.ext]
+        return files
     
     @classmethod   
     def _read_patch_csv(cls, patch_csv) -> dict:
@@ -498,11 +504,9 @@ class PopulateDatabase:
         count : int
             The number of records created
         """
-        
-        # read file names
-        with open(films_txt) as fileobj:
-            files = [Path(file.strip()) for file in list(fileobj) if Path(file.strip()).suffix in self.ext]
-            
+        if films_txt is None:
+            raise ValueError("You must provide a path to file containing list of films in order to populate DB")
+        files = self._read_films_file(films_txt)
         patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
             
         if not self._quiet:
@@ -524,28 +528,38 @@ class PopulateDatabase:
         self._write("Checking for remaining references...")
         self._check_alt_verions()
 
-    def update(self, patch_csv) -> int:
+    def update(self, films_txt=None, patch_csv=None) -> int:
         """ 
-        For all entries in patch_csv file, retrieve the corresponding item from database 
-    
+        If `films_txt` is not None, add any new entries to the database, using 
+        `patch_csv`, if provided.
+        
+        If `patch_csv` is provided, the corresponding item is retrieved from database.
         If the IDs don't match, the item will be deleted from the database and a 
         new record will be created using the patch.
-        
         If there is no item in the database with the given filename, it is created.
+        
+        Either `films_txt` or `patch_csv` can be given or both. Passing no args
+        raises a ValueError.
         
         Returns
         -------
         count : int
             The number of records updated
         """
+        if films_txt is None and patch_csv is None:
+            raise ValueError("Please specify films file and/or patch file when calling `update`")
+            
         count = 0
-        patch = self._read_patch_csv(patch_csv)
+        patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
+        files = self._read_films_file(films_txt) if films_txt is not None else list(patch.keys())
         
         if not self._quiet:
-            progress_count = 0
-            progress = ProgressBar(len(patch))
+            progress = ProgressBar(len(files))
         
-        for file, dct in patch.items():
+        for n, file in enumerate(files):
+            
+            info = patch.get(str(file), None)
+            
             item = VisionItem.objects.filter(filename=file)
             if len(item) > 1:
                 warnings.warn(f"Multiple objects with filename '{file}' in database", UserWarning)
@@ -553,19 +567,22 @@ class PopulateDatabase:
                 skip = False
                 if len(item) == 1:
                     item = item[0]
-                    if int(item.imdb_id) == int(dct['media_id']):
+                    if info is None or int(item.imdb_id) == int(info['media_id']):
+                        # file in DB and we don't have patch info for it, so skip it
+                        # or
+                        # file in both DB and patch and the IDs match
                         skip = True
                     else:
+                        # file in both DB and patch and the IDs don't match, so re-make it
                         item.delete()
                 # (re)create
                 if not skip:
-                    media_info = self._get_movie(patch=dct)
+                    media_info = self._get_movie(file.stem, patch=info)
                     self._add_to_db(file, media_info)
                     count += 1
                     
             if not self._quiet:
-                progress_count += 1
-                progress.progress(progress_count)
+                progress.progress(n+1)
                  
         self._write(f"Updated {count} records")
         return count
@@ -594,7 +611,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--films', help='Path to films text file')
     parser.add_argument('-p', '--patch', help='Path to patch csv')
     parser.add_argument('-m', '--physical-media', help='Path to physical media csv')
-    parser.add_argument('-u', '--update', help='Call update with path to patch csv',
+    parser.add_argument('-u', '--update', help='Call update with path to films file and/or patch csv',
                         action='store_true')
     parser.add_argument('-c', '--clear', help='Clear VisionItems', action='store_true')
     parser.add_argument('-q', '--quiet', help='Dont write anything to stdout', action='store_true')
@@ -607,11 +624,10 @@ if __name__ == "__main__":
     if args.clear:
         pop_db.clear()
     
-    if args.films is not None:
+    if args.update:
+        pop_db.update(args.films, args.patch)
+    else:
         pop_db.populate(args.films, args.patch)
-        
-    if args.update and args.patch is not None:
-        pop_db.update(args.patch)
         
     if not args.quiet:
         t = (time() - t0) / 60 # time in minutes
