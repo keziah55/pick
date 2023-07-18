@@ -337,7 +337,9 @@ def _make_set(item):
         
 def _get_words(s):
     """ Return list of words in string, as lower case, with non-alphnumeric characters removed """
-    return [re.sub(r"\W", "", _s.lower()) for _s in s.split(" ") if _s]
+    s = re.sub(r"'", "", s) # remove apostrophes
+    words = [word.lower() for word in re.split(r"\W", s) if word] # split on all other non-alpha characters
+    return words
 
 def _get_intersect_size(item, other):
     """ 
