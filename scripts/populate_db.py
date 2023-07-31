@@ -551,7 +551,7 @@ class PopulateDatabase:
             
         count = 0
         patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
-        files = self._read_films_file(films_txt) if films_txt is not None else list(patch.keys())
+        files = self._read_films_file(films_txt) if films_txt is not None else [Path(file) for file in patch.keys()]
         
         if not self._quiet:
             progress = ProgressBar(len(files))
@@ -559,7 +559,7 @@ class PopulateDatabase:
         for n, file in enumerate(files):
             
             info = patch.get(str(file), None)
-            
+
             item = VisionItem.objects.filter(filename=file)
             if len(item) > 1:
                 warnings.warn(f"Multiple objects with filename '{file}' in database", UserWarning)
