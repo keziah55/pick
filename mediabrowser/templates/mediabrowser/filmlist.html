@@ -17,29 +17,14 @@
             <p>{{ film.title }} ({{ film.year }}) </p>
             <p>
                 Dir. 
-                 <!-- this is horrible, but not sure how better to make sure that, -->
-                 <!-- if there are multiple directors, they are displayed with comma separators -->
-                 <!-- and if there are more than 3 directors, add an ellipsis -->
-                {% if film.director.all.0 %}
-                    <a href="{% url 'pick:search' film.director.all.0.name %}">{{ film.director.all.0.name }}
-                {% endif %}
-                {% if film.director.all.1 %}
-                    , <a href="{% url 'pick:search' film.director.all.1.name %}">{{ film.director.all.1.name }}</a>
-                {% endif %}
-                {% if film.director.all.2 %}
-                    , <a href="{% url 'pick:search' film.director.all.2.name %}">{{ film.director.all.2.name }}</a>
-                {% endif %}
-                {% if film.director.all|length > 3 %}
-                    ...
-                {% endif %}
+                {% for person in film.director.all|slice:":3" %}
+                    <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
+                {% endfor %}
             </p>  
             <p>
-                {% for person in film.stars.all|slice:":2" %}
-                    <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>,
+                {% for person in film.stars.all|slice:":3" %}
+                    <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
                 {% endfor %}
-                {% if film.stars.all.2 %}
-                    <a href="{% url 'pick:search' film.stars.all.2.name %}">{{ film.stars.all.2.name }}</a>...
-                {% endif %}
             </p>
             
             <!-- list genres for manual verification -->
