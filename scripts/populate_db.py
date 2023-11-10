@@ -578,6 +578,10 @@ class PopulateDatabase:
                 # (re)create
                 if not skip:
                     media_info = self._get_movie(file.stem, patch=info)
+                    if file.suffix == "":
+                        # if filename is name from dvds list (i.e. not actual filename with ext)
+                        # set digital to False
+                        media_info["digital"] = False
                     self._add_to_db(file, media_info)
                     count += 1
                     
