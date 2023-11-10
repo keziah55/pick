@@ -94,6 +94,9 @@ class MediaInfo:
         value = getattr(self, key)
         return value
     
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+    
     def as_string(self, key) -> str:
         """ 
         Return field `key` as a string.
