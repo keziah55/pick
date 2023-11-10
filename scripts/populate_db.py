@@ -125,9 +125,11 @@ class PopulateDatabase:
     
     _error_file = Path("errors.txt")
     
-    def __init__(self, quiet=False, physical_media=None):
+    def __init__(self, quiet=False, physical_media=None, database="default"):
         
         self._quiet = quiet
+        
+        self._database = database
         
         self._direct_fields = []
         self._ref_fields = []
@@ -188,11 +190,11 @@ class PopulateDatabase:
         
         if media_info.local_img_url is not None:
             item.local_img = media_info.local_img_url
-        item.save()
+        item.save(using=self._database)
         
         self._add_refs(item, media_info)
         self._add_alt_versions(item, media_info)
-        item.save()
+        item.save(using=self._database)
         
         return item
         
@@ -225,11 +227,11 @@ class PopulateDatabase:
                 for value in media_info[n]:
                     try:
                         # get ref if it exists
-                        m = model_class.objects.get(pk=value)
+                        m = model_class.objects.using(self._database).get(pk=value)
                     except ObjectDoesNotExist:
                         # otherwise, make new
                         m = model_class(value)
-                        m.save()
+                        m.save(using=self._database)
                         
                     # # make custom through table to preserve insertion order
                     # through_class = self.through_map.get(n, None)
@@ -241,7 +243,7 @@ class PopulateDatabase:
                     # e.g. item.genre.add(m)
                     attr = getattr(item, n)
                     attr.add(m)
-                    item.save()
+                    item.save(using=self._database)
         return item
     
     def _add_alt_versions(self, item, media_info) -> VisionItem:
@@ -250,7 +252,7 @@ class PopulateDatabase:
             return item
         else:
             for ref_film in media_info.alt_versions:
-                ref_items = VisionItem.objects.filter(filename=ref_film)
+                ref_items = VisionItem.objects.using(self._database).filter(filename=ref_film)
                 if len(ref_items) == 0:
                     # ref_film doesn't exist (yet) so add to _waiting_for_alt_versions
                     self._waiting_for_alt_versions.append((item, ref_film))
@@ -258,7 +260,7 @@ class PopulateDatabase:
                     warnings.warn(f"Multiple objects with filename '{ref_film}' in database", UserWarning)
                 else:
                     item.alt_versions.add(ref_items[0])
-            item.save()
+            item.save(using=self._database)
         return item
     
     def _check_alt_verions(self):
@@ -271,14 +273,14 @@ class PopulateDatabase:
         
         for n, (item, ref_film) in enumerate(self._waiting_for_alt_versions):
             
-            ref_items = VisionItem.objects.filter(filename=ref_film)
+            ref_items = VisionItem.objects.using(self._database).filter(filename=ref_film)
             if len(ref_items) == 0:
                 warnings.warn(f"No object with filename '{ref_film}' in database", UserWarning)
             elif len(ref_items) > 1:
                 warnings.warn(f"Multiple objects with filename '{ref_film}' in database", UserWarning)
             else:
                 item.alt_versions.add(ref_items[0])
-                item.save()
+                item.save(using=self._database)
                 
             if not self._quiet:
                 progress.progress(n+1)
@@ -560,7 +562,7 @@ class PopulateDatabase:
             
             info = patch.get(str(file), None)
 
-            item = VisionItem.objects.filter(filename=file)
+            item = VisionItem.objects.using(self._database).filter(filename=file)
             if len(item) > 1:
                 warnings.warn(f"Multiple objects with filename '{file}' in database", UserWarning)
             else:
@@ -593,7 +595,7 @@ class PopulateDatabase:
     
     def clear(self, model=VisionItem):
         """ Remove all entries from the given `model` table """
-        model.objects.all().delete()
+        model.objects.using(self._database).delete()
         self._write("Cleared database")
         
     @classmethod
