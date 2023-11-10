@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import HttpResponseRedirect
 from django.views.generic.list import ListView
 from django.db.models import Q
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
@@ -20,6 +21,8 @@ def index(request, template='mediabrowser/index.html', filmlist_template='mediab
 def search(request, search_str, template='mediabrowser/index.html', 
            filmlist_template='mediabrowser/filmlist.html'):
     
+    print(request)
+    
     context = _get_context_from_request(request)
     
     search_results = _search(search_str, **context)
@@ -33,6 +36,8 @@ def search(request, search_str, template='mediabrowser/index.html',
 
 def set_user_rating(request, template='mediabrowser/index.html', 
                     filmlist_template='mediabrowser/filmlist.html'):
+    
+    print(request)
     
     for key, value in request.POST.items():
         if (m:=re.match(r"rating\[(?P<pk>\d+)\]", key)) is not None:
@@ -101,14 +106,14 @@ def _search(search_str, **kwargs) -> dict:
             continue
         # check how closely matched titles were
         if len(search_lst) == 0:
-            match = 1
+            m = 1
         else:
             intersect = [_get_intersect_size(search_lst, _get_words(film.title))]
             if film.alt_title:
                 intersect.append(_get_intersect_size(search_lst, _get_words(film.alt_title)))
-            match = max(intersect) / len(search_lst)
-        if match > 0:
-            results.append(Result(match, film))
+            m = max(intersect) / len(search_lst)
+        if m > 0:
+            results.append(Result(m, film))
     
     if search_str:
         # only search people and keywords if given a search string
@@ -116,28 +121,28 @@ def _search(search_str, **kwargs) -> dict:
         for person in persons:
             
             if len(search_lst) == 0:
-                match = 1
+                m = 1
             else:
                 intersect = [_get_intersect_size(search_lst, _get_words(person.name))]
                 if person.alias:
                     intersect.append(_get_intersect_size(search_lst, _get_words(person.alias)))
-                match = max(intersect) / len(search_lst)
+                m = max(intersect) / len(search_lst)
             
-            if match > 0:
+            if m > 0:
                 # get person's films, applying filters
-                results += [Result(match, film) for film in person.stars.filter(**filter_kwargs) 
+                results += [Result(m, film) for film in person.stars.filter(**filter_kwargs) 
                             if _check_include_film(film, results, genre_and, genre_or, genre_not)]
-                results += [Result(match, film) for film in person.director.filter(**filter_kwargs) 
+                results += [Result(m, film) for film in person.director.filter(**filter_kwargs) 
                             if _check_include_film(film, results, genre_and, genre_or, genre_not)]
         if search_keywords:
             keywords = Keyword.objects.filter(name__iregex=search_regex)
             for keyword in keywords:
                 if len(search_lst) == 0:
-                    match = 1
+                    m = 1
                 else:
-                    match = _get_intersect_size(search_lst, _get_words(keyword.name))
-                if match > 0:
-                    results += [Result(match, film) for film in keyword.visionitem_set.filter(**filter_kwargs) 
+                    m = _get_intersect_size(search_lst, _get_words(keyword.name))
+                if m > 0:
+                    results += [Result(m, film) for film in keyword.visionitem_set.filter(**filter_kwargs) 
                                 if _check_include_film(film, results, genre_and, genre_or, genre_not)]
     
     results = sorted(results, key=_sort_search, reverse=True)

@@ -119,7 +119,7 @@ class PopulateDatabase:
     # through_map = {'director':DirectorThrough,
     #                'stars':StarsThrough,}
     
-    ext = ['.avi', '.m4v', '.mkv', '.mov', '.mp4', '.wmv']
+    ext = ['.avi', '.m4v', '.mkv', '.mov', '.mp4', '.wmv', '.webm']
     
     sep = "\t"
     

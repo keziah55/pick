@@ -1,5 +1,5 @@
 function hover_film(s) {
-    // show film description on hober
+    // show film description on hover
     p = document.getElementById("description-hover");
     p.innerHTML = s;
 }
