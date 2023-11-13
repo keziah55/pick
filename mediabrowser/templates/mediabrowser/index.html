@@ -1,23 +1,9 @@
-
-<!DOCTYPE html>
-<html>
+{% extends "mediabrowser/base.html" %}
 
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
-<head>
-    <title>Pick</title>
-    
-    <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/img/favicon.ico' %}"/>
-    
-    <link rel="stylesheet" href="{% static 'mediabrowser/css/style.css' %}">
-    <link rel="stylesheet" href="{% static 'mediabrowser/css/slider.css' %}">
-    
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-</head>
-
-<body>
-
+{% block page_content %}
 
 <form action="{% url 'pick:index' %}" method="get">
 
@@ -152,5 +138,4 @@
 <!-- for showing and hiding film description on hover -->
 <script src="{% static 'mediabrowser/js/hover_description.js' %}"></script>
 
-</body>
-</html>
+{% endblock %}
