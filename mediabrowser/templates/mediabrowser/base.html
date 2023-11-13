@@ -10,14 +10,14 @@
     
     <title>{% block page_title %}Pick{% endblock %}</title>
     
+    {% block page_icon %}
     <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/img/favicon.ico' %}"/>
+    {% endblock %}
     
-    <link rel="stylesheet" href="{% static 'mediabrowser/css/style.css' %}">
-    <link rel="stylesheet" href="{% static 'mediabrowser/css/slider.css' %}">
+    {% block style %}{% endblock %}
     
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 </head>
 
 <body>

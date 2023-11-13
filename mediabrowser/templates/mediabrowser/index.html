@@ -3,6 +3,11 @@
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
+{% block style %}
+<link rel="stylesheet" href="{% static 'mediabrowser/css/style.css' %}">
+<link rel="stylesheet" href="{% static 'mediabrowser/css/slider.css' %}">
+{% endblock %}
+
 {% block page_content %}
 
 <form action="{% url 'pick:index' %}" method="get">
