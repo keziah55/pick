@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from sortedm2m.fields import SortedManyToManyField
 
 class MediaSeries(models.Model):
@@ -65,12 +66,13 @@ class VisionItem(models.Model):
     # ideally, would be part of MediaItem subclass
     title = models.CharField(max_length=500)
     filename = models.CharField(max_length=200)
-    year = models.PositiveSmallIntegerField()
+    year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
     img = models.CharField(max_length=500) # url to image
     local_img = models.ImageField(null=True) # TODO TG-61
     media_type = models.CharField(
         max_length=50,
-        choices=MEDIA_TYPE_CHOICES)
+        choices=MEDIA_TYPE_CHOICES
+    )
     
     # specific to films
     runtime =  models.PositiveSmallIntegerField() # runtime in minutes
@@ -86,8 +88,14 @@ class VisionItem(models.Model):
     description = models.TextField()
     alt_description = models.TextField()
     alt_versions = models.ManyToManyField('self', symmetrical=False)
-    imdb_rating = models.FloatField(default=0)
-    user_rating = models.FloatField(default=0)
+    imdb_rating = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+    )
+    user_rating = models.FloatField(
+        default=3,
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+    )
     bonus_features = models.BooleanField(default=False)
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)
