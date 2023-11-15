@@ -85,8 +85,8 @@ class VisionItem(models.Model):
     stars = SortedManyToManyField(Person, related_name="stars")#, through="StarsThrough")
     genre = models.ManyToManyField(Genre)
     keywords = models.ManyToManyField(Keyword)
-    description = models.TextField()
-    alt_description = models.TextField()
+    description = models.TextField(blank=True)
+    alt_description = models.TextField(blank=True)
     alt_versions = models.ManyToManyField('self', symmetrical=False)
     imdb_rating = models.FloatField(
         default=0,
