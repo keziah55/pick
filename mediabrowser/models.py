@@ -1,15 +1,41 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import slugify
 from sortedm2m.fields import SortedManyToManyField
 
-class MediaSeries(models.Model):
+class BaseSlug(models.Model):
+    """
+    Model base class (essentially a mixin) to add and update a slug
+    
+    The slug will be generated from the Model's `name` field, or `title` if
+    there is no `name`
+     
+    An exception is raised if neither field is present
+    """
+    
+    slug = models.SlugField(default="", null=False, db_index=True)
+    
+    def save(self, *args, **kwargs):
+        """ Override `save` to set slug """
+        if (name:=getattr(self, "name", None)) is None:
+            if (name:=getattr(self, "title", None)) is None:
+                raise Exception("Model must contain 'name' or 'title' field")
+        self.slug = slugify(name)
+        super().save(*args, **kwargs)
+        
+    class Meta:
+        abstract = True
+
+class MediaSeries(BaseSlug):
     title = models.CharField(max_length=200, primary_key=True, unique=True)
+    
     def __str__(self):
         return self.title
     
 class Person(models.Model):
     name = models.CharField(max_length=200, primary_key=True, unique=True)
     alias = models.CharField(max_length=200)
+    imdb_id = models.PositiveIntegerField()
     
     def __str__(self):
         return self.name
@@ -24,33 +50,38 @@ class Keyword(models.Model):
     def __str__(self):
         return self.name
     
-# class MediaItem(models.Model):
-#     FILM = 'FILM'
-#     EPISODE = 'EPISODE'
-#     MUSIC_VIDEO ='MUSIC_VIDEO'
-#     VIDEO = 'VIDEO'
-#     SONG = 'SONG'
+class MediaItem(BaseSlug):
+    FILM = 'FILM'
+    EPISODE = 'EPISODE'
+    MUSIC_VIDEO ='MUSIC_VIDEO'
+    VIDEO = 'VIDEO'
+    SONG = 'SONG'
     
-#     MEDIA_TYPE_CHOICES = [
-#         (FILM, 'film'),
-#         (EPISODE, 'episode'),
-#         (MUSIC_VIDEO, 'music_video'),
-#         (VIDEO, 'video'),
-#         (SONG, 'song')
-#     ]
+    MEDIA_TYPE_CHOICES = [
+        (FILM, 'film'),
+        (EPISODE, 'episode'),
+        (MUSIC_VIDEO, 'music_video'),
+        (VIDEO, 'video'),
+        (SONG, 'song')
+    ]
     
-#     title = models.CharField(max_length=500)
-#     filename = models.CharField(max_length=200)
-#     year = models.PositiveSmallIntegerField()
-#     img = models.CharField(max_length=500) # url to image
-#     media_type = models.CharField(
-#         max_length=50,
-#         choices=MEDIA_TYPE_CHOICES)
+    title = models.CharField(max_length=500)
+    filename = models.CharField(max_length=200)
+    year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
+    img = models.CharField(max_length=500) # url to image
+    local_img = models.ImageField(null=True) 
+    media_type = models.CharField(
+        max_length=50,
+        choices=MEDIA_TYPE_CHOICES
+    )
     
-#     def __str__(self):
-#         return f"{self.title} ({int(self.year)})"
+    def __str__(self):
+        return f"{self.title} ({int(self.year)})"
     
-class VisionItem(models.Model):
+    class Meta:
+        abstract = True
+    
+class VisionItem(MediaItem):
     FILM = 'FILM'
     EPISODE = 'EPISODE'
     MUSIC_VIDEO ='MUSIC_VIDEO'
@@ -64,15 +95,15 @@ class VisionItem(models.Model):
     ]
     
     # ideally, would be part of MediaItem subclass
-    title = models.CharField(max_length=500)
-    filename = models.CharField(max_length=200)
-    year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
-    img = models.CharField(max_length=500) # url to image
-    local_img = models.ImageField(null=True) # TODO TG-61
-    media_type = models.CharField(
-        max_length=50,
-        choices=MEDIA_TYPE_CHOICES
-    )
+    # title = models.CharField(max_length=500)
+    # filename = models.CharField(max_length=200)
+    # year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
+    # img = models.CharField(max_length=500) # url to image
+    # local_img = models.ImageField(null=True) 
+    # media_type = models.CharField(
+    #     max_length=50,
+    #     choices=MEDIA_TYPE_CHOICES
+    # )
     
     # specific to films
     runtime =  models.PositiveSmallIntegerField() # runtime in minutes
