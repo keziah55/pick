@@ -94,18 +94,6 @@ class VisionItem(MediaItem):
         (VIDEO, 'video'),
     ]
     
-    # ideally, would be part of MediaItem subclass
-    # title = models.CharField(max_length=500)
-    # filename = models.CharField(max_length=200)
-    # year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
-    # img = models.CharField(max_length=500) # url to image
-    # local_img = models.ImageField(null=True) 
-    # media_type = models.CharField(
-    #     max_length=50,
-    #     choices=MEDIA_TYPE_CHOICES
-    # )
-    
-    # specific to films
     runtime =  models.PositiveSmallIntegerField() # runtime in minutes
     imdb_id = models.PositiveIntegerField()
     alt_title = models.CharField(max_length=1000, blank=True)
