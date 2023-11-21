@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils import slugify
+from django.utils.text import slugify
 from sortedm2m.fields import SortedManyToManyField
 
 class BaseSlug(models.Model):
@@ -35,7 +35,7 @@ class MediaSeries(BaseSlug):
 class Person(models.Model):
     name = models.CharField(max_length=200, primary_key=True, unique=True)
     alias = models.CharField(max_length=200)
-    imdb_id = models.PositiveIntegerField()
+    imdb_id = models.PositiveIntegerField(null=True)
     
     def __str__(self):
         return self.name
