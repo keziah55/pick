@@ -51,11 +51,10 @@ def search(request, search_str, template='mediabrowser/index.html',
 def set_user_rating(request, template='mediabrowser/index.html', 
                     filmlist_template='mediabrowser/filmlist.html'):
     
-    print(request, request.headers.get('x-requested-with'))
+    print(request.POST, request.headers.get('x-requested-with'))
     
     for key, value in request.POST.items():
-        print(key, value)
-        if (m:=re.match(r"rating\[(?P<pk>\d+)\]", key)) is not None:
+        if (m:=re.match(r"star-\d+-(?P<pk>\d+)", key)) is not None:
             pk = int(m.group('pk'))
             film = VisionItem.objects.get(pk=pk)
             film.user_rating = int(float(value)) # cast to float first because value is e.g. "3.0"
