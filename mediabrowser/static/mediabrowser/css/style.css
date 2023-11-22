@@ -191,13 +191,7 @@ input[type=image] {
   float: right;
 }
 
-.star:hover,
-.star:hover + .star,
-.star:hover + .star + .star,
-.star:hover + .star + .star + .star,
-.star:hover + .star + .star + .star + .star {
-  color: var(--foreground-2);
-}
+
 
 .imdbrating {
   margin: 0;
