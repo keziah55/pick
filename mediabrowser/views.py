@@ -63,7 +63,7 @@ def set_user_rating(request, template='mediabrowser/index.html',
             break
     
     # template = filmlist_template
-    context = {}
+    # context = {}
     
     context = _set_search_filters({})
     if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
