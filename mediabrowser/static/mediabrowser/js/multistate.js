@@ -1,4 +1,5 @@
 function tri_state_changed(element) {
+
     // set next state of multistate button `element`
     // cycle through states: 0:neutral, 1:AND, 2:OR, 3:NOT
     values = ['\u2015', "AND", "OR", "NOT"];

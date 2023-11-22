@@ -32,20 +32,29 @@ def search(request, search_str, template='mediabrowser/index.html',
     context['filmlist_template'] = filmlist_template
     if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
         template = filmlist_template
+        print("using filmlist_template")
+    
+    print("serach returning context:")
+    pprint(context)
+        
     return render(request, template, context)
 
 def set_user_rating(request, template='mediabrowser/index.html', 
                     filmlist_template='mediabrowser/filmlist.html'):
     
-    print(request)
+    print(request, request.headers.get('x-requested-with'))
     
     for key, value in request.POST.items():
+        print(key, value)
         if (m:=re.match(r"rating\[(?P<pk>\d+)\]", key)) is not None:
             pk = int(m.group('pk'))
             film = VisionItem.objects.get(pk=pk)
-            film.user_rating = int(value)
+            film.user_rating = int(float(value)) # cast to float first because value is e.g. "3.0"
             film.save()
             break
+    
+    # template = filmlist_template
+    # context = {}
     
     context = _set_search_filters({})
     if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
