@@ -30,7 +30,7 @@ def _process_post(request, *args, **kwargs):
 def search(request, search_str, template='mediabrowser/index.html', 
            filmlist_template='mediabrowser/filmlist.html'):
     
-    print(request)
+    print(request.GET)
     
     context = _get_context_from_request(request)
     
@@ -43,15 +43,16 @@ def search(request, search_str, template='mediabrowser/index.html',
         template = filmlist_template
         print("using filmlist_template")
     
-    # print("serach returning context:")
-    # pprint(context)
+    print("search returning context:")
+    pprint(context)
         
     return render(request, template, context)
 
 def set_user_rating(request, template='mediabrowser/index.html', 
                     filmlist_template='mediabrowser/filmlist.html'):
     
-    print(request.POST, request.headers.get('x-requested-with'))
+    print(f"post: {request.POST}")
+    print(f"headers: {request.headers}")
     
     for key, value in request.POST.items():
         if (m:=re.match(r"star-\d+-(?P<pk>\d+)", key)) is not None:
@@ -62,11 +63,12 @@ def set_user_rating(request, template='mediabrowser/index.html',
             break
     
     # template = filmlist_template
-    # context = {}
+    context = {}
     
     context = _set_search_filters({})
     if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
-        template = filmlist_template
+        template = 'mediabrowser/film.html'
+        context['film'] = film
     return render(request, template, context)
 
 def _search(search_str, **kwargs) -> dict:
