@@ -9,15 +9,24 @@ from pprint import pprint
 
 Result = namedtuple('Result', ['match', 'film'])
 
-def index(request, template='mediabrowser/index.html', filmlist_template='mediabrowser/filmlist.html'):
+def index(request):
+    if request.method == 'GET':
+        return _process_get(request, template='mediabrowser/index.html', filmlist_template='mediabrowser/filmlist.html')
+    elif request.method == 'POST':
+        return _process_post(request)
+    
+def _process_get(request, *args, **kwargs):
     # see if the `request` object has a 'search' item
     try:
         search_str = request.GET['search']
     # if not, use empty string
     except:
         search_str = ''
-    return search(request, search_str, template=template, filmlist_template=filmlist_template)
-    
+    return search(request, search_str, *args, **kwargs)
+
+def _process_post(request, *args, **kwargs):
+    return set_user_rating(request)
+
 def search(request, search_str, template='mediabrowser/index.html', 
            filmlist_template='mediabrowser/filmlist.html'):
     
@@ -34,8 +43,8 @@ def search(request, search_str, template='mediabrowser/index.html',
         template = filmlist_template
         print("using filmlist_template")
     
-    print("serach returning context:")
-    pprint(context)
+    # print("serach returning context:")
+    # pprint(context)
         
     return render(request, template, context)
 

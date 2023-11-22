@@ -36,15 +36,15 @@
         
         <div class="rating">
             <div class="userrating">
-                <form action="{% url 'pick:set_user_rating' %}" method="POST">
+                <form action="{% url 'pick:index' %}" method="POST">
                     {% csrf_token %}
                     {{ form }}
-                    <input type="hidden" name="rating[{{film.pk}}]" value="{{film.user_rating}}">
-                    <button class="star" id="star-5-{{film.pk}}" type="submit" value="5" onclick="set_star_colour(this)" {% if film.user_rating >= 5 %} style="color:#f0b505" {% endif %}>&#9733;</button>
-                    <button class="star" id="star-4-{{film.pk}}" type="submit" value="4" onclick="set_star_colour(this)" {% if film.user_rating >= 4 %} style="color:#f0b505" {% endif %}>&#9733;</button>
-                    <button class="star" id="star-3-{{film.pk}}" type="submit" value="3" onclick="set_star_colour(this)" {% if film.user_rating >= 3 %} style="color:#f0b505" {% endif %}>&#9733;</button>
-                    <button class="star" id="star-2-{{film.pk}}" type="submit" value="2" onclick="set_star_colour(this)" {% if film.user_rating >= 2 %} style="color:#f0b505" {% endif %}>&#9733;</button>
-                    <button class="star" id="star-1-{{film.pk}}" type="submit" value="1" onclick="set_star_colour(this)" {% if film.user_rating >= 1 %} style="color:#f0b505" {% endif %}>&#9733;</button>
+                    <!-- <input type="hidden" name="rating[{{film.pk}}]" value="{{film.user_rating}}"> -->
+                    <button class="star" id="star-5-{{film.pk}}" type="button" value="5" onclick="set_star_colour(this, {{film.pk}})" {% if film.user_rating >= 5 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                    <button class="star" id="star-4-{{film.pk}}" type="button" value="4" onclick="set_star_colour(this, {{film.pk}})" {% if film.user_rating >= 4 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                    <button class="star" id="star-3-{{film.pk}}" type="button" value="3" onclick="set_star_colour(this, {{film.pk}})" {% if film.user_rating >= 3 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                    <button class="star" id="star-2-{{film.pk}}" type="button" value="2" onclick="set_star_colour(this, {{film.pk}})" {% if film.user_rating >= 2 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                    <button class="star" id="star-1-{{film.pk}}" type="button" value="1" onclick="set_star_colour(this, {{film.pk}})" {% if film.user_rating >= 1 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
                 </form>
             </div>  
             <div class="imdbrating">
