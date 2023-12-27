@@ -29,6 +29,7 @@ def search(request, search_str, template='mediabrowser/index.html',
     context['filmlist_template'] = filmlist_template
     if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
         template = filmlist_template
+
     return render(request, template, context)
 
 def set_user_rating(request, template='mediabrowser/index.html', 
