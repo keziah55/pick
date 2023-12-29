@@ -75,8 +75,8 @@ class MediaInfo:
     keywords: list
     year: int
     runtime: int
-    stars: list
-    director: list
+    stars: list    # list of IMDb IDs
+    director: list # list of IMDb IDs
     description: str
     alt_description: str
     media_id: str
@@ -134,6 +134,8 @@ class PopulateDatabase:
         
         self._database = database
         
+        self._cinemagoer = Cinemagoer()
+        
         self._direct_fields = []
         self._ref_fields = []
         
@@ -154,6 +156,34 @@ class PopulateDatabase:
     def _write(self, s):
         if not self._quiet:
             print(s)
+            
+    @staticmethod
+    def _is_id_str(s: str) -> bool:
+        """ Return True if string `s` can be cast to int (and thus is an ID) """
+        try:
+            int(s)
+        except:
+            return False
+        else:
+            return True
+        
+    def _name_to_id(self, name: str) -> str:
+        """ 
+        Given `name` string, return IMDb ID string
+        
+        Note that, if `name` is an ID string, it will simply be returned.
+        
+        Raises
+        ------
+        RuntimeError
+           If searching for the person's name returned no values.
+        """
+        if not self._is_id_str(name):
+            people = self._cinemagoer.search_person(name)
+            if len(people) == 0:
+                raise RuntimeError(f"Could not find IMDb ID for person '{s}'")
+            name = people[0].getID()
+        return name
 
     def _add_to_db(self, filename, media_info):
         """ 
@@ -228,12 +258,34 @@ class PopulateDatabase:
             for n in name:
                 # iterate over list in MediaInfo dataclass
                 for value in media_info[n]:
+                    
+                    if model_class == Person:
+                        # if model is Person, ensure we have the ID and name
+                        if self._is_id_str(value):
+                            person = self._cinemagoer.get_person(value)
+                            person_name = person['name']
+                        else:
+                            person_name = value
+                            value = self._name_to_id(person_name)
+
                     try:
                         # get ref if it exists
                         m = model_class.objects.using(self._database).get(pk=value)
+                        
                     except ObjectDoesNotExist:
                         # otherwise, make new
-                        m = model_class(value)
+                        
+                        if model_class == Person:
+                            # if making a new Person, ensure we have the ID and name
+                            args = ()
+                            kwargs = {"imdb_id": value, "name": person_name}
+                        else:
+                            # if not Person, Model arg is just `value`
+                            args = (value,)
+                            kwargs = {}
+                                
+                        # make new model instance
+                        m = model_class(*args, **kwargs)
                         m.save(using=self._database)
                         
                     # # make custom through table to preserve insertion order
@@ -410,12 +462,14 @@ class PopulateDatabase:
         if 'stars' in patch:
             stars = ','.split(patch['stars'])
         else:
-            stars = [person['name'] for person in movie.get('cast', [])]
+            stars = [person.getID() for person in movie.get('cast', [])]
+        stars = [self._name_to_id(name) for name in stars] # convert any names to IDs
         
         if 'director' in patch:
             director = ','.split(patch['director'])
         else:
-            director = [person['name'] for person in movie.get('director', [])]
+            director = [person.getID() for person in movie.get('director', [])]
+        director = [self._name_to_id(name) for name in director] # convert any names to IDs
         
         desc = patch.get('description', movie.get('plot', movie.get('plot outline', '')))
         
@@ -461,14 +515,13 @@ class PopulateDatabase:
         if title is None and patch is None:
             raise ValueError("PopulateDatabase._get_movie needs either title or patch")
             
-        cinemagoer = Cinemagoer()
         infoset = ['main', 'keywords']
         
         if patch is not None:
-            movie = cinemagoer.get_movie(patch['media_id'])
+            movie = self.cinemagoer.get_movie(patch['media_id'])
             title = movie.get('title')
         else:
-            movies = cinemagoer.search_movie(title)
+            movies = self.cinemagoer.search_movie(title)
             
             if len(movies) == 0:
                 self._log_error(f"{title}; search_movie")
@@ -481,7 +534,7 @@ class PopulateDatabase:
             return None
         
         try:
-            cinemagoer.update(movie, infoset)
+            self.cinemagoer.update(movie, infoset)
         except Exception as err:
             self._log_error(f"{title}; update: {err}")
             return None
