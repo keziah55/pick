@@ -133,6 +133,8 @@ class PopulateDatabase:
     
     _error_file = Path("errors.txt")
     
+    digital_default = True
+    
     def __init__(self, quiet=False, physical_media=None, database="default"):
         
         self._created_item_count = {
@@ -318,10 +320,10 @@ class PopulateDatabase:
                         m = model_class(*args, **kwargs)
                         m.save(using=self._database)
                         
-                        if name in ['director','stars']:
+                        if n in ['director','stars']:
                             key = "person"
                         else:
-                            key = name
+                            key = n
                         self._created_item_count[key] += 1
                         
                     # add to VisionItem
@@ -490,16 +492,16 @@ class PopulateDatabase:
         
         # get list of actors and director(s)
         if 'stars' in patch:
-            stars = ','.split(patch['stars'])
+            stars =','.split(patch['stars'])
         else:
-            stars = [self._make_personinfo(person) for person in movie.get('cast', [])]
-        stars = [self._make_personinfo(person) for person in stars if not isinstance(person, PersonInfo)] # convert any names to IDs
+            stars = movie.get('cast', [])
+        stars = [self._make_personinfo(person) for person in stars]
         
         if 'director' in patch:
             director = ','.split(patch['director'])
         else:
-            director = [self._make_personinfo(person) for person in movie.get('director', [])]
-        director = [self._make_personinfo(person) for person in director if not isinstance(person, PersonInfo)] # convert any names to IDs
+            director = movie.get('director', [])
+        director = [self._make_personinfo(person) for person in director]
         
         desc = patch.get('description', movie.get('plot', movie.get('plot outline', '')))
         
@@ -514,7 +516,7 @@ class PopulateDatabase:
         user_rating = patch.get('user_rating', 0)
         
         bonus_features = patch.get('bonus_features', False)
-        digital = patch.get('digital', True)
+        digital = patch.get('digital', self.digital_default)
         physical = patch.get('physical', title.lower() in self._physical_media)
         
         info = MediaInfo(
@@ -605,8 +607,11 @@ class PopulateDatabase:
             raise ValueError("You must provide a path to file containing list of films in order to populate DB")
         files = self._read_films_file(films_txt)
         patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
-            
-        if not self._quiet:
+        return self._populate(files, patch)
+        
+    def _populate(self, files, patch={}):
+        """ Do populate. See `populate` for args. """
+        if not self._quiet and len(files) > 0:
             progress = ProgressBar(len(files))
             
         for n, file in enumerate(files):
@@ -652,12 +657,16 @@ class PopulateDatabase:
         if films_txt is None and patch_csv is None:
             raise ValueError("Please specify films file and/or patch file when calling `update`")
             
-        count = 0
         patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
         files = self._read_films_file(films_txt) if films_txt is not None else [Path(file) for file in patch.keys()]
+        return self._update(files, patch)
         
-        if not self._quiet:
+    def _update(self, files, patch={}):
+        """ Do update. See `update` for args. """
+        if not self._quiet and len(files) > 0:
             progress = ProgressBar(len(files))
+            
+        count = 0
         
         for n, file in enumerate(files):
             
@@ -755,6 +764,6 @@ if __name__ == "__main__":
         
         print("\nBreakdown:")
         print(f"Getting data from IMDb took {format_time(pop_db._imdb_time)}")
-        print(f"Writing data to DB took     {format_time(pop_db._imdb_time)}")
+        print(f"Writing data to DB took     {format_time(pop_db._db_time)}")
         print("Created models in DB:")
         pprint(pop_db._created_item_count)

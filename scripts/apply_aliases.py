@@ -5,11 +5,14 @@ Add aliases to Person entries in DB.
 """
 
 import warnings
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
-
-import django
-django.setup()
+if __name__ == "__main__":
+    # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
+    import sys, os
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parents[1]))
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pick.settings')
+    import django
+    django.setup()
 
 from mediabrowser.models import Person
 
