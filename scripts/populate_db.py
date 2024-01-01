@@ -11,6 +11,7 @@ import shutil
 from pathlib import Path
 import warnings
 from datetime import datetime
+from time import time
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -24,8 +25,10 @@ from django.db import models
 from django.core.exceptions import ObjectDoesNotExist    
 from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person
 
+from collections import namedtuple
 from dataclasses import dataclass
 from imdb import Cinemagoer
+from imdb.Person import Person as IMDbPerson
 
 class ProgressBar:
     """ Simple ProgressBar object, going up to `maximum` """
@@ -65,6 +68,8 @@ class ProgressBar:
         end = '\r' if p < 1 else '\n'
         print(show, end=end, flush=True)
         
+PersonInfo = namedtuple("PersonInfo", ["id", "name"])
+        
 @dataclass
 class MediaInfo:
     """ Class to hold info from IMDb, from which `VisionItem` can be created in database """
@@ -75,8 +80,8 @@ class MediaInfo:
     keywords: list
     year: int
     runtime: int
-    stars: list    # list of IMDb IDs
-    director: list # list of IMDb IDs
+    stars: list    # list of PersonInfo
+    director: list # list of PersonInfo
     description: str
     alt_description: str
     media_id: str
@@ -129,6 +134,15 @@ class PopulateDatabase:
     _error_file = Path("errors.txt")
     
     def __init__(self, quiet=False, physical_media=None, database="default"):
+        
+        self._created_item_count = {
+            "visionitem": 0,
+            "genre": 0,
+            "keywords": 0,
+            "person": 0
+        }
+        self._imdb_time = 0
+        self._db_time = 0
         
         self._quiet = quiet
         
@@ -185,6 +199,25 @@ class PopulateDatabase:
             name = people[0].getID()
         return name
 
+    def _make_personinfo(self, person) -> PersonInfo:
+        """ 
+        Create PersonInfo for given `person`. 
+        
+        Note that `person` can be an imdb.Person.Person instance, an ID string
+        or a name string.
+        """
+        if isinstance(person, IMDbPerson):
+            id_str = person.getID()
+            name = person['name']
+        elif self._is_id_str(person):
+            person = self._cinemagoer.get_person(person)
+            id_str = person.getID()
+            name = person['name']
+        else:
+            id_str = self._name_to_id(person)
+            name = person
+        return PersonInfo(id_str, name)
+
     def _add_to_db(self, filename, media_info):
         """ 
         Create a `VisionItem` in the database for `media_info` 
@@ -229,6 +262,8 @@ class PopulateDatabase:
         self._add_alt_versions(item, media_info)
         item.save(using=self._database)
         
+        self._created_item_count["visionitem"] += 1
+        
         return item
         
     def _add_refs(self, item, media_info) -> VisionItem:
@@ -259,15 +294,10 @@ class PopulateDatabase:
                 # iterate over list in MediaInfo dataclass
                 for value in media_info[n]:
                     
-                    if model_class == Person:
-                        # if model is Person, ensure we have the ID and name
-                        if self._is_id_str(value):
-                            person = self._cinemagoer.get_person(value)
-                            person_name = person['name']
-                        else:
-                            person_name = value
-                            value = self._name_to_id(person_name)
-
+                    if isinstance(value, PersonInfo):
+                        person_name = value.name
+                        value = value.id
+                    
                     try:
                         # get ref if it exists
                         m = model_class.objects.using(self._database).get(pk=value)
@@ -288,11 +318,11 @@ class PopulateDatabase:
                         m = model_class(*args, **kwargs)
                         m.save(using=self._database)
                         
-                    # # make custom through table to preserve insertion order
-                    # through_class = self.through_map.get(n, None)
-                    # if through_class is not None:
-                    #     through = through_class(person=m, mediaitem=item)
-                    #     through.save()
+                        if name in ['director','stars']:
+                            key = "person"
+                        else:
+                            key = name
+                        self._created_item_count[key] += 1
                         
                     # add to VisionItem
                     # e.g. item.genre.add(m)
@@ -462,14 +492,14 @@ class PopulateDatabase:
         if 'stars' in patch:
             stars = ','.split(patch['stars'])
         else:
-            stars = [person.getID() for person in movie.get('cast', [])]
-        stars = [self._name_to_id(name) for name in stars] # convert any names to IDs
+            stars = [self._make_personinfo(person) for person in movie.get('cast', [])]
+        stars = [self._make_personinfo(person) for person in stars if not isinstance(person, PersonInfo)] # convert any names to IDs
         
         if 'director' in patch:
             director = ','.split(patch['director'])
         else:
-            director = [person.getID() for person in movie.get('director', [])]
-        director = [self._name_to_id(name) for name in director] # convert any names to IDs
+            director = [self._make_personinfo(person) for person in movie.get('director', [])]
+        director = [self._make_personinfo(person) for person in director if not isinstance(person, PersonInfo)] # convert any names to IDs
         
         desc = patch.get('description', movie.get('plot', movie.get('plot outline', '')))
         
@@ -518,10 +548,19 @@ class PopulateDatabase:
         infoset = ['main', 'keywords']
         
         if patch is not None:
-            movie = self._cinemagoer.get_movie(patch['media_id'])
-            title = movie.get('title')
+            try:
+                movie = self._cinemagoer.get_movie(patch['media_id'])
+            except Exception as err:
+                self._log_error(f"{patch['media_id']}; get_movie from media_id: {err}")
+                return None
+            else:
+                title = movie.get('title')
         else:
-            movies = self._cinemagoer.search_movie(title)
+            try:
+                movies = self._cinemagoer.search_movie(title)
+            except Exception as err:
+                self._log_error(f"{title}; search_movie from title: {err}")
+                return None
             
             if len(movies) == 0:
                 self._log_error(f"{title}; search_movie")
@@ -574,11 +613,17 @@ class PopulateDatabase:
 
             info = patch.get(str(file), None)
             
+            t0 = time()
             media_info = self._get_movie(file.stem, patch=info)
+            t1 = time()
+            self._imdb_time += (t1-t0)
             if media_info is None:
                 continue
             else:
+                t0 = time()
                 self._add_to_db(file, media_info)
+                t1 = time()
+                self._db_time += (t1-t0)
                 
             if not self._quiet:
                 progress.progress(n+1)
@@ -665,8 +710,20 @@ class PopulateDatabase:
         
 if __name__ == "__main__":
     
+    def format_time(t):
+        # take t in seconds, return string
+        t /= 60
+        hours, minssecs = divmod(t, 60)
+        mins, secs = divmod((minssecs*60), 60)
+        if hours > 0:
+            s = f"{hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
+        else:
+            s = f"{mins:02.0f}m{secs:02.0f}s"
+        return s
+    
     import argparse
     from time import time
+    from pprint import pprint
 
     parser = argparse.ArgumentParser(description=__doc__)
     
@@ -692,11 +749,12 @@ if __name__ == "__main__":
         pop_db.populate(args.films, args.patch)
         
     if not args.quiet:
-        t = (time() - t0) / 60 # time in minutes
-        hours, minssecs = divmod(t, 60)
-        mins, secs = divmod((minssecs*60), 60)
-        if hours > 0:
-            s = f"{hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
-        else:
-            s = f"{mins:02.0f}m{secs:02.0f}s"
+        t = (time() - t0)
+        s = format_time(t)
         print(f"Completed in {s}")
+        
+        print("\nBreakdown:")
+        print(f"Getting data from IMDb took {format_time(pop_db._imdb_time)}")
+        print(f"Writing data to DB took     {format_time(pop_db._imdb_time)}")
+        print("Created models in DB:")
+        pprint(pop_db._created_item_count)
