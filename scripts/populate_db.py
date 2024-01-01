@@ -518,10 +518,10 @@ class PopulateDatabase:
         infoset = ['main', 'keywords']
         
         if patch is not None:
-            movie = self.cinemagoer.get_movie(patch['media_id'])
+            movie = self._cinemagoer.get_movie(patch['media_id'])
             title = movie.get('title')
         else:
-            movies = self.cinemagoer.search_movie(title)
+            movies = self._cinemagoer.search_movie(title)
             
             if len(movies) == 0:
                 self._log_error(f"{title}; search_movie")
@@ -534,7 +534,7 @@ class PopulateDatabase:
             return None
         
         try:
-            self.cinemagoer.update(movie, infoset)
+            self._cinemagoer.update(movie, infoset)
         except Exception as err:
             self._log_error(f"{title}; update: {err}")
             return None
