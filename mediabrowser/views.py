@@ -30,7 +30,7 @@ def _process_post(request, *args, **kwargs):
 def search(request, search_str, template='mediabrowser/index.html', 
            filmlist_template='mediabrowser/filmlist.html'):
     
-    print(request.GET)
+    # print(request.GET)
     
     context = _get_context_from_request(request)
     
@@ -41,18 +41,18 @@ def search(request, search_str, template='mediabrowser/index.html',
     context['filmlist_template'] = filmlist_template
     if request.headers.get('x-requested-with') == 'XMLHttpRequest': 
         template = filmlist_template
-        print("using filmlist_template")
+        # print("using filmlist_template")
     
-    print("search returning context:")
-    pprint(context)
+    # print("search returning context:")
+    # pprint(context)
         
     return render(request, template, context)
 
 def set_user_rating(request, template='mediabrowser/index.html', 
                     filmlist_template='mediabrowser/filmlist.html'):
     
-    print(f"post: {request.POST}")
-    print(f"headers: {request.headers}")
+    # print(f"post: {request.POST}")
+    # print(f"headers: {request.headers}")
     
     for key, value in request.POST.items():
         if (m:=re.match(r"star-\d+-(?P<pk>\d+)", key)) is not None:
