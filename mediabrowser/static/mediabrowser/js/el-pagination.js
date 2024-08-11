@@ -1,1 +1,1 @@
-/home/keziah/projects/pick/.venv/lib/python3.11/site-packages/el_pagination/static/el-pagination/js/el-pagination.js
+/home/keziah/projects/pick/.venv/lib/python3.12/site-packages/el_pagination/static/el-pagination/js/el-pagination.js
