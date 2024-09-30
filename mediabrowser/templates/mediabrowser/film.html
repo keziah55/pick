@@ -36,7 +36,8 @@
         
         <div class="rating">
             <div class="userrating">
-                <form action="{% url 'pick:index' %}" method="POST">
+                
+                <form id="star-rating">
                     {% csrf_token %}
                     <!-- <input type="hidden" name="rating[{{film.pk}}]" value="{{film.user_rating}}"> -->
                     <button class="star" id="star-5-{{film.pk}}" name="star-5-{{film.pk}}" type="submit" value="5" onclick="set_star_colour(this, {{film.pk}})" onmouseenter="set_star_colour(this, {{film.pk}})" onmouseleave="set_all_star_colours(this, {{film.pk}}, {{film.user_rating}})" {% if film.user_rating >= 5 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
@@ -53,6 +54,3 @@
     </div>  
 </div>  
 
-<script src="{% static 'mediabrowser/js/star.js' %}"></script>
-<!-- for showing and hiding film description on hover -->
-<script src="{% static 'mediabrowser/js/hover_description.js' %}"></script>
