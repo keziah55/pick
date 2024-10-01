@@ -1,23 +1,14 @@
-
-<!DOCTYPE html>
-<html>
+{% extends "mediabrowser/base.html" %}
 
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
-<head>
-    <title>Pick</title>
-    
-    <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/img/favicon.ico' %}"/>
-    
-    <link rel="stylesheet" href="{% static 'mediabrowser/css/style.css' %}">
-    <link rel="stylesheet" href="{% static 'mediabrowser/css/slider.css' %}">
-    
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-</head>
+{% block style %}
+<link rel="stylesheet" href="{% static 'mediabrowser/css/style.css' %}">
+<link rel="stylesheet" href="{% static 'mediabrowser/css/slider.css' %}">
+{% endblock %}
 
-<body>
-
+{% block page_content %}
 
 <form action="{% url 'pick:index' %}" method="get">
 
@@ -36,12 +27,10 @@
         </a>
     
         <!-- year -->
-        <!-- two handle slider from SO:  https://stackoverflow.com/a/44384948 -->
+        <!-- two handle slider from SO: https://stackoverflow.com/a/44384948 -->
         <div class="rangeslider", id="yearslider">
             <input class="min" name="year_min" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_min }}"  />
             <input class="max" name="year_max" type="range" min="{{ year_range_min }}" max="{{ year_range_max }}" value="{{ year_max }}" />
-            <!-- <span class="range_min light left">1900</span> -->
-            <!-- <span class="range_max light right">2032</span> -->
             <span class="rangelabel">Year</span>
             <span class="slider_range light right">{{ year_min }} - {{ year_max }}</span>
         </div>
@@ -149,8 +138,11 @@
 <script src="{% static 'mediabrowser/js/slider.js' %}"></script>
 <!-- for tri-state genre boxes -->
 <script src="{% static 'mediabrowser/js/multistate.js' %}"></script>
-<!-- for showing and hiding film description on hover -->
-<script src="{% static 'mediabrowser/js/hover_description.js' %}"></script>
 
-</body>
-</html>
+<!-- for showing and hiding film description on hover -->
+<script src="{% static 'mediabrowser/js/hover-description.js' %}"></script>
+<!-- star rating bits -->
+<script src="{% static 'mediabrowser/js/star.js' %}"></script>
+<script src="{% static 'mediabrowser/js/star-rating.js' %}"></script>
+
+{% endblock %}

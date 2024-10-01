@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+{% load static %}
+{% get_media_prefix as MEDIA_PREFIX %}
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <title>{% block page_title %}Pick{% endblock %}</title>
+    
+    {% block page_icon %}
+    <link rel="shortcut icon" type="image/png" href="{% static 'mediabrowser/img/favicon.ico' %}"/>
+    {% endblock %}
+    
+    {% block style %}{% endblock %}
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+</head>
+
+<body>
+{% block page_content %}{% endblock %}
+</body>

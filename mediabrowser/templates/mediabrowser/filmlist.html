@@ -1,48 +1,7 @@
 {% load el_pagination_tags %}
-{% load static %}
-{% get_media_prefix as MEDIA_PREFIX %}
 
 {% paginate film_list %}
 {% for film in film_list %}
-    <div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
-        <div class="film-column-img">
-            {% if film.local_img %}
-                <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
-                <!-- <img class="film-thumbnail" src="{{ film.local_img }}" alt="{{ film.title }}"> -->
-            {% else %}
-                <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
-            {% endif %}
-        </div>  
-        <div class="film-column-details">
-            <p>{{ film.title }} ({{ film.year }}) </p>
-            <p>
-                Dir. 
-                {% for person in film.director.all|slice:":3" %}
-                    <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
-                {% endfor %}
-            </p>  
-            <p>
-                {% for person in film.stars.all|slice:":3" %}
-                    <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
-                {% endfor %}
-            </p>
-            
-            <!-- list genres for manual verification -->
-            <!-- <p> -->
-            <!--     {% for genre in film.genre.all %} -->
-            <!--         {{ genre.name }} -->
-            <!--     {% endfor %} -->
-            <!-- </p> -->
-            <!-- -->
-            
-            <p>{{ film.runtime }} minutes</p>
-            
-            <div class="rating">
-                <div class="imdbrating">
-                    &middot {{ film.imdb_rating }} <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a>
-                </div>
-            </div>  
-        </div>  
-    </div>  
+    {% include 'mediabrowser/film.html' %}
 {% endfor %}
 {% show_more %}

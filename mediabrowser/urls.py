@@ -9,10 +9,8 @@ from . import views
 app_name = "pick"
 
 urlpatterns = [
-    # path("", VisionItemList.as_view(), name="scroll")
     path("", views.index, name="index"),
     path("<str:search_str>/", views.search, name="search"),
-    # path("set_user_rating", views.set_user_rating, name="set_user_rating"),
 ]
 
 # Serving the media files in development mode
