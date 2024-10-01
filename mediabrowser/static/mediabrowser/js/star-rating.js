@@ -11,6 +11,6 @@ $(document).on('submit','#star-rating',function(e){
             csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val() 
         }, 
         success:function(){ 
-          } 
+        } 
     }) 
 }); 
