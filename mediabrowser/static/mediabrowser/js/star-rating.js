@@ -1,16 +1,28 @@
 
-$(document).on('submit','#star-rating',function(e){ 
+$(document).on('submit', '#star-rating', function(e){ 
     e.preventDefault(); 
-    console.log(e.originalEvent.submitter.name);
+    
+    submitter = e.originalEvent.submitter.name;
+    var fields = submitter.split('-');
+    var film_pk = fields[2];
+    var div_id = '#film-item-' + film_pk;
+    
+    console.log(submitter, film_pk);
+    
     $.ajax({ 
-        type:'POST', 
-        url:'/', 
+        type: 'POST', 
+        url: '/', 
         data: 
         { 
-            submitter:e.originalEvent.submitter.name, 
+            submitter:submitter, 
             csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val() 
         }, 
-        success:function(){ 
-        } 
+        success: function(data){
+            console.log("success, updating div ", div_id);
+            $(div_id).html( data );
+        },
+        error: function(data){
+            console.log("error setting star rating for film_pk=", film_pk, ": ", error);
+        },
     }) 
 }); 

@@ -65,10 +65,12 @@ def set_user_rating(
     film.user_rating = rating
     film.save()
 
-    context = _set_search_filters({})
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         template = "mediabrowser/film.html"
-        context["film"] = film
+        context = {"film": film}
+    else:
+        context = _set_search_filters({})
+
     return render(request, template, context)
 
 

@@ -1,7 +1,7 @@
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
-<div class="film-row" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
+<div class="film-row" id="film-item-{{film.pk}}" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
     <div class="film-column-img">
         {% if film.local_img %}
             <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
@@ -39,7 +39,6 @@
                 
                 <form id="star-rating">
                     {% csrf_token %}
-                    <!-- <input type="hidden" name="rating[{{film.pk}}]" value="{{film.user_rating}}"> -->
                     <button class="star" id="star-5-{{film.pk}}" name="star-5-{{film.pk}}" type="submit" value="5" onclick="set_star_colour(this, {{film.pk}})" onmouseenter="set_star_colour(this, {{film.pk}})" onmouseleave="set_all_star_colours(this, {{film.pk}}, {{film.user_rating}})" {% if film.user_rating >= 5 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
                     <button class="star" id="star-4-{{film.pk}}" name="star-4-{{film.pk}}" type="submit" value="4" onclick="set_star_colour(this, {{film.pk}})" onmouseenter="set_star_colour(this, {{film.pk}})" onmouseleave="set_all_star_colours(this, {{film.pk}}, {{film.user_rating}})" {% if film.user_rating >= 4 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
                     <button class="star" id="star-3-{{film.pk}}" name="star-3-{{film.pk}}" type="submit" value="3" onclick="set_star_colour(this, {{film.pk}})" onmouseenter="set_star_colour(this, {{film.pk}})" onmouseleave="set_all_star_colours(this, {{film.pk}}, {{film.user_rating}})" {% if film.user_rating >= 3 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
