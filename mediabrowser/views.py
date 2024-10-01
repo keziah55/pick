@@ -415,7 +415,3 @@ def _get_intersect_size(item, other):
     if item is None or other is None:
         raise TypeError("_get_intersect_size args should be set, list or tuple")
     return len(item & other)
-<<<<<<< HEAD
-    
-=======
->>>>>>> user-rating
