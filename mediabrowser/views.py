@@ -1,11 +1,11 @@
 from django.shortcuts import render
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseNotFound
 from django.views.generic.list import ListView
 from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
 from .models import VisionItem, MediaSeries, Genre, Keyword, Person
 import re
 from collections import namedtuple
-from pprint import pprint
 
 Result = namedtuple("Result", ["match", "film"])
 
@@ -70,6 +70,28 @@ def set_user_rating(
         context = {"film": film}
     else:
         context = _set_search_filters({})
+
+    return render(request, template, context)
+
+
+def get_person(
+    request,
+    person,
+    template="mediabrowser/index.html",
+    filmlist_template="mediabrowser/filmlist.html",
+):
+    """Return sorted film list of person's films."""
+    try:
+        person = Person.objects.get(pk=person)
+    except ObjectDoesNotExist:
+        return HttpResponseNotFound(f"<h1>No person found with id={person}</h1>")
+
+    films = list(person.director.all()) + list(person.stars.all())
+    films.sort(key=lambda film: (film.user_rating, film.imdb_rating), reverse=True)
+
+    context = _set_search_filters({})
+    context["film_list"] = films
+    context["filmlist_template"] = filmlist_template
 
     return render(request, template, context)
 

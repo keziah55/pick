@@ -15,12 +15,12 @@
         <p>
             Dir. 
             {% for person in film.director.all|slice:":3" %}
-                <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
+                <a href="{% url 'pick:get_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
             {% endfor %}
         </p>  
         <p>
             {% for person in film.stars.all|slice:":3" %}
-                <a href="{% url 'pick:search' person.name %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
+                <a href="{% url 'pick:get_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
             {% endfor %}
         </p>
         
