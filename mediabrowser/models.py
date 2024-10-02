@@ -6,12 +6,12 @@ from sortedm2m.fields import SortedManyToManyField
 
 class BaseSlug(models.Model):
     """
-    Model base class (essentially a mixin) to add and update a slug
+    Model base class (essentially a mixin) to add and update a slug.
 
     The slug will be generated from the Model's `name` field, or `title` if
-    there is no `name`
+    there is no `name`.
 
-    An exception is raised if neither field is present
+    An exception is raised if neither field is present.
     """
 
     slug = models.SlugField(default="", null=False, db_index=True)
