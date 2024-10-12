@@ -14,8 +14,8 @@ def get_person(request, person):
     except ObjectDoesNotExist:
         return HttpResponseNotFound(f"<h1>No person found with id={person}</h1>")
 
-    films = list(person.director.all()) + list(person.stars.all())
-    films.sort(key=lambda film: (film.user_rating, film.imdb_rating), reverse=True)
+    films = set(person.director.all()) | set(person.stars.all())
+    films = sorted(films, key=lambda film: (film.user_rating, film.imdb_rating), reverse=True)
 
     context = set_search_filters({})
     context["film_list"] = films
