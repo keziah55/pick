@@ -148,6 +148,7 @@ class PopulateDatabase:
     def __init__(self, quiet=False, physical_media=None, database="default"):
 
         self._created_item_count = {"visionitem": 0, "genre": 0, "keywords": 0, "person": 0}
+        self._created_visionitems = []
         self._imdb_time = 0
         self._db_time = 0
 
@@ -272,6 +273,7 @@ class PopulateDatabase:
         item.save(using=self._database)
 
         self._created_item_count["visionitem"] += 1
+        self._created_visionitems.append(str(item))
 
         return item
 
@@ -791,7 +793,8 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument("-c", "--clear", help="Clear VisionItems", action="store_true")
-    parser.add_argument("-q", "--quiet", help="Dont write anything to stdout", action="store_true")
+    parser.add_argument("-q", "--quiet", help="Don't write anything to stdout", action="store_true")
+    parser.add_argument("-v", "--verbose", help="Print list of new VisionItems", action="store_true")
 
     args = parser.parse_args()
 
@@ -816,3 +819,7 @@ if __name__ == "__main__":
         print(f"Writing data to DB took     {format_time(pop_db._db_time)}")
         print("Created models in DB:")
         pprint(pop_db._created_item_count)
+
+        if args.verbose:
+            print("\nCreated VisionItems:")
+            print("\n  ".join(pop_db._created_visionitems))
