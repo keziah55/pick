@@ -794,7 +794,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("-c", "--clear", help="Clear VisionItems", action="store_true")
     parser.add_argument("-q", "--quiet", help="Don't write anything to stdout", action="store_true")
-    parser.add_argument("-v", "--verbose", help="Print list of new VisionItems", action="store_true")
+    parser.add_argument(
+        "-v", "--verbose", help="Print list of new VisionItems", action="store_true"
+    )
 
     args = parser.parse_args()
 
@@ -821,5 +823,6 @@ if __name__ == "__main__":
         pprint(pop_db._created_item_count)
 
         if args.verbose:
-            print("\nCreated VisionItems:")
-            print("\n  ".join(pop_db._created_visionitems))
+            indent = " "
+            s = indent + f"\n{indent}".join(pop_db._created_visionitems)
+            print(f"\nCreated VisionItems:\n{s}")
