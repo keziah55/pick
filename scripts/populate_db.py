@@ -812,6 +812,8 @@ if __name__ == "__main__":
         pop_db.populate(args.films, args.patch)
 
     if not args.quiet:
+        indent = " "
+
         t = time() - t0
         s = format_time(t)
         print(f"Completed in {s}")
@@ -819,10 +821,12 @@ if __name__ == "__main__":
         print("\nBreakdown:")
         print(f"Getting data from IMDb took {format_time(pop_db._imdb_time)}")
         print(f"Writing data to DB took     {format_time(pop_db._db_time)}")
+
         print("Created models in DB:")
-        pprint(pop_db._created_item_count)
+        s = "".join([f"{indent}{k}: {v}" for k, v in pop_db._created_item_count.items()])
+        print(s)
 
         if args.verbose:
-            indent = " "
-            s = indent + f"\n{indent}".join(pop_db._created_visionitems)
-            print(f"\nCreated VisionItems:\n{s}")
+            print("\nCreated VisionItems:")
+            s = "".join([f"{indent}{name}" for name in pop_db._created_visionitems])
+            print(s)
