@@ -823,10 +823,10 @@ if __name__ == "__main__":
         print(f"Writing data to DB took     {format_time(pop_db._db_time)}")
 
         print("Created models in DB:")
-        s = "".join([f"{indent}{k}: {v}" for k, v in pop_db._created_item_count.items()])
+        s = "\n".join([f"{indent}{k}: {v}" for k, v in pop_db._created_item_count.items()])
         print(s)
 
         if args.verbose:
             print("\nCreated VisionItems:")
-            s = "".join([f"{indent}{name}" for name in pop_db._created_visionitems])
+            s = "\n".join([f"{indent}{name}" for name in pop_db._created_visionitems])
             print(s)
