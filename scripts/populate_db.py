@@ -779,7 +779,6 @@ if __name__ == "__main__":
 
     import argparse
     from time import time
-    from pprint import pprint
 
     parser = argparse.ArgumentParser(description=__doc__)
 
