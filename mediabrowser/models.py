@@ -88,17 +88,6 @@ class MediaItem(BaseSlug):
 
 
 class VisionItem(MediaItem):
-    FILM = "FILM"
-    EPISODE = "EPISODE"
-    MUSIC_VIDEO = "MUSIC_VIDEO"
-    VIDEO = "VIDEO"
-
-    MEDIA_TYPE_CHOICES = [
-        (FILM, "film"),
-        (EPISODE, "episode"),
-        (MUSIC_VIDEO, "music_video"),
-        (VIDEO, "video"),
-    ]
 
     runtime = models.PositiveSmallIntegerField()  # runtime in minutes
     imdb_id = models.PositiveIntegerField()
@@ -106,10 +95,8 @@ class VisionItem(MediaItem):
     language = models.CharField(max_length=1000, blank=True)
     colour = models.BooleanField(default=True)
     series = models.ForeignKey("MediaSeries", on_delete=models.CASCADE, blank=True, null=True)
-    director = SortedManyToManyField(
-        Person, related_name="director"
-    )  # , through="DirectorThrough")
-    stars = SortedManyToManyField(Person, related_name="stars")  # , through="StarsThrough")
+    director = SortedManyToManyField(Person, related_name="director")
+    stars = SortedManyToManyField(Person, related_name="stars")
     genre = models.ManyToManyField(Genre)
     keywords = models.ManyToManyField(Keyword)
     description = models.TextField(blank=True)
@@ -133,15 +120,3 @@ class VisionItem(MediaItem):
 
 # class SoundItem(MediaItem):
 # pass
-
-# class PersonThrough(models.Model):
-#     # intermediary table to allow VisionItem to return e.g. stars in order they were added
-#     person = models.ForeignKey(Person, on_delete=models.CASCADE)
-#     mediaitem = models.ForeignKey(VisionItem, on_delete=models.CASCADE)
-#     created = models.DateTimeField(auto_now_add=True)
-
-# # bit of a hack, but i'm not sure how you're supposed to do this
-# # if tyring to use PersonThrough as 'though' value for both stars and director, get this error:
-# # mediabrowser.VisionItem: (models.E003) The model has two identical many-to-many relations through the intermediate model 'mediabrowser.PersonThrough'.
-# class StarsThrough(PersonThrough): pass
-# class DirectorThrough(PersonThrough): pass

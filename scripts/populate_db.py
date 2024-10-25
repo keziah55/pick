@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
-from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person
+from mediabrowser.models import VisionItem, Genre, Keyword, Person
 
 from collections import namedtuple
 from dataclasses import dataclass
