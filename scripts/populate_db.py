@@ -812,7 +812,7 @@ if __name__ == "__main__":
         pop_db.populate(args.films, args.patch)
 
     if not args.quiet:
-        indent = " "
+        indent = "  "
 
         t = time() - t0
         s = format_time(t)
