@@ -96,6 +96,7 @@ class MediaInfo:
     langauge: str
     colour: bool
     alt_versions: list
+    is_alt_version: bool
     imdb_rating: float
     user_rating: float
     bonus_features: bool
@@ -262,6 +263,7 @@ class PopulateDatabase:
             bonus_features=media_info.bonus_features,
             digital=media_info.digital,
             physical=media_info.physical,
+            is_alt_version=media_info.is_alt_version,
         )
 
         if media_info.local_img_url is not None:
@@ -379,7 +381,11 @@ class PopulateDatabase:
                     f"Multiple objects with filename '{ref_film}' in database", UserWarning
                 )
             else:
-                item.alt_versions.add(ref_items[0])
+                ref_item = ref_items[0]
+                if not ref_item.is_alt_version:
+                    ref_item.is_alt_version = True
+                    ref_item.save()
+                item.alt_versions.add(ref_item)
                 item.save(using=self._database)
 
             if not self._quiet:
@@ -540,6 +546,7 @@ class PopulateDatabase:
         bonus_features = patch.get("bonus_features", False)
         digital = patch.get("digital", self.digital_default)
         physical = patch.get("physical", title.lower() in self._physical_media)
+        is_alt_version = patch.get("is_alt_version", False)
 
         info = MediaInfo(
             title,
@@ -558,6 +565,7 @@ class PopulateDatabase:
             language,
             colour,
             alt_versions,
+            is_alt_version,
             imdb_rating,
             user_rating,
             bonus_features,

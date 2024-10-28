@@ -28,11 +28,11 @@ class BaseSlug(models.Model):
         abstract = True
 
 
-class MediaSeries(BaseSlug):
-    title = models.CharField(max_length=200, primary_key=True, unique=True)
+# class MediaSeries(BaseSlug):
+#     title = models.CharField(max_length=200, primary_key=True, unique=True)
 
-    def __str__(self):
-        return self.title
+#     def __str__(self):
+#         return self.title
 
 
 class Person(models.Model):
@@ -64,6 +64,7 @@ class MediaItem(BaseSlug):
     MUSIC_VIDEO = "MUSIC_VIDEO"
     VIDEO = "VIDEO"
     SONG = "SONG"
+    SERIES = "SERIES"
 
     MEDIA_TYPE_CHOICES = [
         (FILM, "film"),
@@ -71,14 +72,16 @@ class MediaItem(BaseSlug):
         (MUSIC_VIDEO, "music_video"),
         (VIDEO, "video"),
         (SONG, "song"),
+        (SERIES, "series"),
     ]
 
     title = models.CharField(max_length=500)
-    filename = models.CharField(max_length=200)
+    filename = models.CharField(max_length=200, blank=True)
     year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
     img = models.CharField(max_length=500)  # url to image
     local_img = models.ImageField(null=True)
     media_type = models.CharField(max_length=50, choices=MEDIA_TYPE_CHOICES)
+    children = SortedManyToManyField("self", on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.title} ({int(self.year)})"
@@ -102,6 +105,7 @@ class VisionItem(MediaItem):
     description = models.TextField(blank=True)
     alt_description = models.TextField(blank=True)
     alt_versions = models.ManyToManyField("self", symmetrical=False)
+    is_alt_version = models.BooleanField(default=False)
     imdb_rating = models.FloatField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(10)],
