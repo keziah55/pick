@@ -81,7 +81,7 @@ class MediaItem(BaseSlug):
     img = models.CharField(max_length=500)  # url to image
     local_img = models.ImageField(null=True)
     media_type = models.CharField(max_length=50, choices=MEDIA_TYPE_CHOICES)
-    children = SortedManyToManyField("self", on_delete=models.CASCADE)
+    children = SortedManyToManyField("self")
 
     def __str__(self):
         return f"{self.title} ({int(self.year)})"
@@ -97,7 +97,6 @@ class VisionItem(MediaItem):
     alt_title = models.CharField(max_length=1000, blank=True)
     language = models.CharField(max_length=1000, blank=True)
     colour = models.BooleanField(default=True)
-    series = models.ForeignKey("MediaSeries", on_delete=models.CASCADE, blank=True, null=True)
     director = SortedManyToManyField(Person, related_name="director")
     stars = SortedManyToManyField(Person, related_name="stars")
     genre = models.ManyToManyField(Genre)
