@@ -4,6 +4,7 @@ from ..models import VisionItem, Genre, Keyword, Person
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 import re
 from collections import namedtuple
+from typing import Union, Iterable
 
 Result = namedtuple("Result", ["match", "film"])
 
@@ -75,7 +76,42 @@ def _search(search_str, **kwargs) -> dict:
     search_lst = _get_words(search_str)
     search_regex = "|".join(search_lst)
 
-    results = []
+    results = _search_vision_items(
+        results, search_lst, search_regex, genre_and, genre_or, genre_not, **filter_kwargs
+    )
+
+    if search_str:
+        # only search people and keywords if given a search string
+        results = _search_people(
+            results, search_lst, search_regex, genre_and, genre_or, genre_not, **filter_kwargs
+        )
+
+        if search_keywords:
+            results = _search_keywords(
+                results, search_lst, search_regex, genre_and, genre_or, genre_not, **filter_kwargs
+            )
+
+    results = sorted(results, key=_sort_search, reverse=True)
+    results = [result.film for result in results]
+
+    # args to be substituted into the templates
+    context = {"film_list": results, "search_str": search_str}
+
+    return context
+
+
+def _search_vision_items(
+    results: list[VisionItem],
+    search_lst: list[str],
+    search_regex: str,
+    genre_and: Union[Iterable, None],
+    genre_or: Union[Iterable, None],
+    genre_not: Union[Iterable, None],
+    **filter_kwargs,
+) -> list[VisionItem]:
+    """
+    Update `results` list with VisionItems.
+    """
     # always search VisionItem by title
     for film in VisionItem.objects.filter(
         Q(title__iregex=search_regex) | Q(alt_title__iregex=search_regex), **filter_kwargs
@@ -93,54 +129,70 @@ def _search(search_str, **kwargs) -> dict:
         if m > 0:
             results.append(Result(m, film))
 
-    if search_str:
-        # only search people and keywords if given a search string
-        persons = Person.objects.filter(name__iregex=search_regex) | Person.objects.filter(
-            alias__iregex=search_regex
-        )
-        for person in persons:
+    return results
 
-            if len(search_lst) == 0:
-                m = 1
-            else:
-                intersect = [_get_intersect_size(search_lst, _get_words(person.name))]
-                if person.alias:
-                    intersect.append(_get_intersect_size(search_lst, _get_words(person.alias)))
-                m = max(intersect) / len(search_lst)
 
-            if m > 0:
-                # get person's films, applying filters
+def _search_people(
+    results: list[VisionItem],
+    search_lst: list[str],
+    search_regex: str,
+    genre_and: Union[Iterable, None],
+    genre_or: Union[Iterable, None],
+    genre_not: Union[Iterable, None],
+    **filter_kwargs,
+) -> list[VisionItem]:
+    """
+    Update `results` list with by searching Person objects.
+    """
+    persons = Person.objects.filter(name__iregex=search_regex) | Person.objects.filter(
+        alias__iregex=search_regex
+    )
+    for person in persons:
+
+        if len(search_lst) == 0:
+            m = 1
+        else:
+            intersect = [_get_intersect_size(search_lst, _get_words(person.name))]
+            if person.alias:
+                intersect.append(_get_intersect_size(search_lst, _get_words(person.alias)))
+            m = max(intersect) / len(search_lst)
+
+        if m > 0:
+            # get person's films, applying filters
+            for field in ["stars", "director"]:
                 results += [
                     Result(m, film)
-                    for film in person.stars.filter(**filter_kwargs)
+                    for film in getattr(person, field).filter(**filter_kwargs)
                     if _check_include_film(film, results, genre_and, genre_or, genre_not)
                 ]
-                results += [
-                    Result(m, film)
-                    for film in person.director.filter(**filter_kwargs)
-                    if _check_include_film(film, results, genre_and, genre_or, genre_not)
-                ]
-        if search_keywords:
-            keywords = Keyword.objects.filter(name__iregex=search_regex)
-            for keyword in keywords:
-                if len(search_lst) == 0:
-                    m = 1
-                else:
-                    m = _get_intersect_size(search_lst, _get_words(keyword.name))
-                if m > 0:
-                    results += [
-                        Result(m, film)
-                        for film in keyword.visionitem_set.filter(**filter_kwargs)
-                        if _check_include_film(film, results, genre_and, genre_or, genre_not)
-                    ]
+    return results
 
-    results = sorted(results, key=_sort_search, reverse=True)
-    results = [result.film for result in results]
 
-    # args to be substituted into the templates
-    context = {"film_list": results, "search_str": search_str}
-
-    return context
+def _search_keywords(
+    results: list[VisionItem],
+    search_lst: list[str],
+    search_regex: str,
+    genre_and: Union[Iterable, None],
+    genre_or: Union[Iterable, None],
+    genre_not: Union[Iterable, None],
+    **filter_kwargs,
+) -> list[VisionItem]:
+    """
+    Update `results` list with by searching Keyword objects.
+    """
+    keywords = Keyword.objects.filter(name__iregex=search_regex)
+    for keyword in keywords:
+        if len(search_lst) == 0:
+            m = 1
+        else:
+            m = _get_intersect_size(search_lst, _get_words(keyword.name))
+        if m > 0:
+            results += [
+                Result(m, film)
+                for film in keyword.visionitem_set.filter(**filter_kwargs)
+                if _check_include_film(film, results, genre_and, genre_or, genre_not)
+            ]
+    return results
 
 
 def _check_include_film(film, results, genre_and=None, genre_or=None, genre_not=None) -> bool:
