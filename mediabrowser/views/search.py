@@ -3,11 +3,11 @@ from django.db.models import Q
 from ..models import VisionItem, Genre, Keyword, Person
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 import re
-from typing import NamedTuple, Union
+from typing import NamedTuple, Optional
 
 
 class Result(NamedTuple):
-    """Object holding a VisionItem and a match score for given search term."""
+    """Object holding a VisionItem and a match score for given search term and filters."""
 
     match: float
     film: VisionItem
@@ -16,9 +16,9 @@ class Result(NamedTuple):
 class GenreFilters(NamedTuple):
     """Object storing genre names for AND/OR/NOT filters."""
 
-    genre_and: Union[set, None]
-    genre_or: Union[set, None]
-    genre_not: Union[set, None]
+    genre_and: Optional[set] = None
+    genre_or: Optional[set] = None
+    genre_not: Optional[set] = None
 
 
 def search(request, search_str):
