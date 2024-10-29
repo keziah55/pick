@@ -3,10 +3,22 @@ from django.db.models import Q
 from ..models import VisionItem, Genre, Keyword, Person
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 import re
-from collections import namedtuple
-from typing import Union, Iterable
+from typing import NamedTuple, Union
 
-Result = namedtuple("Result", ["match", "film"])
+
+class Result(NamedTuple):
+    """Object holding a VisionItem and a match score for given search term."""
+
+    match: float
+    film: VisionItem
+
+
+class GenreFilters(NamedTuple):
+    """Object storing genre names for AND/OR/NOT filters."""
+
+    genre_and: Union[set, None]
+    genre_or: Union[set, None]
+    genre_not: Union[set, None]
 
 
 def search(request, search_str):
@@ -66,9 +78,11 @@ def _search(search_str, **kwargs) -> dict:
 
     search_keywords = kwargs.get("keyword", False)
 
-    genre_and = kwargs.get("genre-and", None)
-    genre_or = kwargs.get("genre-or", None)
-    genre_not = kwargs.get("genre-not", None)
+    genre_and = _make_set(kwargs.get("genre-and", None))
+    genre_or = _make_set(kwargs.get("genre-or", None))
+    genre_not = _make_set(kwargs.get("genre-not", None))
+
+    genre_filters = GenreFilters(genre_and, genre_or, genre_not)
 
     results = []
 
@@ -76,22 +90,25 @@ def _search(search_str, **kwargs) -> dict:
     search_lst = _get_words(search_str)
     search_regex = "|".join(search_lst)
 
+    # make list of VisionItems
     results = _search_vision_items(
-        results, search_lst, search_regex, genre_and, genre_or, genre_not, **filter_kwargs
+        results, search_lst, search_regex, genre_filters, **filter_kwargs
     )
 
     if search_str:
         # only search people and keywords if given a search string
-        results = _search_people(
-            results, search_lst, search_regex, genre_and, genre_or, genre_not, **filter_kwargs
-        )
+        results = _search_people(results, search_lst, search_regex, genre_filters, **filter_kwargs)
 
         if search_keywords:
             results = _search_keywords(
-                results, search_lst, search_regex, genre_and, genre_or, genre_not, **filter_kwargs
+                results, search_lst, search_regex, genre_filters, **filter_kwargs
             )
 
-    results = sorted(results, key=_sort_search, reverse=True)
+    results = sorted(
+        results,
+        key=lambda item: (item.match, item.film.user_rating, item.film.imdb_rating),
+        reverse=True,
+    )
     results = [result.film for result in results]
 
     # args to be substituted into the templates
@@ -104,9 +121,7 @@ def _search_vision_items(
     results: list[VisionItem],
     search_lst: list[str],
     search_regex: str,
-    genre_and: Union[Iterable, None],
-    genre_or: Union[Iterable, None],
-    genre_not: Union[Iterable, None],
+    genre_filters: GenreFilters,
     **filter_kwargs,
 ) -> list[VisionItem]:
     """
@@ -116,7 +131,7 @@ def _search_vision_items(
     for film in VisionItem.objects.filter(
         Q(title__iregex=search_regex) | Q(alt_title__iregex=search_regex), **filter_kwargs
     ):
-        if not _check_include_film(film, results, genre_and, genre_or, genre_not):
+        if not _check_include_film(film, results, genre_filters):
             continue
         # check how closely matched titles were
         if len(search_lst) == 0:
@@ -136,9 +151,7 @@ def _search_people(
     results: list[VisionItem],
     search_lst: list[str],
     search_regex: str,
-    genre_and: Union[Iterable, None],
-    genre_or: Union[Iterable, None],
-    genre_not: Union[Iterable, None],
+    genre_filters: GenreFilters,
     **filter_kwargs,
 ) -> list[VisionItem]:
     """
@@ -163,7 +176,7 @@ def _search_people(
                 results += [
                     Result(m, film)
                     for film in getattr(person, field).filter(**filter_kwargs)
-                    if _check_include_film(film, results, genre_and, genre_or, genre_not)
+                    if _check_include_film(film, results, genre_filters)
                 ]
     return results
 
@@ -172,9 +185,7 @@ def _search_keywords(
     results: list[VisionItem],
     search_lst: list[str],
     search_regex: str,
-    genre_and: Union[Iterable, None],
-    genre_or: Union[Iterable, None],
-    genre_not: Union[Iterable, None],
+    genre_filters: GenreFilters,
     **filter_kwargs,
 ) -> list[VisionItem]:
     """
@@ -190,12 +201,12 @@ def _search_keywords(
             results += [
                 Result(m, film)
                 for film in keyword.visionitem_set.filter(**filter_kwargs)
-                if _check_include_film(film, results, genre_and, genre_or, genre_not)
+                if _check_include_film(film, results, genre_filters)
             ]
     return results
 
 
-def _check_include_film(film, results, genre_and=None, genre_or=None, genre_not=None) -> bool:
+def _check_include_film(film, results, genre_filters) -> bool:
     """
     Return True if `film` not already in `results` and any of its genres are in `genres` set.
 
@@ -205,20 +216,18 @@ def _check_include_film(film, results, genre_and=None, genre_or=None, genre_not=
         Film to check
     results : list
         List of VisionItems
-    genre_and : {set, list, tuple}, optional
-        Set of genre names that must all be present in film's genres (as lower case strings)
-    genre_or : {set, list, tuple}, optional
-        Set of genre names any of which can be present in film's genres (as lower case strings)
-    genre_not : {set, list, tuple}, optional
-        Set of genre names to exclude (as lower case strings)
+    genre_filters : GenreFilters
+        Tuple of sets (of lower case strings). Each set is the genre names which:
+
+          - must be present (and)
+          - may be present (or)
+          - to exclude (not)
+
     """
     film_is_new = film not in [result.film for result in results]
     film_genres = set([g.name.lower() for g in film.genre.all()])
 
-    # this is all very complicated, but it seems to work
-    genre_and = _make_set(genre_and)
-    genre_or = _make_set(genre_or)
-    genre_not = _make_set(genre_not)
+    genre_and, genre_or, genre_not = genre_filters
 
     conditions = []  # list of AND and/or OR
 
@@ -245,9 +254,9 @@ def set_search_filters(context, request=None) -> dict:
 
     # add min and max values for the sliders (not the selected min and max vals)
     if "year_range_min" not in context:
-        context.update(_year_range())
+        context.update(_get_range("year"))
     if "runtime_range_min" not in context:
-        context.update(_runtime_range())
+        context.update(_get_range("runtime"))
 
     if "year_min" not in context:
         context["year_min"] = context["year_range_min"]
@@ -269,17 +278,14 @@ def set_search_filters(context, request=None) -> dict:
     # 0:neutral, 1:AND, 2:OR, 3:NOT
     genres = {}
     genre_text = ["\u2015", "AND", "OR", "NOT"]
+    genre_lists = [context.get(f"genre-{key}", []) for key in ["and", "or", "not"]]
     for g in Genre.objects.all():
-        if g.name.lower() in context.get("genre-and", []):
-            value = "1"
-        elif g.name.lower() in context.get("genre-or", []):
-            value = "2"
-        elif g.name.lower() in context.get("genre-not", []):
-            value = "3"
-        else:
-            value = "0"
-        genres[g.name] = (value, genre_text[int(value)])
-        context["genres"] = genres
+        value = 0  # neutral by default
+        for i, genre_list in enumerate(genre_lists):
+            if g.name.lower() in genre_list:
+                value = i + 1  # value should be 1, 2 or 3
+        genres[g.name] = (str(value), genre_text[value])
+    context["genres"] = genres
 
     if "all-genre-box-data" not in context and request is not None:
         values = set([value[0] for value in genres.values()])
@@ -293,10 +299,6 @@ def set_search_filters(context, request=None) -> dict:
         )
 
     return context
-
-
-def _sort_search(item):
-    return item.match, item.film.user_rating, item.film.imdb_rating
 
 
 def _make_set(item):
@@ -354,16 +356,24 @@ def _get_context_from_request(request) -> dict:
             context[key] = value
         elif key.startswith("genre-"):
             genre = key.removeprefix("genre-").removesuffix("-data")
-            value = int(value)
-            if value == 1:
-                genre_and.append(genre)
-            if value == 2:
-                genre_or.append(genre)
-            elif value == 3:
-                genre_not.append(genre)
-            else:
-                # do nothing for neutral filter
-                continue
+            match int(value):
+                case 1:
+                    genre_and.append(genre)
+                case 2:
+                    genre_or.append(genre)
+                case 3:
+                    genre_not.append(genre)
+
+            # value = int(value)
+            # if value == 1:
+            #     genre_and.append(genre)
+            # if value == 2:
+            #     genre_or.append(genre)
+            # elif value == 3:
+            #     genre_not.append(genre)
+            # else:
+            #     # do nothing for neutral filter
+            #     continue
 
     if len(genre_and) > 0:
         context["genre-and"] = genre_and
@@ -404,16 +414,6 @@ def _get_kwarg(kwargs, key):
         if t is not None:
             value = t(value)
     return value
-
-
-def _year_range() -> dict:
-    """Return dict with 'year_range_min' and 'year_range_max' keys from all VisionItems"""
-    return _get_range("year")
-
-
-def _runtime_range() -> dict:
-    """Return dict with 'runtime_range_min' and 'runtime_range_max' keys from all VisionItems"""
-    return _get_range("runtime")
 
 
 def _get_range(name, model_class=VisionItem) -> dict:
