@@ -102,6 +102,7 @@ class MediaInfo:
     bonus_features: bool
     digital: bool
     physical: bool
+    disc_index: str
 
     def __getitem__(self, key):
         value = getattr(self, key)
@@ -263,6 +264,7 @@ class PopulateDatabase:
             bonus_features=media_info.bonus_features,
             digital=media_info.digital,
             physical=media_info.physical,
+            disc_index=media_info.disc_index,
             is_alt_version=media_info.is_alt_version,
         )
 
@@ -425,7 +427,7 @@ class PopulateDatabase:
         return patch
 
     @classmethod
-    def _read_physical_media_csv(cls, media_csv) -> list:
+    def _read_physical_media_csv(cls, media_csv) -> dict:  # list:
         """Return list of films that are available on physical media"""
         with open(media_csv) as fileobj:
             header, *lines = fileobj.readlines()
@@ -433,17 +435,25 @@ class PopulateDatabase:
         header = header.lower().strip().split(cls.sep)
         title_idx = header.index("title")
         media_type_idx = header.index("media type")
+        case_idx = header.index("case")
+        slot_idx = header.index("slot")
 
-        physical = []
+        physical = {}
         for line in lines:
             line = line.lower()
             row = line.strip().split(cls.sep)
             if len(row) < len(header):
                 break
             if row[media_type_idx].strip() == "film":
-                physical.append(row[title_idx])
+                # physical.append(row[title_idx])
+                title, case, slot = [row[i] for i in [title_idx, case_idx, slot_idx]]
+                physical[title] = cls.make_disc_index(case, slot)
 
         return physical
+
+    @staticmethod
+    def make_disc_index(case, slot):
+        return f"{case}.{slot}"
 
     @staticmethod
     def _get_patched(movie, patch, imdb_key, patch_key=None, default=None):
@@ -547,7 +557,10 @@ class PopulateDatabase:
 
         bonus_features = patch.get("bonus_features", False)
         digital = patch.get("digital", self.digital_default)
-        physical = patch.get("physical", title.lower() in self._physical_media)
+
+        disc_index = self._physical_media.get(title.lower(), "")
+        physical = patch.get("physical", disc_index != "")
+
         is_alt_version = patch.get("is_alt_version", False)
 
         info = MediaInfo(
@@ -573,6 +586,7 @@ class PopulateDatabase:
             bonus_features,
             digital,
             physical,
+            disc_index,
         )
 
         return info

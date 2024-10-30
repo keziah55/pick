@@ -116,6 +116,7 @@ class VisionItem(MediaItem):
     bonus_features = models.BooleanField(default=False)
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)
+    disc_index = models.CharField(max_length=10, blank=True)
 
     def __str__(self):
         return f"{self.title} ({int(self.year)})"
