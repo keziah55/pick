@@ -532,6 +532,8 @@ class PopulateDatabase:
         director = [self._make_personinfo(person) for person in director]
 
         desc = patch.get("description", movie.get("plot", movie.get("plot outline", "")))
+        if isinstance(desc, list):
+            desc = desc[0]
 
         alt_desc = patch.get("alt_description", "")
 
