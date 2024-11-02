@@ -86,8 +86,8 @@ class MediaItem(BaseSlug):
     def __str__(self):
         return f"{self.title} ({int(self.year)})"
 
-    # class Meta:
-    #     abstract = True
+    class Meta:
+        abstract = False# True
 
 
 class VisionItem(MediaItem):
