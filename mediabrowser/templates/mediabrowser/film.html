@@ -1,7 +1,7 @@
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
-<div class="film-row" id="film-item-{{film.pk}}" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
+<div class="film-row" id="film-item-{{film.pk}}" {% if film.children.all %} onmouseover="hover_film( 'hello' )" {% else %} onmouseover="hover_film( '{{ film.description|escapejs }}' )" {% endif %} onmouseout="hover_film_leave()">
     <div class="film-column-img">
         {% if film.local_img %}
             <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
