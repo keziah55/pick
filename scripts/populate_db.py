@@ -174,7 +174,7 @@ class PopulateDatabase:
         self._waiting_for_alt_versions = []
 
         self._physical_media = (
-            self._read_physical_media_csv(physical_media) if physical_media is not None else []
+            self._read_physical_media_csv(physical_media) if physical_media is not None else {}
         )
 
         self._clear_error_log()
