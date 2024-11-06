@@ -51,17 +51,17 @@ def make_films_list(media_csv, out_path):
     in_db = []
 
     for title, disc_index in physical_media.items():
-        if any(s in title for s in ["bonus features", "special features", "extras"]):
+        if any(s in title for s in ["bonus features", "special features", "extras", "disc 2"]):
             continue
 
         item_info = "\t".join([disc_index, title])
 
         try:
-            VisionItem.objects.get(title__iexact=title)
+            VisionItem.objects.get(disc_index__exact=disc_index)
         except ObjectDoesNotExist:
             not_in_db.append(item_info)
         except MultipleObjectsReturned:
-            print(f"Multiple items found for '{title}'")
+            print(f"Multiple items found for {disc_index=}, '{title}'")
         else:
             in_db.append(item_info)
 
@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # make_films_list(args.physical_media, args.out_path)
+    make_films_list(args.physical_media, args.out_path)
 
     # check_physical(args.file)
-    update_not_in_db(args.file)
+    # update_not_in_db(args.file)

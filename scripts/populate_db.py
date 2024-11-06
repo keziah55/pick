@@ -11,6 +11,7 @@ import shutil
 from pathlib import Path
 import warnings
 from datetime import datetime
+import time
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -135,9 +136,6 @@ class PopulateDatabase:
         "keywords": Keyword,
         ("director", "stars"): Person,
     }
-
-    # through_map = {'director':DirectorThrough,
-    #                'stars':StarsThrough,}
 
     ext = [".avi", ".m4v", ".mkv", ".mov", ".mp4", ".wmv", ".webm"]
 
@@ -684,17 +682,17 @@ class PopulateDatabase:
 
             info = patch.get(str(file), None)
 
-            t0 = time()
+            t0 = time.monotonic()
             media_info = self._get_movie(file.stem, patch=info)
-            t1 = time()
-            self._imdb_time += t1 - t0
+            t1 = time.monotonic()
+            self._imdb_time += (t1 - t0)
             if media_info is None:
                 continue
             else:
-                t0 = time()
+                t0 = time.monotonic()
                 self._add_to_db(file, media_info)
-                t1 = time()
-                self._db_time += t1 - t0
+                t1 = time.monotonic()
+                self._db_time += (t1 - t0)
 
             if not self._quiet:
                 progress.progress(n + 1)
@@ -802,7 +800,6 @@ if __name__ == "__main__":
         return s
 
     import argparse
-    from time import time
 
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -823,7 +820,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    t0 = time()
+    t0 = time.monotonic()
     pop_db = PopulateDatabase(quiet=args.quiet, physical_media=args.physical_media)
 
     if args.clear:
@@ -837,7 +834,7 @@ if __name__ == "__main__":
     if not args.quiet:
         indent = "  "
 
-        t = time() - t0
+        t = time.monotonic() - t0
         s = format_time(t)
         print(f"Completed in {s}")
 
