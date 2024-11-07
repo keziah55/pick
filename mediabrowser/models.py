@@ -20,7 +20,7 @@ class BaseSlug(models.Model):
         """Override `save` to set slug"""
         if (name := getattr(self, "name", None)) is None:
             if (name := getattr(self, "title", None)) is None:
-                raise Exception("Model must contain 'name' or 'title' field")
+                raise ValueError("Model must contain 'name' or 'title' field")
         self.slug = slugify(name)
         super().save(*args, **kwargs)
 
@@ -48,14 +48,14 @@ class Genre(models.Model):
     name = models.CharField(max_length=200, primary_key=True, unique=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name}"
 
 
 class Keyword(models.Model):
     name = models.CharField(max_length=200, primary_key=True, unique=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name}"
 
 
 class MediaItem(BaseSlug):

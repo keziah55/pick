@@ -12,6 +12,10 @@ from pathlib import Path
 import warnings
 from datetime import datetime
 import time
+from collections import namedtuple
+from dataclasses import dataclass
+from imdb import Cinemagoer
+from imdb.Person import Person as IMDbPerson
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -27,11 +31,6 @@ if __name__ == "__main__":
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, Genre, Keyword, Person
-
-from collections import namedtuple
-from dataclasses import dataclass
-from imdb import Cinemagoer
-from imdb.Person import Person as IMDbPerson
 
 
 class ProgressBar:
@@ -94,7 +93,7 @@ class MediaInfo:
     alt_description: str
     media_id: str
     alt_title: list
-    langauge: str
+    language: str
     colour: bool
     alt_versions: list
     is_alt_version: bool
@@ -205,7 +204,7 @@ class PopulateDatabase:
         if not self._is_id_str(name):
             people = self._cinemagoer.search_person(name)
             if len(people) == 0:
-                raise RuntimeError(f"Could not find IMDb ID for person '{s}'")
+                raise RuntimeError(f"Could not find IMDb ID for person '{name}'")
             name = people[0].getID()
         return name
 
@@ -254,7 +253,7 @@ class PopulateDatabase:
             description=media_info.description,
             alt_description=media_info.alt_description,
             alt_title=media_info.as_string("alt_title"),
-            language=media_info.as_string("langauge"),
+            language=media_info.as_string("language"),
             colour=media_info.colour,
             media_type=VisionItem.FILM,
             imdb_rating=media_info.imdb_rating,
@@ -279,7 +278,7 @@ class PopulateDatabase:
 
         return item
 
-    def _add_refs(self, item, media_info) -> VisionItem:
+    def _add_refs(self, item: VisionItem, media_info: MediaInfo) -> VisionItem:
         """
         For genre, keywords, director and stars in `media_info`, add to VisionItem `item`
 
@@ -673,10 +672,13 @@ class PopulateDatabase:
         patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
         return self._populate(files, patch)
 
-    def _populate(self, files, patch={}):
+    def _populate(self, files, patch=None):
         """Do populate. See `populate` for args."""
-        if not self._quiet and len(files) > 0:
-            progress = ProgressBar(len(files))
+
+        if patch is None:
+            patch = {}
+
+        progress = ProgressBar(len(files)) if not self._quiet and len(files) > 0 else None
 
         for n, file in enumerate(files):
 
@@ -685,16 +687,16 @@ class PopulateDatabase:
             t0 = time.monotonic()
             media_info = self._get_movie(file.stem, patch=info)
             t1 = time.monotonic()
-            self._imdb_time += (t1 - t0)
+            self._imdb_time += t1 - t0
             if media_info is None:
                 continue
             else:
                 t0 = time.monotonic()
                 self._add_to_db(file, media_info)
                 t1 = time.monotonic()
-                self._db_time += (t1 - t0)
+                self._db_time += t1 - t0
 
-            if not self._quiet:
+            if progress is not None:
                 progress.progress(n + 1)
 
         self._write("Checking for remaining references...")
@@ -729,10 +731,13 @@ class PopulateDatabase:
         )
         return self._update(files, patch)
 
-    def _update(self, files, patch={}):
+    def _update(self, files, patch=None):
         """Do update. See `update` for args."""
-        if not self._quiet and len(files) > 0:
-            progress = ProgressBar(len(files))
+
+        if patch is None:
+            patch = {}
+
+        progress = ProgressBar(len(files)) if not self._quiet and len(files) > 0 else None
 
         count = 0
 
@@ -765,7 +770,7 @@ class PopulateDatabase:
                     self._add_to_db(file, media_info)
                     count += 1
 
-            if not self._quiet:
+            if progress is not None:
                 progress.progress(n + 1)
 
         self._write(f"Updated {count} records")
@@ -781,6 +786,7 @@ class PopulateDatabase:
         with open(cls._error_file, "a") as fileobj:
             fileobj.write(f"[{datetime.now().isoformat()}] {msg}\n")
 
+    @classmethod
     def _clear_error_log(cls):
         if cls._error_file.exists():
             cls._error_file.unlink()
