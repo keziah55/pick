@@ -3,14 +3,16 @@
 
 <div class="film-row" id="film-item-{{film.pk}}" {% if film.children.all %} onmouseover="hover_film( 'hello' )" {% else %} onmouseover="hover_film( '{{ film.description|escapejs }}' )" {% endif %} onmouseout="hover_film_leave()">
     <div class="film-column-img">
-        {% if film.local_img %}
-            <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
-        {% else %}
-            <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
-        {% endif %}
+        <a href="{% url 'pick:view_visionitem' film.pk %}">
+            {% if film.local_img %}
+                <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
+            {% else %}
+                <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
+            {% endif %}
+        </a>
     </div>  
     <div class="film-column-details">
-        <p>{{ film.title }} ({{ film.year }}) </p>
+        <p><a href="{% url 'pick:view_visionitem' film.pk %}">{{ film.title }} ({{ film.year }})</a></p>
         <p>
             Dir. 
             {% for person in film.director.all|slice:":3" %}

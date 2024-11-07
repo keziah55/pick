@@ -13,6 +13,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("<str:search_str>/", views.search, name="search"),
     path("person/<int:person>", views.view_person, name="view_person"),
+    path("mediaitem/<int:pk>", views.view_visionitem, name="view_visionitem")
 ]
 
 # Serving the media files in development mode
