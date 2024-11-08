@@ -2,8 +2,8 @@ from django.shortcuts import render
 from django.http import HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
 from ..models import VisionItem
-from .search import set_search_filters
-from .templates import INDEX_TEMPLATE, FILM_TEMPLATE
+from .utils import set_search_filters, get_filter_kwargs, get_context_from_request
+from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE, FILM_TEMPLATE
 import re
 
 
@@ -26,5 +26,25 @@ def set_user_rating(request):
         context = {"film": film}
     else:
         context = set_search_filters({})
+
+    return render(request, template, context)
+
+
+def view_user_rating(request, rating):
+
+    template = INDEX_TEMPLATE
+
+    context = get_context_from_request(request)
+
+    filter_kwargs, _, _ = get_filter_kwargs(**context)
+
+    items = VisionItem.objects.filter(user_rating__exact=rating, **filter_kwargs)
+
+    context["film_list"] = list(items)
+    context = set_search_filters(context, request)
+
+    context["filmlist_template"] = FILMLIST_TEMPLATE
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        template = FILMLIST_TEMPLATE
 
     return render(request, template, context)
