@@ -1,4 +1,11 @@
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
-<p>series</p>
+<!-- <div> -->
+<!--     <input type="image" name="back" src="{% static 'mediabrowser/img/back-64.svg' %}" border="0" onClick="javascript:history.go(-1);"> -->
+<!--     <span class="seriestitle"> {{ series_item.title }} </span> -->
+<!-- </div> -->
+
+{% for film in series_members %}
+    {% include 'mediabrowser/film.html' %}
+{% endfor %}

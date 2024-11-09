@@ -192,7 +192,6 @@ input[type=image] {
 }
 
 
-
 .imdbrating {
   margin: 0;
   left: 135px;
@@ -200,4 +199,12 @@ input[type=image] {
   top: 56%;
   -ms-transform: translateY(-50%);
   transform: translateY(-50%);
+}
+
+/* series */
+
+.seriestitle {
+  font-size: 18pt;
+  color: var(--foreground);
+  padding: 20px;
 }

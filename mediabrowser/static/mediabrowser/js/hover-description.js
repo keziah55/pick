@@ -1,15 +1,15 @@
 function hover_film(s) {
     // show film description on hover
-    p = document.getElementById("description-hover");
+    div = document.getElementById("description-hover");
     
-    if (p !== null) 
-        p.innerHTML = s;
+    if (div !== null) 
+        div.innerHTML = s;
 }
 
 function hover_film_leave() {
     // hide film description on hover leave
-    p = document.getElementById("description-hover");
+    div = document.getElementById("description-hover");
     
-    if (p !== null) 
-        p.innerHTML = "";
+    if (div !== null) 
+        div.innerHTML = "";
 }

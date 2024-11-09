@@ -123,6 +123,9 @@
             </script>
         {% endblock %}
         
+    {% elif series_item %}
+        {% include serieslist_template %}
+        
     {% else %}
         <div class="film-row"
             <p>No films found.<p>
@@ -131,7 +134,7 @@
 </div>
 
 <div class="column right">
-    <p class="description-hover" id="description-hover"></p>
+    <div class="description-hover" id="description-hover"></div>
 </div>
 
 {% endblock %}
