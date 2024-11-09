@@ -1,7 +1,7 @@
 from .index import index
 from .search import search
 from .person import view_person
-from .visionitem import view_visionitem, view_mediaitem
+from .visionitem import view_visionitem
 from .user_rating import view_user_rating
 
 __all__ = [
@@ -9,6 +9,5 @@ __all__ = [
     "search",
     "view_person",
     "view_visionitem",
-    "view_mediaitem",
     "view_user_rating",
 ]

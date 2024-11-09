@@ -14,7 +14,6 @@ urlpatterns = [
     path("<str:search_str>/", views.search, name="search"),
     path("person/<int:person>", views.view_person, name="view_person"),
     path("visionitem/<int:pk>", views.view_visionitem, name="view_visionitem"),
-    path("mediaitem/<int:pk>", views.view_mediaitem, name="view_mediaitem"),
     path("rating/<int:rating>", views.view_user_rating, name="view_user_rating"),
 ]
 

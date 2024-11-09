@@ -18,7 +18,7 @@ class Result(NamedTuple):
 
     match: float
     film: VisionItem
-    user_rating_: Optional[int] = None
+    user_rating_: Optional[float] = None
     imdb_rating_: Optional[float] = None
 
     @property
