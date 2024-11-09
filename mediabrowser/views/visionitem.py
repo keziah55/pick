@@ -27,9 +27,12 @@ def view_mediaitem(request, pk):
     items = [_get_item(child.pk, VisionItem) for child in item.children.all()]
 
     context = set_search_filters({})
-    context["series_item"] = item
-    context["series_members"] = items
-    context["serieslist_template"] = SERIESLIST_TEMPLATE
+    # context["series_item"] = item
+    # context["series_members"] = items
+    # context["serieslist_template"] = SERIESLIST_TEMPLATE
+    context["film_list"] = items
+    context["filmlist_template"] = FILMLIST_TEMPLATE
+
 
     pprint(context)
 

@@ -200,11 +200,3 @@ input[type=image] {
   -ms-transform: translateY(-50%);
   transform: translateY(-50%);
 }
-
-/* series */
-
-.seriestitle {
-  font-size: 18pt;
-  color: var(--foreground);
-  padding: 20px;
-}

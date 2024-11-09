@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
-from ..models import VisionItem, Keyword, Person
+from ..models import VisionItem, MediaItem, Keyword, Person
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 from .utils import (
     get_filter_kwargs,
@@ -10,7 +10,7 @@ from .utils import (
     get_context_from_request,
 )
 import re
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 
 class Result(NamedTuple):
@@ -18,6 +18,26 @@ class Result(NamedTuple):
 
     match: float
     film: VisionItem
+    # user_rating_: Optional[int] = None
+    # imdb_rating_: Optional[float] = None
+
+    # @property
+    # def pk(self):
+    #     return self.film.pk
+
+    # @property
+    # def user_rating(self):
+    #     if (rating := getattr(self.film, "user_rating", None)) is not None:
+    #         return rating
+    #     else:
+    #         return self.user_rating_
+
+    # @property
+    # def imdb_rating(self):
+    #     if (rating := getattr(self.film, "imdb_rating", None)) is not None:
+    #         return rating
+    #     else:
+    #         return self.imdb_rating_
 
 
 def search(request, search_str):
@@ -67,6 +87,32 @@ def _search(search_str, **kwargs) -> dict:
             results = _search_keywords(
                 results, search_lst, search_regex, genre_filters, **filter_kwargs
             )
+
+    # all_series = MediaItem.objects.filter(media_type__exact="SERIES")
+
+    # results_set = set(item.film.pk for item in results)
+
+    # new_results = []
+    # remove_results = []
+
+    # for series in all_series:
+    #     members = set(item.pk for item in series.children.all())
+
+    #     if members.issubset(results_set):
+    #         rmv = [result for result in results if result.pk in members]
+    #         new = Result(
+    #             max(result.match for result in rmv),
+    #             series,
+    #             user_rating_=max(result.user_rating for result in rmv),
+    #             imdb_rating_=max(result.imdb_rating for result in rmv),
+    #         )
+    #         new_results.append(new)
+    #         remove_results += rmv
+
+    # print(f"new: {new_results}")
+    # print(f"remove: {remove_results}")
+
+    # results = [result for result in results + new_results if result not in remove_results]
 
     results = sorted(
         results,
