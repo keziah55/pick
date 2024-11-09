@@ -90,35 +90,35 @@ class MediaItem(BaseSlug):
         abstract = False
 
 
-# class BaseVisionItem(MediaItem):
+class BaseVisionItem(MediaItem):
 
-#     alt_title = models.CharField(max_length=1000, blank=True)
-#     director = SortedManyToManyField(Person, related_name="director")
-#     stars = SortedManyToManyField(Person, related_name="stars")
-#     alt_year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)], null=True)
-#     genre = models.ManyToManyField(Genre)
-#     keywords = models.ManyToManyField(Keyword)
-#     description = models.TextField(blank=True)
-#     alt_description = models.TextField(blank=True)
+    alt_title = models.CharField(max_length=1000, blank=True)
+    director = SortedManyToManyField(Person, related_name="director")
+    stars = SortedManyToManyField(Person, related_name="stars")
+    alt_year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)], null=True)
+    genre = models.ManyToManyField(Genre)
+    keywords = models.ManyToManyField(Keyword)
+    description = models.TextField(blank=True)
+    alt_description = models.TextField(blank=True)
 
-#     class Meta:
-#         abstract = False
+    class Meta:
+        abstract = False
 
 
-class VisionItem(MediaItem):  # BaseVisionItem):
+class VisionItem(BaseVisionItem):
 
     runtime = models.PositiveSmallIntegerField()  # runtime in minutes
     imdb_id = models.PositiveIntegerField()
     language = models.CharField(max_length=1000, blank=True)
     colour = models.BooleanField(default=True)
 
-    alt_title = models.CharField(max_length=1000, blank=True)
-    director = SortedManyToManyField(Person, related_name="director")
-    stars = SortedManyToManyField(Person, related_name="stars")
-    genre = models.ManyToManyField(Genre)
-    keywords = models.ManyToManyField(Keyword)
-    description = models.TextField(blank=True)
-    alt_description = models.TextField(blank=True)
+    # alt_title = models.CharField(max_length=1000, blank=True)
+    # director = SortedManyToManyField(Person, related_name="director")
+    # stars = SortedManyToManyField(Person, related_name="stars")
+    # genre = models.ManyToManyField(Genre)
+    # keywords = models.ManyToManyField(Keyword)
+    # description = models.TextField(blank=True)
+    # alt_description = models.TextField(blank=True)
 
     alt_versions = models.ManyToManyField("self", symmetrical=False)
     is_alt_version = models.BooleanField(default=False)

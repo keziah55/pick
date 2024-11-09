@@ -414,6 +414,8 @@ class PopulateDatabase:
             key, *values = line
             # key is filename; make dict of any other info
             dct = {header[i]: value for i, value in enumerate(values) if value}
+            if "imdb_id" in dct:
+                dct["media_id"] = dct.pop("imdb_id")
             # in case a file is entered twice in the csv, merge the two dics
             current = patch.get(key, None)
             if current is None:
