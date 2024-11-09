@@ -18,26 +18,26 @@ class Result(NamedTuple):
 
     match: float
     film: VisionItem
-    # user_rating_: Optional[int] = None
-    # imdb_rating_: Optional[float] = None
+    user_rating_: Optional[int] = None
+    imdb_rating_: Optional[float] = None
 
-    # @property
-    # def pk(self):
-    #     return self.film.pk
+    @property
+    def pk(self):
+        return self.film.pk
 
-    # @property
-    # def user_rating(self):
-    #     if (rating := getattr(self.film, "user_rating", None)) is not None:
-    #         return rating
-    #     else:
-    #         return self.user_rating_
+    @property
+    def user_rating(self):
+        if (rating := getattr(self.film, "user_rating", None)) is not None:
+            return rating
+        else:
+            return self.user_rating_
 
-    # @property
-    # def imdb_rating(self):
-    #     if (rating := getattr(self.film, "imdb_rating", None)) is not None:
-    #         return rating
-    #     else:
-    #         return self.imdb_rating_
+    @property
+    def imdb_rating(self):
+        if (rating := getattr(self.film, "imdb_rating", None)) is not None:
+            return rating
+        else:
+            return self.imdb_rating_
 
 
 def search(request, search_str):
@@ -88,35 +88,35 @@ def _search(search_str, **kwargs) -> dict:
                 results, search_lst, search_regex, genre_filters, **filter_kwargs
             )
 
-    # all_series = MediaItem.objects.filter(media_type__exact="SERIES")
+    all_series = MediaItem.objects.filter(media_type__exact="SERIES")
 
-    # results_set = set(item.film.pk for item in results)
+    results_set = set(item.film.pk for item in results)
 
-    # new_results = []
-    # remove_results = []
+    new_results = []
+    remove_results = []
 
-    # for series in all_series:
-    #     members = set(item.pk for item in series.children.all())
+    for series in all_series:
+        members = set(item.pk for item in series.children.all())
 
-    #     if members.issubset(results_set):
-    #         rmv = [result for result in results if result.pk in members]
-    #         new = Result(
-    #             max(result.match for result in rmv),
-    #             series,
-    #             user_rating_=max(result.user_rating for result in rmv),
-    #             imdb_rating_=max(result.imdb_rating for result in rmv),
-    #         )
-    #         new_results.append(new)
-    #         remove_results += rmv
+        if members.issubset(results_set):
+            rmv = [result for result in results if result.pk in members]
+            new = Result(
+                max(result.match for result in rmv),
+                series,
+                user_rating_=max(result.user_rating for result in rmv),
+                imdb_rating_=max(result.imdb_rating for result in rmv),
+            )
+            new_results.append(new)
+            remove_results += rmv
 
-    # print(f"new: {new_results}")
-    # print(f"remove: {remove_results}")
+    print(f"new: {new_results}")
+    print(f"remove: {remove_results}")
 
-    # results = [result for result in results + new_results if result not in remove_results]
+    results = [result for result in results + new_results if result not in remove_results]
 
     results = sorted(
         results,
-        key=lambda item: (item.match, item.film.user_rating, item.film.imdb_rating),
+        key=lambda item: (item.match, item.user_rating, item.imdb_rating),
         reverse=True,
     )
     results = [result.film for result in results]

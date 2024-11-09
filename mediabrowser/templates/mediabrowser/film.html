@@ -1,9 +1,7 @@
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
-<!-- <div class="film-row" id="film-item-{{film.pk}}" {% if film.media_type == 'SERIES' %} onmouseover="hover_film( 'hello' )" {% else %} onmouseover="hover_film( '{{ film.description|escapejs }}' )" {% endif %} onmouseout="hover_film_leave()"> -->
-
-<div class="film-row" id="film-item-{{film.pk}}"  onmouseover="hover_film( '{{ film.description|escapejs }}' )"  onmouseout="hover_film_leave()">
+<div class="film-row" id="film-item-{{film.pk}}" {% if film.media_type == 'SERIES' %} onmouseover="hover_film( 'hello' )" {% else %} onmouseover="hover_film( '{{ film.description|escapejs }}' )" {% endif %} onmouseout="hover_film_leave()">
     <div class="film-column-img">
         <a href="{% url 'pick:view_visionitem' film.pk %}">
             {% if film.local_img %}
