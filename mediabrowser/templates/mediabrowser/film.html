@@ -1,15 +1,13 @@
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
+{% if film.media_type == 'SERIES' %}
+    {% include 'mediabrowser/serieslist.html' %}
+{% else %}
+
 <div class="film-row" id="film-item-{{film.pk}}" {% if film.media_type == 'SERIES' %} onmouseover="hover_film( 'hello' )" {% else %} onmouseover="hover_film( '{{ film.description|escapejs }}' )" {% endif %} onmouseout="hover_film_leave()">
     <div class="film-column-img">
-        <a href="{% url 'pick:view_visionitem' film.pk %}">
-            {% if film.local_img %}
-                <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
-            {% else %}
-                <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
-            {% endif %}
-        </a>
+        <a href="{% url 'pick:view_visionitem' film.pk %}"><img class="film-thumbnail" {% if film.local_img %} src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" {% else %} src="{{ film.img }}" {% endif %} alt="{{ film.title }}"></a>
     </div>  
     <div class="film-column-details">
         <p><a href="{% url 'pick:view_visionitem' film.pk %}">{{ film.title }} ({{ film.year }})</a></p>
@@ -53,4 +51,4 @@
         </div>  
     </div>  
 </div>  
-
+{% endif %}

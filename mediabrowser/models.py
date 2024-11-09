@@ -87,7 +87,7 @@ class MediaItem(BaseSlug):
         return f"{self.title} ({int(self.year)})"
 
     class Meta:
-        abstract = False# True
+        abstract = False
 
 
 class VisionItem(MediaItem):

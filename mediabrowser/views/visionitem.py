@@ -1,20 +1,36 @@
 from django.shortcuts import render
 from django.http import HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
-from ..models import VisionItem, MediaItem
+from ..models import VisionItem, MediaItem, Person
 from .search import set_search_filters
-from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE, SERIESLIST_TEMPLATE
+from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 
 from pprint import pprint
 
 
 def view_visionitem(request, pk):
     """Return view of VisionItem."""
-    item = _get_item(pk, VisionItem)
+    # item = _get_item(pk, VisionItem)
 
     context = set_search_filters({})
-    context["film_list"] = [item]
+
+    try:
+        item = VisionItem.objects.get(pk=pk)
+    except ObjectDoesNotExist:
+        try:
+            item = MediaItem.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return HttpResponseNotFound(f"<h1>No media item found with id={pk}</h1>")
+        else:
+            items = [_get_item(child.pk, VisionItem) for child in item.children.all()]
+            
+    else:
+        items = [item]
+
+    context["film_list"] = items
     context["filmlist_template"] = FILMLIST_TEMPLATE
+    
+    pprint(context)
 
     return render(request, INDEX_TEMPLATE, context)
 
@@ -32,7 +48,6 @@ def view_mediaitem(request, pk):
     # context["serieslist_template"] = SERIESLIST_TEMPLATE
     context["film_list"] = items
     context["filmlist_template"] = FILMLIST_TEMPLATE
-
 
     pprint(context)
 

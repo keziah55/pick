@@ -88,12 +88,13 @@ def _search(search_str, **kwargs) -> dict:
                 results, search_lst, search_regex, genre_filters, **filter_kwargs
             )
 
+    # if all children of any series are in results, replace the individual VisionItems with the
+    # series MediaItem
     all_series = MediaItem.objects.filter(media_type__exact="SERIES")
-
     results_set = set(item.film.pk for item in results)
 
-    new_results = []
-    remove_results = []
+    new_results = []  # new Results to add
+    remove_results = []  # Results to remove
 
     for series in all_series:
         members = set(item.pk for item in series.children.all())
@@ -108,9 +109,6 @@ def _search(search_str, **kwargs) -> dict:
             )
             new_results.append(new)
             remove_results += rmv
-
-    print(f"new: {new_results}")
-    print(f"remove: {remove_results}")
 
     results = [result for result in results + new_results if result not in remove_results]
 

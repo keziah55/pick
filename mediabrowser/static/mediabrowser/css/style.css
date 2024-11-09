@@ -146,6 +146,11 @@ input[type=image] {
   width: 200px;
 }
 
+.film-thumbnail-small {
+  width: 120px;
+  padding: 5px;
+}
+
 .film-column-details {
   float: left;
   padding-left: 15px;
