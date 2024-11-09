@@ -105,13 +105,13 @@ class MediaItem(BaseSlug):
 #         abstract = False
 
 
-class VisionItem(MediaItem): #BaseVisionItem):
+class VisionItem(MediaItem):  # BaseVisionItem):
 
     runtime = models.PositiveSmallIntegerField()  # runtime in minutes
     imdb_id = models.PositiveIntegerField()
     language = models.CharField(max_length=1000, blank=True)
     colour = models.BooleanField(default=True)
-    
+
     alt_title = models.CharField(max_length=1000, blank=True)
     director = SortedManyToManyField(Person, related_name="director")
     stars = SortedManyToManyField(Person, related_name="stars")
@@ -119,7 +119,7 @@ class VisionItem(MediaItem): #BaseVisionItem):
     keywords = models.ManyToManyField(Keyword)
     description = models.TextField(blank=True)
     alt_description = models.TextField(blank=True)
-    
+
     alt_versions = models.ManyToManyField("self", symmetrical=False)
     is_alt_version = models.BooleanField(default=False)
     imdb_rating = models.FloatField(
@@ -134,6 +134,7 @@ class VisionItem(MediaItem): #BaseVisionItem):
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)
     disc_index = models.CharField(max_length=10, blank=True)
+
 
 # class SoundItem(MediaItem):
 # pass

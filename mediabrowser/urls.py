@@ -5,8 +5,6 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from . import views
 
-# from .views import VisionItemList
-
 app_name = "pick"
 
 urlpatterns = [
