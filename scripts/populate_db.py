@@ -128,7 +128,7 @@ class MediaInfo:
 
 
 class PopulateDatabase:
-    """Class to create records in database from list of file names"""
+    """Class to create records in database from list of file names and/or csv file."""
 
     field_map = {
         "genre": Genre,

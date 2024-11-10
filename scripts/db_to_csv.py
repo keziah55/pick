@@ -23,8 +23,8 @@ from mediabrowser.models import VisionItem
 def write_db_to_csv(csv_file: Path, csv_sep: str = "\t", line_sep: str = "\n"):
 
     fields = [
-        "title",
         "filename",
+        "title",
         "year",
         # "img",
         "local_img",
