@@ -21,12 +21,12 @@
         
         <p>
             Dir. 
-            {% for person in film.all|slice:":3" %}
+            {% for person in film.director.all|slice:":3" %}
                 <a href="{% url 'pick:view_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
             {% endfor %}
         </p>  
         <p>
-            {% for person in film.all|slice:":3" %}
+            {% for person in film.stars.all|slice:":3" %}
                 <a href="{% url 'pick:view_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
             {% endfor %}
         </p>

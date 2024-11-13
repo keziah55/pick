@@ -452,7 +452,7 @@ class PopulateDatabase:
 
     @staticmethod
     def make_disc_index(case, slot):
-        return f"{case}.{slot}"
+        return f"{case}.{slot:03d}"
 
     @staticmethod
     def _get_patched(movie, patch, imdb_key, patch_key=None, default=None):
@@ -557,7 +557,7 @@ class PopulateDatabase:
         bonus_features = patch.get("bonus_features", False)
         digital = patch.get("digital", self.digital_default)
 
-        disc_index = self._physical_media.get(title.lower(), "")
+        disc_index = patch.get("disc_index", self._physical_media.get(title.lower(), ""))
         physical = patch.get("physical", disc_index != "")
 
         is_alt_version = patch.get("is_alt_version", False)
@@ -689,14 +689,14 @@ class PopulateDatabase:
             t0 = time.monotonic()
             media_info = self._get_movie(file.stem, patch=info)
             t1 = time.monotonic()
-            self._imdb_time += t1 - t0
+            self._imdb_time += (t1 - t0)
             if media_info is None:
                 continue
             else:
                 t0 = time.monotonic()
                 self._add_to_db(file, media_info)
                 t1 = time.monotonic()
-                self._db_time += t1 - t0
+                self._db_time += (t1 - t0)
 
             if progress is not None:
                 progress.progress(n + 1)

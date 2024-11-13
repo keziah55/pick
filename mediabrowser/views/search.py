@@ -90,27 +90,27 @@ def _search(search_str, **kwargs) -> dict:
 
     # if all children of any series are in results, replace the individual VisionItems with the
     # series MediaItem
-    all_series = MediaItem.objects.filter(media_type__exact="SERIES")
-    results_set = set(item.film.pk for item in results)
+    # all_series = MediaItem.objects.filter(media_type__exact="SERIES")
+    # results_set = set(item.film.pk for item in results)
 
-    new_results = []  # new Results to add
-    remove_results = []  # Results to remove
+    # new_results = []  # new Results to add
+    # remove_results = []  # Results to remove
 
-    for series in all_series:
-        members = set(item.pk for item in series.children.all())
+    # for series in all_series:
+    #     members = set(item.pk for item in series.children.all())
 
-        if members.issubset(results_set):
-            rmv = [result for result in results if result.pk in members]
-            new = Result(
-                max(result.match for result in rmv),
-                series,
-                user_rating_=max(result.user_rating for result in rmv),
-                imdb_rating_=max(result.imdb_rating for result in rmv),
-            )
-            new_results.append(new)
-            remove_results += rmv
+    #     if members.issubset(results_set):
+    #         rmv = [result for result in results if result.pk in members]
+    #         new = Result(
+    #             max(result.match for result in rmv),
+    #             series,
+    #             user_rating_=max(result.user_rating for result in rmv),
+    #             imdb_rating_=max(result.imdb_rating for result in rmv),
+    #         )
+    #         new_results.append(new)
+    #         remove_results += rmv
 
-    results = [result for result in results + new_results if result not in remove_results]
+    # results = [result for result in results + new_results if result not in remove_results]
 
     results = sorted(
         results,

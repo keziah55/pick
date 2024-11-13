@@ -74,7 +74,7 @@ def write_series_to_db(csv_file: Path, csv_sep="\t"):
         for name, counter in counts.items():
             attr = getattr(item, name)
             for pk in [c[0] for c in counter.most_common()]:
-                
+                pass
 
 
 

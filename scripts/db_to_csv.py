@@ -53,20 +53,23 @@ def write_db_to_csv(csv_file: Path, csv_sep: str = "\t", line_sep: str = "\n"):
 
     rows = [csv_sep.join(fields)]
 
-    for item in VisionItem.objects.all():
+    for item in VisionItem.objects.filter(title__icontains="before"): #.all():
         row = []
         for field in fields:
             value = getattr(item, field)
-            if field in "local_img":
-                value = str(value)
-            elif field == "alt_versions":
+            # if field in "local_img":
+            #     value = str(value)
+            if field == "alt_versions":
                 value = ",".join([item.filename for item in value.all()])
             elif field == "disc_index" and value != "":
                 case, slot = [int(s) for s in value.split(".")]
                 value = f"{case}.{slot:03d}"
+
             value = str(value)
-            if "'" in value:
-                value = f'"{value}"'
+
+            if field in ["title", "alt_title"] and value.startswith('"') and value.endswith('"'):
+                value = value[1:-1]
+
             row.append(value)
         row = csv_sep.join(row)
         rows.append(row)
