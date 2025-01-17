@@ -4,7 +4,7 @@
 Utility functions and imports that may be useful in an interactive session.
 """
 
-from mediabrowser.models import VisionItem, Genre, Keyword, Person, MediaItem
+from mediabrowser.models import VisionItem, Genre, Keyword, Person, MediaItem, VisionSeries
 
 
 def search_items(s: str):
@@ -30,4 +30,4 @@ def search_items(s: str):
     return items
 
 
-__all__ = ["VisionItem", "Genre", "Keyword", "Person", "MediaItem", "search_items"]
+__all__ = ["VisionItem", "Genre", "Keyword", "Person", "MediaItem", "search_items", "VisionSeries"]

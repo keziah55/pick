@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
-from ..models import VisionItem, MediaItem, Keyword, Person
+from ..models import VisionItem, VisionSeries, MediaItem, Keyword, Person
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 from .utils import (
     get_filter_kwargs,
@@ -90,14 +90,19 @@ def _search(search_str, **kwargs) -> dict:
 
     # if all children of any series are in results, replace the individual VisionItems with the
     # series MediaItem
-    # all_series = MediaItem.objects.filter(media_type__exact="SERIES")
-    # results_set = set(item.film.pk for item in results)
+    all_series = VisionSeries.objects.all() # MediaItem.objects.filter(media_type__exact="SERIES")
+    results_set = set(item.film.pk for item in results)
 
-    # new_results = []  # new Results to add
-    # remove_results = []  # Results to remove
+    new_results = []  # new Results to add
+    remove_results = []  # Results to remove
+    
+    print()
+    print(results_set)
 
     # for series in all_series:
     #     members = set(item.pk for item in series.children.all())
+        
+    #     print(members)
 
     #     if members.issubset(results_set):
     #         rmv = [result for result in results if result.pk in members]
@@ -110,7 +115,7 @@ def _search(search_str, **kwargs) -> dict:
     #         new_results.append(new)
     #         remove_results += rmv
 
-    # results = [result for result in results + new_results if result not in remove_results]
+    results = [result for result in results + new_results if result not in remove_results]
 
     results = sorted(
         results,

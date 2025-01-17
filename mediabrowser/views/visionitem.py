@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
-from ..models import VisionItem, MediaItem
+from ..models import VisionItem, VisionSeries, MediaItem
 from .search import set_search_filters
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 
@@ -16,7 +16,7 @@ def view_visionitem(request, pk):
         item = VisionItem.objects.get(pk=pk)
     except ObjectDoesNotExist:
         try:
-            item = MediaItem.objects.get(pk=pk)
+            item = VisionSeries.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return HttpResponseNotFound(f"<h1>No media item found with id={pk}</h1>")
         else:

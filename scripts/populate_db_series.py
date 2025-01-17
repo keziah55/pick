@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     django.setup()
 
-from mediabrowser.models import BaseVisionItem, VisionItem
+from mediabrowser.models import BaseVisionItem, VisionItem, VisionSeries
 from populate_db import ProgressBar
 
 

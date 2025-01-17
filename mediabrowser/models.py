@@ -82,52 +82,75 @@ class MediaItem(BaseSlug):
     img = models.CharField(max_length=500)  # url to image
     local_img = models.ImageField(null=True)
     media_type = models.CharField(max_length=50, choices=MEDIA_TYPE_CHOICES)
-    children = SortedManyToManyField("self")
+    # children = SortedManyToManyField("self")
 
     def __str__(self):
         return f"{self.title} ({int(self.year)})"
 
-    class Meta:
-        abstract = True  # False
+    # class Meta:
+    #     abstract = True  # False
 
 
-# class BaseVisionItem(MediaItem):
+class BaseVision(MediaItem):
 
-#     alt_title = models.CharField(max_length=1000, blank=True)
-#     director = SortedManyToManyField(Person, related_name="director")
-#     stars = SortedManyToManyField(Person, related_name="stars")
-#     alt_year = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)], null=True)
-#     genre = models.ManyToManyField(Genre)
-#     keywords = models.ManyToManyField(Keyword)
-#     description = models.TextField(blank=True)
-#     alt_description = models.TextField(blank=True)
+    director = SortedManyToManyField(Person, related_name="director")
+    stars = SortedManyToManyField(Person, related_name="stars")
+    genre = models.ManyToManyField(Genre)
+    keywords = models.ManyToManyField(Keyword)
 
-#     class Meta:
-#         abstract = False
-
-
-class MediaSeries(MediaItem):
-    director: Optional[list] = None
-    stars: Optional[list] = None
-    genre: Optional[list] = None
-    keywords: Optional[list] = None
-    year_range: Optional[tuple] = None
-
-
-class VisionItem(MediaItem):
+    description = models.TextField(blank=True)
+    alt_description = models.TextField(blank=True)
 
     runtime = models.PositiveSmallIntegerField()  # runtime in minutes
+
+    user_rating = models.FloatField(
+        default=3,
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+    )
+    
+    parent_series = SortedManyToManyField("self", symmetrical=False)
+
+    # class Meta:
+    # abstract = True
+
+
+class VisionSeries(BaseVision):
+    # director = SortedManyToManyField(Person, related_name="director")
+    # stars = SortedManyToManyField(Person, related_name="stars")
+    # genre = models.ManyToManyField(Genre)
+    # keywords = models.ManyToManyField(Keyword)
+
+    # description = models.TextField(blank=True)
+    # alt_description = models.TextField(blank=True)
+
+    # inherited `year` should be regarded as `year_min`
+    year_max = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
+    # inherited `runtime` should be regarded as `runtime_min`
+    runtime_max = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
+
+    # make this read only?
+    # user_rating = models.FloatField(
+    #     default=3,
+    #     validators=[MinValueValidator(0), MaxValueValidator(5)],
+    # )
+
+    members = SortedManyToManyField(MediaItem, symmetrical=False)
+
+
+class VisionItem(BaseVision):
+
+    # runtime = models.PositiveSmallIntegerField()  # runtime in minutes
     imdb_id = models.PositiveIntegerField()
     language = models.CharField(max_length=1000, blank=True)
     colour = models.BooleanField(default=True)
 
     alt_title = models.CharField(max_length=1000, blank=True)
-    director = SortedManyToManyField(Person, related_name="director")
-    stars = SortedManyToManyField(Person, related_name="stars")
-    genre = models.ManyToManyField(Genre)
-    keywords = models.ManyToManyField(Keyword)
-    description = models.TextField(blank=True)
-    alt_description = models.TextField(blank=True)
+    # director = SortedManyToManyField(Person, related_name="director")
+    # stars = SortedManyToManyField(Person, related_name="stars")
+    # genre = models.ManyToManyField(Genre)
+    # keywords = models.ManyToManyField(Keyword)
+    # description = models.TextField(blank=True)
+    # alt_description = models.TextField(blank=True)
 
     alt_versions = models.ManyToManyField("self", symmetrical=False)
     is_alt_version = models.BooleanField(default=False)
@@ -135,10 +158,10 @@ class VisionItem(MediaItem):
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(10)],
     )
-    user_rating = models.FloatField(
-        default=3,
-        validators=[MinValueValidator(0), MaxValueValidator(5)],
-    )
+    # user_rating = models.FloatField(
+    #     default=3,
+    #     validators=[MinValueValidator(0), MaxValueValidator(5)],
+    # )
     bonus_features = models.BooleanField(default=False)
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)

@@ -758,6 +758,7 @@ class PopulateDatabase:
                         # file in DB and we don't have patch info for it, so skip it
                         # or
                         # file in both DB and patch and the IDs match
+                        # TODO check if all given patch fields match current item fields
                         skip = True
                     else:
                         # file in both DB and patch and the IDs don't match, so re-make it
