@@ -107,6 +107,10 @@ class BaseVision(MediaItem):
         default=3,
         validators=[MinValueValidator(0), MaxValueValidator(5)],
     )
+    imdb_rating = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+    )
     
     parent_series = SortedManyToManyField("self", symmetrical=False)
 
@@ -154,10 +158,10 @@ class VisionItem(BaseVision):
 
     alt_versions = models.ManyToManyField("self", symmetrical=False)
     is_alt_version = models.BooleanField(default=False)
-    imdb_rating = models.FloatField(
-        default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(10)],
-    )
+    # imdb_rating = models.FloatField(
+    #     default=0,
+    #     validators=[MinValueValidator(0), MaxValueValidator(10)],
+    # )
     # user_rating = models.FloatField(
     #     default=3,
     #     validators=[MinValueValidator(0), MaxValueValidator(5)],

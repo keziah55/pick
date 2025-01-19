@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
 from ..models import VisionItem, VisionSeries, MediaItem, Keyword, Person
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 from .utils import (
@@ -10,16 +11,27 @@ from .utils import (
     get_context_from_request,
 )
 import re
-from typing import NamedTuple, Optional
+from typing import NamedTuple
+from collections import defaultdict
+import warnings
 
 
 class Result(NamedTuple):
-    """Object holding a VisionItem and a match score for given search term and filters."""
+    """
+    Object holding a VisionItem and a match score for given search term and filters.
+
+    Attributes
+    ----------
+    match
+        How well this film matched the search filters
+    film
+        VisionItem instance
+    """
 
     match: float
     film: VisionItem
-    user_rating_: Optional[float] = None
-    imdb_rating_: Optional[float] = None
+    # user_rating_: Optional[float] = None
+    # imdb_rating_: Optional[float] = None
 
     @property
     def pk(self):
@@ -27,17 +39,22 @@ class Result(NamedTuple):
 
     @property
     def user_rating(self):
-        if (rating := getattr(self.film, "user_rating", None)) is not None:
-            return rating
-        else:
-            return self.user_rating_
+        return self.film.user_rating
+    #     if (rating := getattr(self.film, "user_rating", None)) is not None:
+    #         return rating
+    #     else:
+    #         return self.user_rating_
 
     @property
     def imdb_rating(self):
-        if (rating := getattr(self.film, "imdb_rating", None)) is not None:
-            return rating
-        else:
-            return self.imdb_rating_
+        return self.film.imdb_rating
+    #     if (rating := getattr(self.film, "imdb_rating", None)) is not None:
+    #         return rating
+    #     else:
+    #         return self.imdb_rating_
+
+    def __hash__(self):
+        return self.pk
 
 
 def search(request, search_str):
@@ -90,18 +107,42 @@ def _search(search_str, **kwargs) -> dict:
 
     # if all children of any series are in results, replace the individual VisionItems with the
     # series MediaItem
-    all_series = VisionSeries.objects.all() # MediaItem.objects.filter(media_type__exact="SERIES")
-    results_set = set(item.film.pk for item in results)
+    # all_series = VisionSeries.objects.all() # MediaItem.objects.filter(media_type__exact="SERIES")
 
-    new_results = []  # new Results to add
-    remove_results = []  # Results to remove
-    
+    # results_set = set(item.film.pk for item in results)
+
+    # # pks for new Results to add
+    # new_results: list[Result] = []
+    # dict of parent pk: members for Results to remove
+    remove_results: dict[int: list[Result]] = defaultdict(list)
+
+    for result in results:
+        if parents := result.film.parent_series.all():
+            for parent in parents:
+                # new_results.add(parent.pk)
+                remove_results[parent.pk].append(result)
+
+    for parent_pk, members in remove_results.items():
+
+        try:
+            series_item = VisionSeries.objects.get(pk=parent_pk)
+        except ObjectDoesNotExist:
+            warnings.warn(f"Could not find series with key {parent_pk}")
+            continue
+        else:
+            best_match = max(member.match for member in members)
+            results.append(Result(best_match, series_item))
+            
+    all_remove_items = {item for members in remove_results.values() for item in members}
+            
+    results = [result for result in results if result not in all_remove_items]
+            
     print()
-    print(results_set)
+    print(results)
 
     # for series in all_series:
     #     members = set(item.pk for item in series.children.all())
-        
+
     #     print(members)
 
     #     if members.issubset(results_set):
@@ -115,7 +156,7 @@ def _search(search_str, **kwargs) -> dict:
     #         new_results.append(new)
     #         remove_results += rmv
 
-    results = [result for result in results + new_results if result not in remove_results]
+    # results = [result for result in results + new_results if result not in remove_results]
 
     results = sorted(
         results,

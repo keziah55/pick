@@ -39,6 +39,7 @@ def make_series(
     year = [None, None]
     runtime = [None, None]
     user_rating = 0
+    imdb_rating = 0
 
     director = set()
     stars = set()
@@ -73,6 +74,7 @@ def make_series(
             runtime[1] = getattr(item, runtime_max_attr)
 
         user_rating += item.user_rating
+        imdb_rating += item.imdb_rating
 
         director |= set(item.director.all())
         stars |= set(item.stars.all())
@@ -80,6 +82,7 @@ def make_series(
         keyword |= set(item.keywords.all())
 
     user_rating = round(user_rating / len(items))
+    imdb_rating = imdb_rating / len(items)
 
     series = VisionSeries(
         title=title,
@@ -93,6 +96,7 @@ def make_series(
         description=description,
         alt_description="",
         user_rating=user_rating,
+        imdb_rating=imdb_rating,
     )
 
     series.save()
