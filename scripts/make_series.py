@@ -41,10 +41,10 @@ def make_series(
     user_rating = 0
     imdb_rating = 0
 
-    director = set()
-    stars = set()
-    genre = set()
-    keyword = set()
+    director = []
+    stars = []
+    genre = []
+    keyword = []
 
     description = description if description is not None else title
 
@@ -76,10 +76,14 @@ def make_series(
         user_rating += item.user_rating
         imdb_rating += item.imdb_rating
 
-        director |= set(item.director.all())
-        stars |= set(item.stars.all())
-        genre |= set(item.genre.all())
-        keyword |= set(item.keywords.all())
+        director += list(item.director.all())
+        stars += list(item.stars.all())
+        genre += list(item.genre.all())
+        keyword += list(item.keywords.all())
+
+    # get unique values from lists, ordered by number of occurrences
+    for lst in [director, stars, genre, keyword]:
+        lst = list(dict.fromkeys(sorted(lst, key=lst.count, reverse=True)))
 
     user_rating = round(user_rating / len(items))
     imdb_rating = imdb_rating / len(items)

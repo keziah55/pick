@@ -20,7 +20,7 @@ def view_visionitem(request, pk):
         except ObjectDoesNotExist:
             return HttpResponseNotFound(f"<h1>No media item found with id={pk}</h1>")
         else:
-            items = [_get_item(child.pk, VisionItem) for child in item.children.all()]
+            items = [_get_item(child.pk, VisionItem) for child in item.members.all()]
 
     else:
         items = [item]

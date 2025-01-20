@@ -2,7 +2,6 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
 from sortedm2m.fields import SortedManyToManyField
-from typing import Optional
 
 
 class BaseSlug(models.Model):
@@ -85,7 +84,7 @@ class MediaItem(BaseSlug):
     # children = SortedManyToManyField("self")
 
     def __str__(self):
-        return f"{self.title} ({int(self.year)})"
+        return f"{self.title} ({self.year})"
 
     # class Meta:
     #     abstract = True  # False
@@ -107,11 +106,13 @@ class BaseVision(MediaItem):
         default=3,
         validators=[MinValueValidator(0), MaxValueValidator(5)],
     )
-    imdb_rating = models.FloatField(
+    imdb_rating = models.DecimalField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(10)],
+        decimal_places=1,
+        max_digits=3,
     )
-    
+
     parent_series = SortedManyToManyField("self", symmetrical=False)
 
     # class Meta:
@@ -139,6 +140,14 @@ class VisionSeries(BaseVision):
     # )
 
     members = SortedManyToManyField(MediaItem, symmetrical=False)
+
+    @property
+    def year_str(self):
+        return f"{self.year}-{self.year_max}"
+
+    @property
+    def runtime_str(self):
+        return f"{self.runtime}-{self.runtime_max}"
 
 
 class VisionItem(BaseVision):
@@ -170,6 +179,14 @@ class VisionItem(BaseVision):
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)
     disc_index = models.CharField(max_length=10, blank=True)
+
+    @property
+    def year_str(self):
+        return f"{self.year}"
+
+    @property
+    def runtime_str(self):
+        return f"{self.runtime}"
 
 
 # class SoundItem(MediaItem):
