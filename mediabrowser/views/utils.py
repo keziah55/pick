@@ -1,5 +1,7 @@
-from ..models import VisionItem, Genre
-from typing import NamedTuple, Optional
+from ..models import VisionItem, VisionSeries, MediaItem, Genre
+from typing import NamedTuple, Optional, Union
+
+# SEARCH HELPERS
 
 
 class GenreFilters(NamedTuple):
@@ -201,3 +203,37 @@ def _get_range(name, model_class=VisionItem) -> dict:
     values = set(model_class.objects.all().values_list(name, flat=True))
     dct = {f"{name}_range_min": min(values), f"{name}_range_max": max(values)}
     return dct
+
+
+# MISC
+
+_vision_types = {MediaItem.FILM: VisionItem, MediaItem.SERIES: VisionSeries}
+
+
+def cast_vision_item(item: MediaItem) -> Union[VisionItem, VisionSeries]:
+    """
+    If `item` is a FILM or SERIES media type, get item of correct model class.
+
+    Parameters
+    ----------
+    item
+        MediaItem to cast.
+
+    Raises
+    ------
+    ValueError
+        If media type of `item` is not FILM or SERIES.
+
+    Returns
+    -------
+    Union[VisionItem, VisionSeries]
+        Item as correct model instance.
+
+    """
+    t = item.media_type
+    if (model_cls := _vision_types.get(t), None) is not None:
+        return model_cls.objects.get(pk=item.pk)
+    else:
+        raise ValueError(
+            f"cast_vision_item can only operate on FILM or SERIES media types, not {t}"
+        )

@@ -32,6 +32,16 @@
         
         <div class="rating">
             <div class="userrating">
+            
+            {% if film.media_type == 'SERIES' %}
+            
+                <button class="star" id="star-5-{{film.pk}}" name="star-5-{{film.pk}}" value="5" {% if film.user_rating >= 5 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                <button class="star" id="star-4-{{film.pk}}" name="star-4-{{film.pk}}" value="4" {% if film.user_rating >= 4 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                <button class="star" id="star-3-{{film.pk}}" name="star-3-{{film.pk}}" value="3" {% if film.user_rating >= 3 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                <button class="star" id="star-2-{{film.pk}}" name="star-2-{{film.pk}}" value="2" {% if film.user_rating >= 2 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                <button class="star" id="star-1-{{film.pk}}" name="star-1-{{film.pk}}" value="1" {% if film.user_rating >= 1 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+            
+            {% else %}
                 
                 <form id="star-rating">
                     {% csrf_token %}
@@ -41,6 +51,8 @@
                     <button class="star" id="star-2-{{film.pk}}" name="star-2-{{film.pk}}" type="submit" value="2" onclick="set_star_colour(this, {{film.pk}})" onmouseenter="set_star_colour(this, {{film.pk}})" onmouseleave="set_all_star_colours(this, {{film.pk}}, {{film.user_rating}})" {% if film.user_rating >= 2 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
                     <button class="star" id="star-1-{{film.pk}}" name="star-1-{{film.pk}}" type="submit" value="1" onclick="set_star_colour(this, {{film.pk}})" onmouseenter="set_star_colour(this, {{film.pk}})" onmouseleave="set_all_star_colours(this, {{film.pk}}, {{film.user_rating}})" {% if film.user_rating >= 1 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
                 </form>
+                
+            {% endif %}
             </div>  
             <div class="imdbrating">
                 &middot {{ film.imdb_rating }} <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a>

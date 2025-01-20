@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
-from ..models import VisionItem
-from .utils import set_search_filters, get_filter_kwargs, get_context_from_request
+from ..models import VisionItem, VisionSeries, MediaItem
+from .utils import set_search_filters, get_filter_kwargs, get_context_from_request, cast_vision_item
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE, FILM_TEMPLATE
 import re
 
@@ -20,6 +20,15 @@ def set_user_rating(request):
         return HttpResponseNotFound(f"<h1>No film found with id={pk}</h1>")
     film.user_rating = rating
     film.save()
+
+    for parent in film.parent_series.all():
+        # parent user_rating is max of members
+        if rating != parent.user_rating and parent.media_type == MediaItem.SERIES:
+            parent = VisionSeries.objects.get(pk=parent.pk)
+            parent.user_rating = max(
+                cast_vision_item(member).user_rating for member in parent.members.all()
+            )
+            parent.save()
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         template = FILM_TEMPLATE

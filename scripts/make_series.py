@@ -73,7 +73,8 @@ def make_series(
         if runtime[1] is None or getattr(item, runtime_max_attr) > runtime[1]:
             runtime[1] = getattr(item, runtime_max_attr)
 
-        user_rating += item.user_rating
+        # user_rating += item.user_rating
+        user_rating = max(item.user_rating, user_rating)
         imdb_rating += item.imdb_rating
 
         director += list(item.director.all())
@@ -85,7 +86,7 @@ def make_series(
     for lst in [director, stars, genre, keyword]:
         lst = list(dict.fromkeys(sorted(lst, key=lst.count, reverse=True)))
 
-    user_rating = round(user_rating / len(items))
+    # user_rating = round(user_rating / len(items))
     imdb_rating = imdb_rating / len(items)
 
     series = VisionSeries(
