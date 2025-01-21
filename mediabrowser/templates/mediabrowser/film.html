@@ -2,7 +2,7 @@
 {% get_media_prefix as MEDIA_PREFIX %}
 
 
-<div class="film-row" id="film-item-{{film.pk}}" {% if film.media_type == 'SERIES' %} onmouseover="hover_film_grid( '{% if film.media_type == 'SERIES' %}{% for member in film.members.all %}{% if member.local_img %} {{ MEDIA_PREFIX }}mediabrowser/{{ member.local_img }} {% else %} {{ member.img }} {% endif %};{% endfor %}{% endif %}' )" {% else %} onmouseover="hover_film( '{{ film.description|escapejs }}' )" {% endif %} onmouseout="hover_film_leave()">
+<div class="film-row" id="film-item-{{film.pk}}" {% if film.media_type == 'SERIES' %} onmouseover="hover_film_grid( '{% if film.media_type == 'SERIES' %}{% for member in film.members.all %}{% if member.local_img %} {{ MEDIA_PREFIX }}mediabrowser/{{ member.local_img }} {% else %} {{ member.img }} {% endif %};{% endfor %}{% endif %}', 3 )" {% else %} onmouseover="hover_film( '{{ film.description|escapejs }}' )" {% endif %} onmouseout="hover_film_leave()">
     <div class="film-column-img">
         <a href="{% url 'pick:view_visionitem' film.pk %}"><img class="film-thumbnail" {% if film.local_img %} src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" {% else %} src="{{ film.img }}" {% endif %} alt="{{ film.title }}"></a>
     </div>  

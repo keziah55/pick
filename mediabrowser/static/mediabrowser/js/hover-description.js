@@ -3,42 +3,38 @@ function hover_film(s) {
     // show film description on hover
     div = document.getElementById("description-hover");
     
-        
-    
     if (div !== null) 
         div.innerHTML = s;
 }
 
-function hover_film_grid(s) {
+function hover_film_grid(s, row_count) {
+   // make grid of thumbnails from ;-separated string of url/uri
+   // row_count is number of thumbnails per row
 
     var imgs = s.split(';');
-    var column_count = 3;
     
-    var html = '<div class="img-grid-row">';
+    var html = '<div class="img-grid">';
     
     for (var i = 0; i < imgs.length; i++) {
         img_src = imgs[i];
-        html += _make_img_item(img_src, i);
+        html += _make_img_item(img_src, i, row_count);
         }
     
     html += "</div></div>";
     
-    console.log(html);
-    
     hover_film(html);
-    
-    
+       
 }
 
-function _make_img_item(img_src, index) {
+function _make_img_item(img_src, index, row_count) {
 
     var html = ""
 
-    if (index % 3 == 0) {
+    if (index % row_count == 0) {
         if (index != 0) {
             html += "</div>"
         }
-        html += '<div class="img-grid-column">'
+        html += '<div class="img-grid-row">'
         }
     html += '<img class="film-thumbnail-small" src="' + img_src + '">'
     
