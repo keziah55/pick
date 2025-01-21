@@ -148,6 +148,7 @@ if __name__ == "__main__":
     data = [
         ((2, 3, 1), "Before trilogy"),
         ((9, 7, 8), "Men in Black"),
+        ((10, 11, 12, 13, 14, 15), "The Lord of the Rings")
     ]
     for item_pks, title in data:
         srs = make_series(item_pks, title)

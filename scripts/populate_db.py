@@ -607,6 +607,8 @@ class PopulateDatabase:
         info : MediaInfo
             Dataclass of info about the given film
         """
+        # TODO if patch["alt_versions"] is not empty, cache the movie object
+        # if patch["is_alt_version"] is True, get movie from cache (by imbd_id)
         if title is None and patch is None:
             raise ValueError("PopulateDatabase._get_movie needs either title or patch")
 

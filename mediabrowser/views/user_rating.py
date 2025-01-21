@@ -22,6 +22,7 @@ def set_user_rating(request):
     film.save()
 
     for parent in film.parent_series.all():
+        # TODO keep propagating up if parent has parent
         # parent user_rating is max of members
         if rating != parent.user_rating and parent.media_type == MediaItem.SERIES:
             parent = VisionSeries.objects.get(pk=parent.pk)
