@@ -60,7 +60,7 @@ class ProgressBar:
         """
         # calculate percentage progress
         p = value / self.mx
-        show = f"{100*p:5.1f}%"
+        show = f"{p:6.1%}"
 
         # make bar, if required
         if self.show_bar:
@@ -453,7 +453,7 @@ class PopulateDatabase:
 
     @staticmethod
     def make_disc_index(case, slot):
-        return f"{case}.{slot:03d}"
+        return f"{int(case)}.{int(slot):03d}"
 
     @staticmethod
     def _get_patched(movie, patch, imdb_key, patch_key=None, default=None):
