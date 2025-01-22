@@ -9,6 +9,7 @@ from .utils import (
     make_set,
     set_search_filters,
     get_context_from_request,
+    get_top_level_parent,
 )
 import re
 from typing import NamedTuple
@@ -99,9 +100,9 @@ def _search(search_str, **kwargs) -> dict:
     remove_results: dict[VisionSeries : list[Result]] = defaultdict(list)
 
     for result in results:
-        if (parent := result.film.parent_series) is not None:
-            # TODO check if parent has parents and recurse upwards
-            remove_results[parent].append(result)
+        if result.film.parent_series is not None:
+            top_parent = get_top_level_parent(result.film)
+            remove_results[top_parent].append(result)
 
     for series_item, members in remove_results.items():
         best_match = max(member.match for member in members)

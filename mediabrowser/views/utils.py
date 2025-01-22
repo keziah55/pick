@@ -207,6 +207,36 @@ def _get_range(name, model_class=VisionItem) -> dict:
 
 # MISC
 
+
+def get_top_level_parent(item: Union[VisionItem, VisionSeries]) -> Union[VisionItem, VisionSeries]:
+    """
+    Recurse up through `parent_series` until there is no parent.
+
+    Return the final parent-less item.
+
+    Parameters
+    ----------
+    item : Union[VisionItem, VisionSeries]
+        VisionItem or VisionSeries to find top level parent of.
+
+    Returns
+    -------
+    Union[VisionItem, VisionSeries]
+        Return the VisionItem or VisionSeries with no parent.
+
+    """
+    if item.parent_series is None:
+        return item
+
+    while True:
+        parent = item.parent_series
+        if parent is None:
+            break
+        else:
+            item = parent
+    return item
+
+
 _vision_types = {MediaItem.FILM: VisionItem, MediaItem.SERIES: VisionSeries}
 
 

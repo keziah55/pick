@@ -21,15 +21,17 @@ def set_user_rating(request):
     film.user_rating = rating
     film.save()
 
-    if (parent:=film.parent_series) is not None:
-        # TODO keep propagating up if parent has parent
-        # parent user_rating is max of members
-        if rating != parent.user_rating and parent.media_type == MediaItem.SERIES:
-            parent = VisionSeries.objects.get(pk=parent.pk)
-            parent.user_rating = max(
-                cast_vision_item(member).user_rating for member in parent.members.all()
-            )
-            parent.save()
+    _set_parents_user_rating(film)
+
+    # if (parent := film.parent_series) is not None:
+    #     # TODO keep propagating up if parent has parent
+    #     # parent user_rating is max of members
+    #     if rating != parent.user_rating and parent.media_type == MediaItem.SERIES:
+    #         parent = VisionSeries.objects.get(pk=parent.pk)
+    #         parent.user_rating = max(
+    #             cast_vision_item(member).user_rating for member in parent.members.all()
+    #         )
+    #         parent.save()
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         template = FILM_TEMPLATE
@@ -38,6 +40,20 @@ def set_user_rating(request):
         context = set_search_filters({})
 
     return render(request, template, context)
+
+
+def _set_parents_user_rating(item):
+    """Recursively update user_rating of all parents of `item`."""
+    if (parent := item.parent_series) is not None:
+        # parent user_rating is max of members
+        if parent.media_type == MediaItem.SERIES:
+            parent.user_rating = max(
+                cast_vision_item(member).user_rating for member in parent.members.all()
+            )
+            parent.save()
+
+        if parent.parent_series is not None:
+            return _set_parents_user_rating(parent)
 
 
 def view_user_rating(request, rating):
