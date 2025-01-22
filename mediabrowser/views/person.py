@@ -6,7 +6,7 @@ from .search import set_search_filters
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 
 
-def get_person(request, person):
+def view_person(request, person):
     """Return sorted film list of person's films."""
 
     try:

@@ -11,6 +11,11 @@ import shutil
 from pathlib import Path
 import warnings
 from datetime import datetime
+import time
+from collections import namedtuple
+from dataclasses import dataclass
+from imdb import Cinemagoer
+from imdb.Person import Person as IMDbPerson
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -25,12 +30,7 @@ if __name__ == "__main__":
 
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
-from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person
-
-from collections import namedtuple
-from dataclasses import dataclass
-from imdb import Cinemagoer
-from imdb.Person import Person as IMDbPerson
+from mediabrowser.models import VisionItem, Genre, Keyword, Person
 
 
 class ProgressBar:
@@ -93,14 +93,16 @@ class MediaInfo:
     alt_description: str
     media_id: str
     alt_title: list
-    langauge: str
+    language: str
     colour: bool
     alt_versions: list
+    is_alt_version: bool
     imdb_rating: float
     user_rating: float
     bonus_features: bool
     digital: bool
     physical: bool
+    disc_index: str
 
     def __getitem__(self, key):
         value = getattr(self, key)
@@ -126,16 +128,13 @@ class MediaInfo:
 
 
 class PopulateDatabase:
-    """Class to create records in database from list of file names"""
+    """Class to create records in database from list of file names and/or csv file."""
 
     field_map = {
         "genre": Genre,
         "keywords": Keyword,
         ("director", "stars"): Person,
     }
-
-    # through_map = {'director':DirectorThrough,
-    #                'stars':StarsThrough,}
 
     ext = [".avi", ".m4v", ".mkv", ".mov", ".mp4", ".wmv", ".webm"]
 
@@ -157,6 +156,7 @@ class PopulateDatabase:
         self._database = database
 
         self._cinemagoer = Cinemagoer()
+        self._movie_cache = {}
 
         self._direct_fields = []
         self._ref_fields = []
@@ -172,7 +172,7 @@ class PopulateDatabase:
         self._waiting_for_alt_versions = []
 
         self._physical_media = (
-            self._read_physical_media_csv(physical_media) if physical_media is not None else []
+            self._read_physical_media_csv(physical_media) if physical_media is not None else {}
         )
 
         self._clear_error_log()
@@ -205,7 +205,7 @@ class PopulateDatabase:
         if not self._is_id_str(name):
             people = self._cinemagoer.search_person(name)
             if len(people) == 0:
-                raise RuntimeError(f"Could not find IMDb ID for person '{s}'")
+                raise RuntimeError(f"Could not find IMDb ID for person '{name}'")
             name = people[0].getID()
         return name
 
@@ -254,7 +254,7 @@ class PopulateDatabase:
             description=media_info.description,
             alt_description=media_info.alt_description,
             alt_title=media_info.as_string("alt_title"),
-            language=media_info.as_string("langauge"),
+            language=media_info.as_string("language"),
             colour=media_info.colour,
             media_type=VisionItem.FILM,
             imdb_rating=media_info.imdb_rating,
@@ -262,6 +262,8 @@ class PopulateDatabase:
             bonus_features=media_info.bonus_features,
             digital=media_info.digital,
             physical=media_info.physical,
+            disc_index=media_info.disc_index,
+            is_alt_version=media_info.is_alt_version,
         )
 
         if media_info.local_img_url is not None:
@@ -277,7 +279,7 @@ class PopulateDatabase:
 
         return item
 
-    def _add_refs(self, item, media_info) -> VisionItem:
+    def _add_refs(self, item: VisionItem, media_info: MediaInfo) -> VisionItem:
         """
         For genre, keywords, director and stars in `media_info`, add to VisionItem `item`
 
@@ -379,7 +381,11 @@ class PopulateDatabase:
                     f"Multiple objects with filename '{ref_film}' in database", UserWarning
                 )
             else:
-                item.alt_versions.add(ref_items[0])
+                ref_item = ref_items[0]
+                if not ref_item.is_alt_version:
+                    ref_item.is_alt_version = True
+                    ref_item.save()
+                item.alt_versions.add(ref_item)
                 item.save(using=self._database)
 
             if not self._quiet:
@@ -409,6 +415,8 @@ class PopulateDatabase:
             key, *values = line
             # key is filename; make dict of any other info
             dct = {header[i]: value for i, value in enumerate(values) if value}
+            if "imdb_id" in dct:
+                dct["media_id"] = dct.pop("imdb_id")
             # in case a file is entered twice in the csv, merge the two dics
             current = patch.get(key, None)
             if current is None:
@@ -419,7 +427,7 @@ class PopulateDatabase:
         return patch
 
     @classmethod
-    def _read_physical_media_csv(cls, media_csv) -> list:
+    def _read_physical_media_csv(cls, media_csv) -> dict:  # list:
         """Return list of films that are available on physical media"""
         with open(media_csv) as fileobj:
             header, *lines = fileobj.readlines()
@@ -427,17 +435,25 @@ class PopulateDatabase:
         header = header.lower().strip().split(cls.sep)
         title_idx = header.index("title")
         media_type_idx = header.index("media type")
+        case_idx = header.index("case")
+        slot_idx = header.index("slot")
 
-        physical = []
+        physical = {}
         for line in lines:
             line = line.lower()
             row = line.strip().split(cls.sep)
             if len(row) < len(header):
                 break
             if row[media_type_idx].strip() == "film":
-                physical.append(row[title_idx])
+                # physical.append(row[title_idx])
+                title, case, slot = [row[i] for i in [title_idx, case_idx, slot_idx]]
+                physical[title] = cls.make_disc_index(case, slot)
 
         return physical
+
+    @staticmethod
+    def make_disc_index(case, slot):
+        return f"{case}.{slot:03d}"
 
     @staticmethod
     def _get_patched(movie, patch, imdb_key, patch_key=None, default=None):
@@ -541,7 +557,11 @@ class PopulateDatabase:
 
         bonus_features = patch.get("bonus_features", False)
         digital = patch.get("digital", self.digital_default)
-        physical = patch.get("physical", title.lower() in self._physical_media)
+
+        disc_index = patch.get("disc_index", self._physical_media.get(title.lower(), ""))
+        physical = patch.get("physical", disc_index != "")
+
+        is_alt_version = patch.get("is_alt_version", False)
 
         info = MediaInfo(
             title,
@@ -560,11 +580,13 @@ class PopulateDatabase:
             language,
             colour,
             alt_versions,
+            is_alt_version,
             imdb_rating,
             user_rating,
             bonus_features,
             digital,
             physical,
+            disc_index,
         )
 
         return info
@@ -592,6 +614,19 @@ class PopulateDatabase:
         infoset = ["main", "keywords"]
 
         if patch is not None:
+
+            if patch.get("is_alt_version", False):
+                movie = self._movie_cache.get(patch["media_id"], None)
+                if movie is None:
+                    self._log_error(f"No cached version for {title=} id={patch['media_id']}")
+                else:
+                    try:
+                        info = self._get_media_info(movie, patch)
+                    except Exception as err:
+                        info = None
+                        self._log_error(f"{title}; _get_media_info: {err}")
+                    return info
+
             try:
                 movie = self._cinemagoer.get_movie(patch["media_id"])
             except Exception as err:
@@ -621,6 +656,10 @@ class PopulateDatabase:
         except Exception as err:
             self._log_error(f"{title}; update: {err}")
             return None
+
+        if patch is not None and patch.get("alt_versions", None) is not None:
+            media_id = patch.get("media_id", movie.getID())
+            self._movie_cache[media_id] = movie
 
         try:
             info = self._get_media_info(movie, patch)
@@ -653,28 +692,31 @@ class PopulateDatabase:
         patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
         return self._populate(files, patch)
 
-    def _populate(self, files, patch={}):
+    def _populate(self, files, patch=None):
         """Do populate. See `populate` for args."""
-        if not self._quiet and len(files) > 0:
-            progress = ProgressBar(len(files))
+
+        if patch is None:
+            patch = {}
+
+        progress = ProgressBar(len(files)) if not self._quiet and len(files) > 0 else None
 
         for n, file in enumerate(files):
 
             info = patch.get(str(file), None)
 
-            t0 = time()
+            t0 = time.monotonic()
             media_info = self._get_movie(file.stem, patch=info)
-            t1 = time()
+            t1 = time.monotonic()
             self._imdb_time += t1 - t0
             if media_info is None:
                 continue
             else:
-                t0 = time()
+                t0 = time.monotonic()
                 self._add_to_db(file, media_info)
-                t1 = time()
+                t1 = time.monotonic()
                 self._db_time += t1 - t0
 
-            if not self._quiet:
+            if progress is not None:
                 progress.progress(n + 1)
 
         self._write("Checking for remaining references...")
@@ -709,10 +751,13 @@ class PopulateDatabase:
         )
         return self._update(files, patch)
 
-    def _update(self, files, patch={}):
+    def _update(self, files, patch=None):
         """Do update. See `update` for args."""
-        if not self._quiet and len(files) > 0:
-            progress = ProgressBar(len(files))
+
+        if patch is None:
+            patch = {}
+
+        progress = ProgressBar(len(files)) if not self._quiet and len(files) > 0 else None
 
         count = 0
 
@@ -731,6 +776,7 @@ class PopulateDatabase:
                         # file in DB and we don't have patch info for it, so skip it
                         # or
                         # file in both DB and patch and the IDs match
+                        # TODO check if all given patch fields match current item fields
                         skip = True
                     else:
                         # file in both DB and patch and the IDs don't match, so re-make it
@@ -745,7 +791,7 @@ class PopulateDatabase:
                     self._add_to_db(file, media_info)
                     count += 1
 
-            if not self._quiet:
+            if progress is not None:
                 progress.progress(n + 1)
 
         self._write(f"Updated {count} records")
@@ -761,6 +807,7 @@ class PopulateDatabase:
         with open(cls._error_file, "a") as fileobj:
             fileobj.write(f"[{datetime.now().isoformat()}] {msg}\n")
 
+    @classmethod
     def _clear_error_log(cls):
         if cls._error_file.exists():
             cls._error_file.unlink()
@@ -780,8 +827,6 @@ if __name__ == "__main__":
         return s
 
     import argparse
-    from time import time
-    from pprint import pprint
 
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -802,7 +847,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    t0 = time()
+    t0 = time.monotonic()
     pop_db = PopulateDatabase(quiet=args.quiet, physical_media=args.physical_media)
 
     if args.clear:
@@ -816,7 +861,7 @@ if __name__ == "__main__":
     if not args.quiet:
         indent = "  "
 
-        t = time() - t0
+        t = time.monotonic() - t0
         s = format_time(t)
         print(f"Completed in {s}")
 

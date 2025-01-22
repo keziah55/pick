@@ -1,26 +1,22 @@
 {% load static %}
 {% get_media_prefix as MEDIA_PREFIX %}
 
-<div class="film-row" id="film-item-{{film.pk}}" onmouseover="hover_film( '{{ film.description|escapejs }}' )" onmouseout="hover_film_leave()">
+
+<div class="film-row" id="film-item-{{film.pk}}" {% if film.media_type == 'SERIES' %} onmouseover="hover_film_grid( '{% if film.media_type == 'SERIES' %}{% for member in film.members.all %}{% if member.local_img %} {{ MEDIA_PREFIX }}mediabrowser/{{ member.local_img }} {% else %} {{ member.img }} {% endif %};{% endfor %}{% endif %}', 3, 3 )" {% else %} onmouseover="hover_film( '{{ film.description|escapejs }}' )" {% endif %} onmouseout="hover_film_leave()">
     <div class="film-column-img">
-        {% if film.local_img %}
-            <img class="film-thumbnail" src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" alt="{{ film.title }}">
-            <!-- <img class="film-thumbnail" src="{{ film.local_img }}" alt="{{ film.title }}"> -->
-        {% else %}
-            <img class="film-thumbnail" src="{{ film.img }}" alt="{{ film.title }}">
-        {% endif %}
+        <a href="{% url 'pick:view_visionitem' film.pk %}"><img class="film-thumbnail" {% if film.local_img %} src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" {% else %} src="{{ film.img }}" {% endif %} alt="{{ film.title }}"></a>
     </div>  
     <div class="film-column-details">
-        <p>{{ film.title }} ({{ film.year }}) </p>
+        <p><a href="{% url 'pick:view_visionitem' film.pk %}">{{ film.title }} ({{ film.year_str }})</a></p>
         <p>
             Dir. 
             {% for person in film.director.all|slice:":3" %}
-                <a href="{% url 'pick:get_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
+                <a href="{% url 'pick:view_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
             {% endfor %}
         </p>  
         <p>
             {% for person in film.stars.all|slice:":3" %}
-                <a href="{% url 'pick:get_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
+                <a href="{% url 'pick:view_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
             {% endfor %}
         </p>
         
@@ -32,10 +28,20 @@
         <!-- </p> -->
         <!-- -->
         
-        <p>{{ film.runtime }} minutes</p>
+        <p>{{ film.runtime_str }} minutes</p>
         
         <div class="rating">
             <div class="userrating">
+            
+            {% if film.media_type == 'SERIES' %}
+            
+                <button class="star" id="star-5-{{film.pk}}" name="star-5-{{film.pk}}" value="5" {% if film.user_rating >= 5 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                <button class="star" id="star-4-{{film.pk}}" name="star-4-{{film.pk}}" value="4" {% if film.user_rating >= 4 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                <button class="star" id="star-3-{{film.pk}}" name="star-3-{{film.pk}}" value="3" {% if film.user_rating >= 3 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                <button class="star" id="star-2-{{film.pk}}" name="star-2-{{film.pk}}" value="2" {% if film.user_rating >= 2 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+                <button class="star" id="star-1-{{film.pk}}" name="star-1-{{film.pk}}" value="1" {% if film.user_rating >= 1 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
+            
+            {% else %}
                 
                 <form id="star-rating">
                     {% csrf_token %}
@@ -45,11 +51,12 @@
                     <button class="star" id="star-2-{{film.pk}}" name="star-2-{{film.pk}}" type="submit" value="2" onclick="set_star_colour(this, {{film.pk}})" onmouseenter="set_star_colour(this, {{film.pk}})" onmouseleave="set_all_star_colours(this, {{film.pk}}, {{film.user_rating}})" {% if film.user_rating >= 2 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
                     <button class="star" id="star-1-{{film.pk}}" name="star-1-{{film.pk}}" type="submit" value="1" onclick="set_star_colour(this, {{film.pk}})" onmouseenter="set_star_colour(this, {{film.pk}})" onmouseleave="set_all_star_colours(this, {{film.pk}}, {{film.user_rating}})" {% if film.user_rating >= 1 %} style="color:#f0b505" {% else %} style="color:none" {% endif %}>&#9733;</button>
                 </form>
+                
+            {% endif %}
             </div>  
             <div class="imdbrating">
-                &middot {{ film.imdb_rating }} <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a>
+                &middot {{ film.imdb_rating }} {% if film.media_type == 'FILM' %} <a href="https://www.imdb.com/title/tt{{film.imdb_id|stringformat:'07d'}}/">IMDb</a> {% else %} <span>IMDb</span> {% endif %}
             </div>
         </div>  
     </div>  
 </div>  
-

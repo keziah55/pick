@@ -1,5 +1,5 @@
 from django.test import TestCase
-from mediabrowser.models import VisionItem, MediaSeries, Genre, Keyword, Person
+from mediabrowser.models import VisionItem, Genre, Keyword, Person
 from scripts.populate_db import PopulateDatabase
 from pathlib import Path
 import unittest

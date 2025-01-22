@@ -146,6 +146,11 @@ input[type=image] {
   width: 200px;
 }
 
+.film-thumbnail-small {
+  width: 150px;
+  padding: 12px;
+}
+
 .film-column-details {
   float: left;
   padding-left: 15px;
@@ -190,7 +195,6 @@ input[type=image] {
   padding: 0;
   float: right;
 }
-
 
 
 .imdbrating {
