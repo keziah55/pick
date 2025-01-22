@@ -95,25 +95,17 @@ def _search(search_str, **kwargs) -> dict:
                 results, search_lst, search_regex, genre_filters, **filter_kwargs
             )
 
-    # dict of parent_pk: members for Results to remove
-    remove_results: dict[int : list[Result]] = defaultdict(list)
+    # dict of parent: members for Results to remove
+    remove_results: dict[VisionSeries : list[Result]] = defaultdict(list)
 
     for result in results:
-        for parent in result.film.parent_series.all():
+        if (parent := result.film.parent_series) is not None:
             # TODO check if parent has parents and recurse upwards
-            # TODO dict value could be float of best match
-            remove_results[parent.pk].append(result)
+            remove_results[parent].append(result)
 
-    for parent_pk, members in remove_results.items():
-
-        try:
-            series_item = VisionSeries.objects.get(pk=parent_pk)
-        except ObjectDoesNotExist:
-            warnings.warn(f"Could not find series with key {parent_pk}")
-            continue
-        else:
-            best_match = max(member.match for member in members)
-            results.append(Result(best_match, series_item))
+    for series_item, members in remove_results.items():
+        best_match = max(member.match for member in members)
+        results.append(Result(best_match, series_item))
 
     all_remove_items = {item for members in remove_results.values() for item in members}
 

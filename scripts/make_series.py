@@ -121,7 +121,7 @@ def make_series(
 
     for item in derived_items:
         series.members.add(item)
-        item.parent_series.add(series)
+        item.parent_series = series
         item.save()
 
     series.save()
