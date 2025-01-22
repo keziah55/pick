@@ -156,6 +156,7 @@ class PopulateDatabase:
         self._database = database
 
         self._cinemagoer = Cinemagoer()
+        self._movie_cache = {}
 
         self._direct_fields = []
         self._ref_fields = []
@@ -615,6 +616,19 @@ class PopulateDatabase:
         infoset = ["main", "keywords"]
 
         if patch is not None:
+
+            if patch.get("is_alt_version", False):
+                movie = self._movie_cache.get(patch["media_id"], None)
+                if movie is None:
+                    self._log_error(f"No cached version for {title=} id={patch['media_id']}")
+                else:
+                    try:
+                        info = self._get_media_info(movie, patch)
+                    except Exception as err:
+                        info = None
+                        self._log_error(f"{title}; _get_media_info: {err}")
+                    return info
+
             try:
                 movie = self._cinemagoer.get_movie(patch["media_id"])
             except Exception as err:
@@ -644,6 +658,10 @@ class PopulateDatabase:
         except Exception as err:
             self._log_error(f"{title}; update: {err}")
             return None
+
+        if patch is not None and patch.get("alt_versions", None) is not None:
+            media_id = patch.get("media_id", movie.getID())
+            self._movie_cache[media_id] = movie
 
         try:
             info = self._get_media_info(movie, patch)
@@ -691,14 +709,14 @@ class PopulateDatabase:
             t0 = time.monotonic()
             media_info = self._get_movie(file.stem, patch=info)
             t1 = time.monotonic()
-            self._imdb_time += (t1 - t0)
+            self._imdb_time += t1 - t0
             if media_info is None:
                 continue
             else:
                 t0 = time.monotonic()
                 self._add_to_db(file, media_info)
                 t1 = time.monotonic()
-                self._db_time += (t1 - t0)
+                self._db_time += t1 - t0
 
             if progress is not None:
                 progress.progress(n + 1)

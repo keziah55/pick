@@ -113,7 +113,7 @@ class BaseVision(MediaItem):
         max_digits=3,
     )
 
-    parent_series = SortedManyToManyField("self", symmetrical=False)
+    parent_series = models.ForeignKey("VisionSeries", on_delete=models.CASCADE, null=True)
 
     # class Meta:
     # abstract = True
@@ -139,6 +139,7 @@ class VisionSeries(BaseVision):
     #     validators=[MinValueValidator(0), MaxValueValidator(5)],
     # )
 
+    # parent_series = models.ForeignKey("self",  on_delete=models.CASCADE)
     members = SortedManyToManyField(MediaItem, symmetrical=False)
 
     @property
@@ -179,6 +180,8 @@ class VisionItem(BaseVision):
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)
     disc_index = models.CharField(max_length=10, blank=True)
+
+    # parent_series = models.ForeignKey(VisionSeries, on_delete=models.CASCADE)
 
     @property
     def year_str(self):

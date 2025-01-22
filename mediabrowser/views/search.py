@@ -100,6 +100,8 @@ def _search(search_str, **kwargs) -> dict:
 
     for result in results:
         for parent in result.film.parent_series.all():
+            # TODO check if parent has parents and recurse upwards
+            # TODO dict value could be float of best match
             remove_results[parent.pk].append(result)
 
     for parent_pk, members in remove_results.items():
@@ -123,9 +125,6 @@ def _search(search_str, **kwargs) -> dict:
         reverse=True,
     )
     results = [result.film for result in results]
-
-    print()
-    print(results)
 
     # args to be substituted into the templates
     context = {"film_list": results, "search_str": search_str}
