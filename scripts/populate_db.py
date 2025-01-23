@@ -42,6 +42,8 @@ def _make_visionitem_field_type_map():
     field_map = {}
     for field in VisionItem._meta.fields:
         field_class_name = field.__class__.__name__.lower()
+        if field.name == "colour":
+            continue
         if "integer" in field_class_name:
             field_map[field.name] = int
         elif "float" in field_class_name:
