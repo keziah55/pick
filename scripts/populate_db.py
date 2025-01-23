@@ -9,9 +9,10 @@ see `populate_db.py -h` for options.
 
 import shutil
 from pathlib import Path
+from decimal import Decimal
 import warnings
-from datetime import datetime
 import time
+import logging
 from collections import namedtuple
 from dataclasses import dataclass
 from imdb import Cinemagoer
@@ -30,7 +31,26 @@ if __name__ == "__main__":
 
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
-from mediabrowser.models import VisionItem, Genre, Keyword, Person
+from mediabrowser.models import VisionItem, VisionSeries, Genre, Keyword, Person
+
+
+ts = time.strftime("%Y-%m-%d-%H:%M:%S")
+logger = logging.getLogger("populate_db")
+
+
+def _make_visionitem_field_type_map():
+    field_map = {}
+    for field in VisionItem._meta.fields:
+        field_class_name = field.__class__.__name__.lower()
+        if "integer" in field_class_name:
+            field_map[field.name] = int
+        elif "float" in field_class_name:
+            field_map[field.name] = float
+        elif "decimal" in field_class_name:
+            field_map[field.name] = Decimal
+        elif "bool" in field_class_name:
+            field_map[field.name] = bool
+    return field_map
 
 
 class ProgressBar:
@@ -104,6 +124,9 @@ class MediaInfo:
     physical: bool
     disc_index: str
 
+    def __repr__(self):
+        return f"MediaInfo<{self.title} ({self.year}), {self.media_id=}>"
+
     def __getitem__(self, key):
         value = getattr(self, key)
         return value
@@ -140,11 +163,18 @@ class PopulateDatabase:
 
     sep = "\t"
 
-    _error_file = Path("errors.txt")
-
     digital_default = True
 
+    _patch_to_model_map = {
+        "media_id": "imdb_id",
+        "image_url": "img",
+    }
+
+    _model_field_type_map = _make_visionitem_field_type_map()
+
     def __init__(self, quiet=False, physical_media=None, database="default"):
+
+        # self._model_field_type_map = self._make_visionitem_field_type_map()
 
         self._created_item_count = {"visionitem": 0, "genre": 0, "keywords": 0, "person": 0}
         self._created_visionitems = []
@@ -175,7 +205,11 @@ class PopulateDatabase:
             self._read_physical_media_csv(physical_media) if physical_media is not None else {}
         )
 
-        self._clear_error_log()
+        logging.basicConfig(
+            filename=f"populate_db-{ts}.log",
+            level=logging.INFO,
+            format="%(levelname)s: %(name)s: %(asctime)s: %(message)s",
+        )
 
     def _write(self, s):
         if not self._quiet:
@@ -244,6 +278,8 @@ class PopulateDatabase:
         item : VisionItem
             VisionItem added to database.
         """
+        t0 = time.monotonic()
+
         item = VisionItem(
             title=media_info.title,
             filename=filename,
@@ -276,6 +312,8 @@ class PopulateDatabase:
 
         self._created_item_count["visionitem"] += 1
         self._created_visionitems.append(str(item))
+
+        self._db_time += time.monotonic() - t0
 
         return item
 
@@ -394,6 +432,42 @@ class PopulateDatabase:
         self._waiting_for_alt_versions = []
 
     @classmethod
+    def _cast_patch_value(cls, value: str, name: str):
+        """
+        Given a value (and header name) from patch dict, cast to appropriate type.
+
+        If string is the appropriate type, return `value` unaltered.
+
+        Parameters
+        ----------
+        value
+            Value read from patch csv.
+        name
+            Header name cooresponding to value.
+
+        Returns
+        -------
+        value
+            `value` cast to appropriate type.
+
+        """
+        key = cls._patch_to_model_map.get(name, name)
+
+        if (cast_type := cls._model_field_type_map.get(key, None)) is not None:
+            if cast_type == bool:
+                match value.lower():
+                    case "true":
+                        value = True
+                    case "false":
+                        value = False
+                    case _:
+                        raise ValueError(f"Cannot cast '{value}' for field '{name}' to bool")
+            else:
+                value = cast_type(value)
+
+        return value
+
+    @classmethod
     def _read_films_file(cls, films_txt) -> list:
         with open(films_txt) as fileobj:
             files = [
@@ -414,10 +488,14 @@ class PopulateDatabase:
             line = line.strip().split(cls.sep)
             key, *values = line
             # key is filename; make dict of any other info
-            dct = {header[i]: value for i, value in enumerate(values) if value}
+            dct = {
+                header[i]: cls._cast_patch_value(value, header[i])
+                for i, value in enumerate(values)
+                if value
+            }
             if "imdb_id" in dct:
                 dct["media_id"] = dct.pop("imdb_id")
-            # in case a file is entered twice in the csv, merge the two dics
+            # in case a file is entered twice in the csv, merge the two dicts
             current = patch.get(key, None)
             if current is None:
                 patch[key] = dct
@@ -501,7 +579,8 @@ class PopulateDatabase:
         language = self._get_patched(movie, patch, "languages", "language", default=[])
 
         colour = self._get_patched(movie, patch, "color info", "colour", default=["Color"])
-        colour = any(["color" in item.lower() for item in colour])  # boolean
+        if not isinstance(colour, bool):
+            colour = any(["color" in item.lower() for item in colour])  # boolean
 
         image_url = self._get_patched(movie, patch, "cover url", "image_url", default="")
         if "_V1_" in image_url:
@@ -608,64 +687,80 @@ class PopulateDatabase:
         info : MediaInfo
             Dataclass of info about the given film
         """
+        t0 = time.monotonic()
+        ret = self.__get_movie(title=title, patch=patch, item_type=item_type)
+        self._imdb_time += time.monotonic() - t0
+        if ret is None:
+            logger.warning(f"Could not get media info for {title=} {patch=}")
+        return ret
+
+    def __get_movie(self, title=None, patch=None, item_type="film") -> MediaInfo:
         if title is None and patch is None:
             raise ValueError("PopulateDatabase._get_movie needs either title or patch")
 
         infoset = ["main", "keywords"]
 
         if patch is not None:
+            logger.info(f"{patch=}")
+            media_id = patch["media_id"]
 
             if patch.get("is_alt_version", False):
-                movie = self._movie_cache.get(patch["media_id"], None)
+                movie = self._movie_cache.get(media_id, None)
                 if movie is None:
-                    self._log_error(f"No cached version for {title=} id={patch['media_id']}")
+                    logger.warning(f"No cached version for {title=} id={media_id}")
                 else:
+                    logger.info(f"Got {movie} from cache")
                     try:
                         info = self._get_media_info(movie, patch)
                     except Exception as err:
                         info = None
-                        self._log_error(f"{title}; _get_media_info: {err}")
+                        logger.warning(f"{title}; _get_media_info: {err}")
                     return info
 
             try:
-                movie = self._cinemagoer.get_movie(patch["media_id"])
+                movie = self._cinemagoer.get_movie(media_id)
             except Exception as err:
-                self._log_error(f"{patch['media_id']}; get_movie from media_id: {err}")
+                logger.warning(f"{media_id}; get_movie from media_id: {err}")
                 return None
             else:
+                logger.info(f"Got {movie} by ID {media_id} from cinemagoer")
                 title = movie.get("title")
         else:
             try:
                 movies = self._cinemagoer.search_movie(title)
             except Exception as err:
-                self._log_error(f"{title}; search_movie from title: {err}")
+                logger.warning(f"{title}; search_movie from title: {err}")
                 return None
 
             if len(movies) == 0:
-                self._log_error(f"{title}; search_movie")
+                logger.warning(f"{title}; search_movie")
                 return None
 
             movie = movies[0]
+            logger.info(f"Got {movie} by search for '{title}' from cinemagoer")
 
         if movie is None:
-            self._log_error(f"{title}; no imdb results")
+            logger.warning(f"{title}; no imdb results")
             return None
 
         try:
             self._cinemagoer.update(movie, infoset)
         except Exception as err:
-            self._log_error(f"{title}; update: {err}")
+            logger.warning(f"{title}; update: {err}")
             return None
 
         if patch is not None and patch.get("alt_versions", None) is not None:
             media_id = patch.get("media_id", movie.getID())
             self._movie_cache[media_id] = movie
+            logger.info(f"Caching movie with key {media_id}")
 
         try:
             info = self._get_media_info(movie, patch)
         except Exception as err:
             info = None
-            self._log_error(f"{title}; _get_media_info: {err}")
+            logger.warning(f"{title}; _get_media_info: {err}")
+        else:
+            logger.info(f"Made MediaInfo object {info}")
         return info
 
     def populate(self, films_txt, patch_csv=None) -> int:
@@ -704,17 +799,12 @@ class PopulateDatabase:
 
             info = patch.get(str(file), None)
 
-            t0 = time.monotonic()
             media_info = self._get_movie(file.stem, patch=info)
-            t1 = time.monotonic()
-            self._imdb_time += t1 - t0
             if media_info is None:
                 continue
             else:
-                t0 = time.monotonic()
                 self._add_to_db(file, media_info)
-                t1 = time.monotonic()
-                self._db_time += t1 - t0
+                logger.info(f"Created {file} in DB")
 
             if progress is not None:
                 progress.progress(n + 1)
@@ -784,12 +874,15 @@ class PopulateDatabase:
                 # (re)create
                 if not skip:
                     media_info = self._get_movie(file.stem, patch=info)
+                    if media_info is None:
+                        continue
                     if file.suffix == "":
                         # if filename is name from dvds list (i.e. not actual filename with ext)
                         # set digital to False
                         media_info["digital"] = False
                     self._add_to_db(file, media_info)
                     count += 1
+                    logger.info(f"Updated {file} in DB")
 
             if progress is not None:
                 progress.progress(n + 1)
@@ -801,16 +894,6 @@ class PopulateDatabase:
         """Remove all entries from the given `model` table"""
         model.objects.using(self._database).delete()
         self._write("Cleared database")
-
-    @classmethod
-    def _log_error(cls, msg):
-        with open(cls._error_file, "a") as fileobj:
-            fileobj.write(f"[{datetime.now().isoformat()}] {msg}\n")
-
-    @classmethod
-    def _clear_error_log(cls):
-        if cls._error_file.exists():
-            cls._error_file.unlink()
 
 
 if __name__ == "__main__":
@@ -839,7 +922,9 @@ if __name__ == "__main__":
         help="Call update with path to films file and/or patch csv",
         action="store_true",
     )
-    parser.add_argument("-c", "--clear", help="Clear VisionItems", action="store_true")
+    parser.add_argument(
+        "-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true"
+    )
     parser.add_argument("-q", "--quiet", help="Don't write anything to stdout", action="store_true")
     parser.add_argument(
         "-v", "--verbose", help="Print list of new VisionItems", action="store_true"
@@ -851,7 +936,8 @@ if __name__ == "__main__":
     pop_db = PopulateDatabase(quiet=args.quiet, physical_media=args.physical_media)
 
     if args.clear:
-        pop_db.clear()
+        pop_db.clear(VisionItem)
+        pop_db.clear(VisionSeries)
 
     if args.update:
         pop_db.update(args.films, args.patch)

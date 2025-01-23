@@ -4,8 +4,8 @@
 Add series to DB.
 """
 from pathlib import Path
-from collections import Counter
 import warnings
+from typing import Union, Optional
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -18,64 +18,163 @@ if __name__ == "__main__":
 
     django.setup()
 
-from mediabrowser.models import BaseVisionItem, VisionItem, VisionSeries
+from django.core.exceptions import ObjectDoesNotExist
+from mediabrowser.models import VisionItem, VisionSeries, MediaItem
 from populate_db import ProgressBar
 
 
 def write_series_to_db(csv_file: Path, csv_sep="\t"):
     header, *rows = [line.split(csv_sep) for line in csv_file.read_text().split("\n") if line]
 
-    for row in rows:
+    progress = ProgressBar(len(rows))
+
+    for n, row in enumerate(rows):
         name, search_str, pks, description, img = row
 
         if pks:
-            members = [VisionItem.objects.get(pk=int(pk)) for pk in pks.split(",")]
+            members = [_get_item(pk) for pk in pks.split(",")]
         else:
             if not search_str:
                 search_str = name
             members = list(VisionItem.objects.filter(title__icontains=search_str))
+            members += list(VisionSeries.objects.filter(title__icontains=search_str))
 
-        if len(members):
-            warnings.warn(f"Could not find VisionItems for {name=}")
-            continue
+        if len(members) == 0:
+            warnings.warn(f"Could not find VisionItem/VisionSeries for {name=}")
+        else:
+            make_series(members, name)
 
-        if not img:
-            img = members[0].img
+        progress.progress(n + 1)
 
-        years = []
-        counts = {key: Counter() for key in ["director", "stars", "genres", "keywords"]}
 
-        for member in members:
-            if len(years) == 0:
-                years = [member.year] * 2
-            else:
-                if member.year < years[0]:
-                    years[0] = member.year
-                elif member.year > years[1]:
-                    years[1] = member.year
+def make_series(
+    items: list[Union[VisionItem, VisionSeries]],
+    title: str,
+    description: Optional[str] = None,
+) -> VisionSeries:
 
-            for name, counter in counts.items():
-                obj = getattr(member, name)
-                counter.update([o.pk for o in obj.all()])
-                # data_set.union(set([o.pk for o in obj.all()]))
+    # items = [MediaItem.objects.get(pk=pk) for pk in item_pks]
+    derived_items = []
 
-        year, alt_year = years
+    filename = ""
+    img = items[0].img
+    media_type = MediaItem.SERIES
 
-        item = BaseVisionItem(
-            title=name,
-            img=img,
-            media_type=BaseVisionItem.SERIES,
-            year=year,
-            alt_year=alt_year,
-            description=description,
-        )
+    year = [None, None]
+    runtime = [None, None]
+    user_rating = 0
+    imdb_rating = 0
+
+    director = []
+    stars = []
+    genre = []
+    keyword = []
+
+    description = description if description is not None else title
+
+    for item in items:
+
+        item = _get_dervied_instance(item)
+        derived_items.append(item)
+
+        if isinstance(item, VisionSeries):
+            year_max_attr = "year_max"
+            runtime_max_attr = "runtime_max"
+
+        else:
+            year_max_attr = "year"
+            runtime_max_attr = "runtime"
+
+        if year[0] is None or item.year < year[0]:
+            year[0] = item.year
+
+        if year[1] is None or getattr(item, year_max_attr) > year[1]:
+            year[1] = getattr(item, year_max_attr)
+
+        if runtime[0] is None or item.runtime < runtime[0]:
+            runtime[0] = item.runtime
+
+        if runtime[1] is None or getattr(item, runtime_max_attr) > runtime[1]:
+            runtime[1] = getattr(item, runtime_max_attr)
+
+        # user_rating += item.user_rating
+        user_rating = max(item.user_rating, user_rating)
+        imdb_rating += item.imdb_rating
+
+        director += list(item.director.all())
+        stars += list(item.stars.all())
+        genre += list(item.genre.all())
+        keyword += list(item.keywords.all())
+
+    # get unique values from lists, ordered by number of occurrences
+    for lst in [director, stars, genre, keyword]:
+        lst = list(dict.fromkeys(sorted(lst, key=lst.count, reverse=True)))
+
+    # user_rating = round(user_rating / len(items))
+    imdb_rating = imdb_rating / len(items)
+
+    series = VisionSeries(
+        title=title,
+        filename=filename,
+        year=year[0],
+        year_max=year[1],
+        runtime=runtime[0],
+        runtime_max=runtime[1],
+        img=img,
+        media_type=media_type,
+        description=description,
+        alt_description="",
+        user_rating=user_rating,
+        imdb_rating=imdb_rating,
+    )
+
+    series.save()
+    print(f"created series {series}")
+
+    for person in director:
+        series.director.add(person)
+
+    for person in stars:
+        series.stars.add(person)
+
+    for g in genre:
+        series.genre.add(g)
+
+    for kw in keyword:
+        series.keywords.add(kw)
+
+    for item in derived_items:
+        series.members.add(item)
+        item.parent_series = series
         item.save()
-        
-        for name, counter in counts.items():
-            attr = getattr(item, name)
-            for pk in [c[0] for c in counter.most_common()]:
-                pass
 
+    series.save()
+    print(f"updated series {series}")
+
+    return series
+
+
+def _get_dervied_instance(item):
+    try:
+        item = VisionSeries.objects.get(pk=item.pk)
+    except ObjectDoesNotExist:
+        try:
+            item = VisionItem.objects.get(pk=item.pk)
+        except ObjectDoesNotExist:
+            msg = f"Item {item.pk} {item} is neither a VisionSeries nor a VisionItem."
+            raise RuntimeError(msg)
+    return item
+
+
+def _get_item(pk):
+    try:
+        item = VisionItem.objects.get(pk=pk)
+    except ObjectDoesNotExist:
+        try:
+            item = VisionSeries.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            raise ValueError(f"No VisionItem or VisionSeries found for {pk}")
+    return item
 
 
 if __name__ == "__main__":
