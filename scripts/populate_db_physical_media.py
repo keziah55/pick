@@ -43,8 +43,9 @@ def populate_physical(not_in_db_file, patch_csv, media_csv):
     pop_db._populate(films, patch)
 
 
-def make_films_list(media_csv, out_path):
+def make_films_list(media_csv, patch_csv, out_path):
     physical_media = PopulateDatabase._read_physical_media_csv(media_csv)
+    patch = PopulateDatabase._read_patch_csv(patch_csv, key="disc_index")
     out_path = Path(out_path)
 
     not_in_db = []
@@ -56,12 +57,21 @@ def make_films_list(media_csv, out_path):
 
         item_info = "\t".join([disc_index, title])
 
+        patch_data = patch.get(disc_index, None)
+        if patch_data is not None:
+            kwargs = {
+                "filename__exact": patch_data["filename"],
+                "imdb_id__exact": patch_data["media_id"],
+            }
+        else:
+            kwargs = {"disc_index__exact": disc_index}
+
         try:
-            VisionItem.objects.get(disc_index__exact=disc_index)
+            VisionItem.objects.get(**kwargs)
         except ObjectDoesNotExist:
             not_in_db.append(item_info)
         except MultipleObjectsReturned:
-            print(f"Multiple items found for {disc_index=}, '{title}'")
+            print(f"Multiple items found for {kwargs}, '{title}'")
         else:
             in_db.append(item_info)
 
@@ -163,12 +173,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--physical-media", help="Path to physical media csv")
+    parser.add_argument("-p", "--patch", help="Path to patch csv")
     parser.add_argument("-o", "--out-path", help="Path to write to")
-    parser.add_argument("-f", "--file")
+    # parser.add_argument("-f", "--file")
 
     args = parser.parse_args()
 
-    make_films_list(args.physical_media, args.out_path)
+    make_films_list(args.physical_media, args.patch, args.out_path)
 
     # check_physical(args.file)
     # update_not_in_db(args.file)

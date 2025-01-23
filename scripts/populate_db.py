@@ -434,7 +434,7 @@ class PopulateDatabase:
         self._waiting_for_alt_versions = []
 
     @classmethod
-    def _cast_patch_value(cls, value: str, name: str):
+    def _format_patch_value(cls, value: str, name: str):
         """
         Given a value (and header name) from patch dict, cast to appropriate type.
 
@@ -453,19 +453,22 @@ class PopulateDatabase:
             `value` cast to appropriate type.
 
         """
-        key = cls._patch_to_model_map.get(name, name)
+        if name == "disc_index":
+            value = cls.make_disc_index(*value.split("."))
+        else:
+            key = cls._patch_to_model_map.get(name, name)
 
-        if (cast_type := cls._model_field_type_map.get(key, None)) is not None:
-            if cast_type == bool:
-                match value.lower():
-                    case "true":
-                        value = True
-                    case "false":
-                        value = False
-                    case _:
-                        raise ValueError(f"Cannot cast '{value}' for field '{name}' to bool")
-            else:
-                value = cast_type(value)
+            if (cast_type := cls._model_field_type_map.get(key, None)) is not None:
+                if cast_type == bool:
+                    match value.lower():
+                        case "true":
+                            value = True
+                        case "false":
+                            value = False
+                        case _:
+                            raise ValueError(f"Cannot cast '{value}' for field '{name}' to bool")
+                else:
+                    value = cast_type(value)
 
         return value
 
@@ -478,20 +481,37 @@ class PopulateDatabase:
         return files
 
     @classmethod
-    def _read_patch_csv(cls, patch_csv) -> dict:
+    def _read_patch_csv(cls, patch_csv, key="filename") -> dict:
         """Return dict from csv file"""
         # make patch dict
         with open(patch_csv) as fileobj:
             header, *lines = fileobj.readlines()
-        _, *header = header.strip().split(cls.sep)  # drop 'filename'
+
+        header = header.strip().split(cls.sep)
+        try:
+            key_idx = header.index(key)
+        except ValueError:
+            raise ValueError(f"No such item '{key}' in csv header: {header}")
+
+        key_name = header.pop(key_idx)
+        # _, *header = header.strip().split(cls.sep)  # drop 'filename'
 
         patch = {}
         for line in lines:
-            line = line.strip().split(cls.sep)
-            key, *values = line
+            values = line.split(cls.sep)
+            key = values.pop(key_idx)
+            if not key.strip():
+                logger.warning(f"Dropping '{key_name}' item {key=} when reading patch csv")
+                continue
+            elif key in patch:
+                logger.warning(f"'{key_name}' item {key=} already in patch dict. Skipping.")
+                continue
+            
+            key = cls._format_patch_value(key, key_name)
+            # key, *values = line
             # key is filename; make dict of any other info
             dct = {
-                header[i]: cls._cast_patch_value(value, header[i])
+                header[i]: cls._format_patch_value(value, header[i])
                 for i, value in enumerate(values)
                 if value
             }
