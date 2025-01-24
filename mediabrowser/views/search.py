@@ -1,20 +1,18 @@
 from django.shortcuts import render
 from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
 from ..models import VisionItem, VisionSeries, Keyword, Person
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 from .utils import (
     get_filter_kwargs,
     GenreFilters,
-    make_set,
     set_search_filters,
     get_context_from_request,
     get_top_level_parent,
+    get_match,
+    make_search_regex,
 )
-import re
 from typing import NamedTuple
 from collections import defaultdict
-import warnings
 
 
 class Result(NamedTuple):
@@ -79,28 +77,30 @@ def _search(search_str, **kwargs) -> dict:
     results = []
 
     # search words independently
-    search_lst = _get_words(search_str)
-    search_regex = "|".join(search_lst)
+    search_regex = make_search_regex(search_str)
 
     # make list of VisionItems
     results = _search_vision_items(
-        results, search_lst, search_regex, genre_filters, **filter_kwargs
+        results, search_str, search_regex, genre_filters, **filter_kwargs
     )
 
     if search_str:
         # only search people and keywords if given a search string
-        results = _search_people(results, search_lst, search_regex, genre_filters, **filter_kwargs)
+        results = _search_people(results, search_str, search_regex, genre_filters, **filter_kwargs)
 
         if search_keywords:
             results = _search_keywords(
-                results, search_lst, search_regex, genre_filters, **filter_kwargs
+                results, search_str, search_regex, genre_filters, **filter_kwargs
             )
 
     # dict of parent: members for Results to remove
     remove_results: dict[VisionSeries : list[Result]] = defaultdict(list)
 
     for result in results:
-        if result.film.parent_series is not None:
+        if (
+            result.film.parent_series is not None
+            and len(result.film.parent_series.members.all()) > 1
+        ):
             top_parent = get_top_level_parent(result.film)
             remove_results[top_parent].append(result)
 
@@ -126,14 +126,14 @@ def _search(search_str, **kwargs) -> dict:
 
 
 def _search_vision_items(
-    results: list[VisionItem],
-    search_lst: list[str],
+    results: list[Result],
+    search_str: str,
     search_regex: str,
     genre_filters: GenreFilters,
     **filter_kwargs,
-) -> list[VisionItem]:
+) -> list[Result]:
     """
-    Update `results` list with VisionItems.
+    Update `results` list by searching titles.
     """
     # always search VisionItem by title
     for film in VisionItem.objects.filter(
@@ -142,13 +142,13 @@ def _search_vision_items(
         if not _check_include_film(film, results, genre_filters):
             continue
         # check how closely matched titles were
-        if len(search_lst) == 0:
+        if len(search_str) == 0:
             m = 1
         else:
-            intersect = [_get_intersect_size(search_lst, _get_words(film.title))]
+            possible = [film.title]
             if film.alt_title:
-                intersect.append(_get_intersect_size(search_lst, _get_words(film.alt_title)))
-            m = max(intersect) / len(search_lst)
+                possible.append(film.alt_title)
+            m = get_match(search_str, possible)
         if m > 0:
             results.append(Result(m, film))
 
@@ -156,27 +156,27 @@ def _search_vision_items(
 
 
 def _search_people(
-    results: list[VisionItem],
-    search_lst: list[str],
+    results: list[Result],
+    search_str: str,
     search_regex: str,
     genre_filters: GenreFilters,
     **filter_kwargs,
-) -> list[VisionItem]:
+) -> list[Result]:
     """
-    Update `results` list with by searching Person objects.
+    Update `results` list by searching Person objects.
     """
     persons = Person.objects.filter(name__iregex=search_regex) | Person.objects.filter(
         alias__iregex=search_regex
     )
     for person in persons:
 
-        if len(search_lst) == 0:
+        if len(search_str) == 0:
             m = 1
         else:
-            intersect = [_get_intersect_size(search_lst, _get_words(person.name))]
+            possible = [person.name]
             if person.alias:
-                intersect.append(_get_intersect_size(search_lst, _get_words(person.alias)))
-            m = max(intersect) / len(search_lst)
+                possible.append(person.alias)
+            m = get_match(search_str, possible)
 
         if m > 0:
             # get person's films, applying filters
@@ -190,21 +190,22 @@ def _search_people(
 
 
 def _search_keywords(
-    results: list[VisionItem],
-    search_lst: list[str],
+    results: list[Result],
+    search_str: str,
     search_regex: str,
     genre_filters: GenreFilters,
     **filter_kwargs,
-) -> list[VisionItem]:
+) -> list[Result]:
     """
-    Update `results` list with by searching Keyword objects.
+    Update `results` list by searching Keyword objects.
     """
     keywords = Keyword.objects.filter(name__iregex=search_regex)
     for keyword in keywords:
-        if len(search_lst) == 0:
+        if len(search_str) == 0:
             m = 1
         else:
-            m = _get_intersect_size(search_lst, _get_words(keyword.name))
+            m = get_match(search_str, keyword.name)
+
         if m > 0:
             results += [
                 Result(m, film)
@@ -256,25 +257,3 @@ def _check_include_film(film, results, genre_filters) -> bool:
 
     ret = [value for value in (include, dont_exclude, film_is_new) if value is not None]
     return all(ret)
-
-
-def _get_words(s):
-    """Return list of words in string, as lower case, with non-alphnumeric characters removed"""
-    s = re.sub(r"'", "", s)  # remove apostrophes
-    words = [
-        word.lower() for word in re.split(r"\W", s) if word
-    ]  # split on all other non-alpha characters
-    return words
-
-
-def _get_intersect_size(item, other):
-    """
-    Return the size of the intersection between the two given sets.
-
-    Args are cast to sets if given as list or tuple.
-    """
-    item = make_set(item)
-    other = make_set(other)
-    if item is None or other is None:
-        raise TypeError("_get_intersect_size args should be set, list or tuple")
-    return len(item & other)

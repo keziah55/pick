@@ -32,6 +32,7 @@ if __name__ == "__main__":
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, VisionSeries, Genre, Keyword, Person
+from mediabrowser.views.utils import get_match
 
 
 ts = time.strftime("%Y-%m-%d-%H:%M:%S")
@@ -494,7 +495,6 @@ class PopulateDatabase:
             raise ValueError(f"No such item '{key}' in csv header: {header}")
 
         key_name = header.pop(key_idx)
-        # _, *header = header.strip().split(cls.sep)  # drop 'filename'
 
         patch = {}
         for line in lines:
@@ -506,10 +506,8 @@ class PopulateDatabase:
             elif key in patch:
                 logger.warning(f"'{key_name}' item {key=} already in patch dict. Skipping.")
                 continue
-            
+
             key = cls._format_patch_value(key.strip(), key_name)
-            # key, *values = line
-            # key is filename; make dict of any other info
             dct = {
                 header[i]: cls._format_patch_value(value.strip(), header[i])
                 for i, value in enumerate(values)
@@ -758,12 +756,23 @@ class PopulateDatabase:
                 logger.warning(f"{title}; search_movie")
                 return None
 
-            movie = movies[0]
-            logger.info(f"Got {movie} by search for '{title}' from cinemagoer")
+            logger.info(f"Got {len(movies)} possible matches:\n{movies}")
 
-        if movie is None:
-            logger.warning(f"{title}; no imdb results")
-            return None
+            best_match = None
+            for movie in movies:
+                m = get_match(title, movie.get("title"))
+                if best_match is None or m > best_match[1]:
+                    best_match = (movie, m)
+
+            logger.info(f"Got best match {best_match[0]} with score {best_match[1]}")
+            movie = best_match[0]
+
+            # movie = movies[0]
+            # logger.info(f"Got {movie} by search for '{title}' from cinemagoer")
+
+        # if movie is None:
+        #     logger.warning(f"{title}; no imdb results")
+        #     return None
 
         try:
             self._cinemagoer.update(movie, infoset)

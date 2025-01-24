@@ -1,5 +1,6 @@
 from ..models import VisionItem, VisionSeries, MediaItem, Genre
 from typing import NamedTuple, Optional, Union
+import re
 
 # SEARCH HELPERS
 
@@ -148,6 +149,52 @@ def get_context_from_request(request) -> dict:
         context["genre-not"] = genre_not
 
     return context
+
+
+def make_search_regex(search_str: str) -> str:
+    """Convert `search_str` into regex to search for each word separately."""
+    search_lst = _get_words(search_str)
+    search_regex = "|".join(search_lst)
+    return search_regex
+
+
+def get_match(target: str, guesses: Union[str, list[str]]) -> float:
+    """Compare guesses with target and return best score."""
+    if isinstance(guesses, str):
+        guesses = [guesses]
+
+    target_lst = _get_words(target)
+    guesses = [_get_words(s) for s in guesses]
+    intersect = [_get_intersect_size(target_lst, guess) for guess in guesses]
+
+    all_guess_words = set([s for sublist in guesses for s in sublist])
+    total_num_words = len(set(target_lst) | all_guess_words)
+
+    m = max(intersect) / total_num_words
+
+    return m
+
+
+def _get_words(s):
+    """Return list of words in string, as lower case, with non-alphnumeric characters removed"""
+    s = re.sub(r"'", "", s)  # remove apostrophes
+    words = [
+        word.lower() for word in re.split(r"\W", s) if word
+    ]  # split on all other non-alpha characters
+    return words
+
+
+def _get_intersect_size(item, other):
+    """
+    Return the size of the intersection between the two given sets.
+
+    Args are cast to sets if given as list or tuple.
+    """
+    item = make_set(item)
+    other = make_set(other)
+    if item is None or other is None:
+        raise TypeError("_get_intersect_size args should be set, list or tuple")
+    return len(item & other)
 
 
 def make_set(item):
