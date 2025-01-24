@@ -6,28 +6,30 @@
         <a href="{% url 'pick:view_visionitem' film.pk %}"><img class="film-thumbnail" {% if film.local_img %} src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" {% else %} src="{{ film.img }}" {% endif %} alt="{{ film.title }}"></a>
     </div>  
     <div class="film-column-details">
-        <p><a href="{% url 'pick:view_visionitem' film.pk %}">{{ film.title }} ({% if film.media_type == 'SERIES' %}{{ film.year }} - {{ film.year_max }}{% else %}{{ film.year }}{% endif %})</a></p>
-        <p>
-            Dir. 
-            {% for person in film.director.all|slice:":3" %}
-                <a href="{% url 'pick:view_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
-            {% endfor %}
-        </p>  
-        <p>
-            {% for person in film.stars.all|slice:":3" %}
-                <a href="{% url 'pick:view_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
-            {% endfor %}
-        </p>
-        
-        <!-- list genres for manual verification -->
-        <!-- <p> -->
-        <!--     {% for genre in film.genre.all %} -->
-        <!--         {{ genre.name }} -->
-        <!--     {% endfor %} -->
-        <!-- </p> -->
-        <!-- -->
-        
-        <p>{% if film.media_type == 'SERIES' %} {{ film.runtime }} - {{ film.runtime_max }}{% else %}{{ film.runtime }}{% endif %} minutes</p>
+        <div class="film-column-details-top">
+            <p><a href="{% url 'pick:view_visionitem' film.pk %}">{{ film.title }} ({% if film.media_type == 'SERIES' %}{{ film.year }} - {{ film.year_max }}{% else %}{{ film.year }}{% endif %})</a></p>
+            <p>
+                Dir. 
+                {% for person in film.director.all|slice:":3" %}
+                    <a href="{% url 'pick:view_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.director.all|length > 3 %}... {% endif %}{% endif %}
+                {% endfor %}
+            </p>  
+            <p>
+                {% for person in film.stars.all|slice:":3" %}
+                    <a href="{% url 'pick:view_person' person.pk %}">{{ person.name }}</a>{% if not forloop.last %}, {% endif %}{% if forloop.last %}{% if film.stars.all|length > 3 %}... {% endif %}{% endif %}
+                {% endfor %}
+            </p>
+            
+            <!-- list genres for manual verification -->
+            <!-- <p> -->
+            <!--     {% for genre in film.genre.all %} -->
+            <!--         {{ genre.name }} -->
+            <!--     {% endfor %} -->
+            <!-- </p> -->
+            <!-- -->
+            
+            <p>{% if film.media_type == 'SERIES' %} {{ film.runtime }} - {{ film.runtime_max }}{% else %}{{ film.runtime }}{% endif %} minutes</p>
+        </div>
         
         <div class="rating">
             <div class="userrating">

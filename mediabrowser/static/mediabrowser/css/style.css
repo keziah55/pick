@@ -157,6 +157,11 @@ input[type=image] {
   width: 600px;
 }
 
+.film-column-details-top {
+  float: left;
+  padding-bottom: 70px;
+}
+
 .film-row {
   position: relative;
   padding-top: 10px;
@@ -185,6 +190,8 @@ input[type=image] {
   float: left;
   left: 0px;
   margin-right: 10px;
+  bottom: 0;
+  
 }
 
 .star {
@@ -194,14 +201,16 @@ input[type=image] {
   margin: 0;
   padding: 0;
   float: right;
+  bottom: 0;
 }
 
 
 .imdbrating {
   margin: 0;
   left: 135px;
+  bottom: 3px;
   position: absolute;
-  top: 56%;
-  -ms-transform: translateY(-50%);
-  transform: translateY(-50%);
+  /*top: 56%;*/
+  /*-ms-transform: translateY(-50%);*/
+  /*transform: translateY(-50%);*/
 }
