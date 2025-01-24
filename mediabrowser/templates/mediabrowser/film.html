@@ -7,7 +7,7 @@
         <a href="{% url 'pick:view_visionitem' film.pk %}"><img class="film-thumbnail" {% if film.local_img %} src="{{ MEDIA_PREFIX }}mediabrowser/{{ film.local_img }}" {% else %} src="{{ film.img }}" {% endif %} alt="{{ film.title }}"></a>
     </div>  
     <div class="film-column-details">
-        <p><a href="{% url 'pick:view_visionitem' film.pk %}">{{ film.title }} ({% if film.media_type == 'SERIES' %}{{ film.year }} - {{ fim.year_max }} {% else %} {{ film.year }}{% endif %})</a></p>
+        <p><a href="{% url 'pick:view_visionitem' film.pk %}">{{ film.title }} ({% if film.media_type == 'SERIES' %}{{ film.year }} - {{ fim.year_max }}{% else %}{{ film.year }}{% endif %})</a></p>
         <p>
             Dir. 
             {% for person in film.director.all|slice:":3" %}
@@ -28,7 +28,7 @@
         <!-- </p> -->
         <!-- -->
         
-        <p>{% if film.media_type == 'SERIES' %} {{ film.runtime }} - {{ fim.runtime_max }} {% else %} {{ film.runtime }}{% endif %} minutes</p>
+        <p>{% if film.media_type == 'SERIES' %} {{ film.runtime }} - {{ fim.runtime_max }}{% else %}{{ film.runtime }}{% endif %} minutes</p>
         
         <div class="rating">
             <div class="userrating">
