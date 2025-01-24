@@ -453,7 +453,7 @@ class PopulateDatabase:
             `value` cast to appropriate type.
 
         """
-        if name == "disc_index":
+        if name == "disc_index" and value:
             value = cls.make_disc_index(*value.split("."))
         else:
             key = cls._patch_to_model_map.get(name, name)
@@ -507,11 +507,11 @@ class PopulateDatabase:
                 logger.warning(f"'{key_name}' item {key=} already in patch dict. Skipping.")
                 continue
             
-            key = cls._format_patch_value(key, key_name)
+            key = cls._format_patch_value(key.strip(), key_name)
             # key, *values = line
             # key is filename; make dict of any other info
             dct = {
-                header[i]: cls._format_patch_value(value, header[i])
+                header[i]: cls._format_patch_value(value.strip(), header[i])
                 for i, value in enumerate(values)
                 if value
             }

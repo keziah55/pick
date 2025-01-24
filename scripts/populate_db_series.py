@@ -23,7 +23,7 @@ from mediabrowser.models import VisionItem, VisionSeries, MediaItem
 from populate_db import ProgressBar
 
 
-def write_series_to_db(csv_file: Path, csv_sep="\t"):
+def write_series_to_db(csv_file: Path, csv_sep="\t", sort_by_year=True):
     header, *rows = [line.split(csv_sep) for line in csv_file.read_text().split("\n") if line]
 
     progress = ProgressBar(len(rows))
@@ -38,6 +38,10 @@ def write_series_to_db(csv_file: Path, csv_sep="\t"):
                 search_str = name
             members = list(VisionItem.objects.filter(title__icontains=search_str))
             members += list(VisionSeries.objects.filter(title__icontains=search_str))
+
+            # sort in chronological order
+            if sort_by_year:
+                members.sort(key=lambda item: item.year)
 
         if len(members) == 0:
             warnings.warn(f"Could not find VisionItem/VisionSeries for {name=}")
@@ -65,10 +69,12 @@ def make_series(
     user_rating = 0
     imdb_rating = 0
 
-    director = []
-    stars = []
-    genre = []
-    keyword = []
+    refs = {
+        "director": [],
+        "stars": [],
+        "genre": [],
+        "keyword": [],
+    }
 
     description = description if description is not None else title
 
@@ -101,14 +107,14 @@ def make_series(
         user_rating = max(item.user_rating, user_rating)
         imdb_rating += item.imdb_rating
 
-        director += list(item.director.all())
-        stars += list(item.stars.all())
-        genre += list(item.genre.all())
-        keyword += list(item.keywords.all())
+        refs["director"] += list(item.director.all())
+        refs["stars"] += list(item.stars.all())
+        refs["genre"] += list(item.genre.all())
+        refs["keyword"] += list(item.keywords.all())
 
     # get unique values from lists, ordered by number of occurrences
-    for lst in [director, stars, genre, keyword]:
-        lst = list(dict.fromkeys(sorted(lst, key=lst.count, reverse=True)))
+    for key, lst in refs.items():
+        refs[key] = list(dict.fromkeys(sorted(lst, key=lst.count, reverse=True)))
 
     # user_rating = round(user_rating / len(items))
     imdb_rating = imdb_rating / len(items)
@@ -131,16 +137,16 @@ def make_series(
     series.save()
     print(f"created series {series}")
 
-    for person in director:
+    for person in refs["director"]:
         series.director.add(person)
 
-    for person in stars:
+    for person in refs["stars"]:
         series.stars.add(person)
 
-    for g in genre:
+    for g in refs["genre"]:
         series.genre.add(g)
 
-    for kw in keyword:
+    for kw in refs["keyword"]:
         series.keywords.add(kw)
 
     for item in derived_items:
