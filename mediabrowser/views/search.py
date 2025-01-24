@@ -107,7 +107,6 @@ def _search(search_str, **kwargs) -> dict:
     for series_item, members in remove_results.items():
         best_match = max(member.match for member in members)
         results.append(Result(best_match, series_item))
-        print(f"Adding series {series_item} ({type(series_item)}) to results")
 
     all_remove_items = {item for members in remove_results.values() for item in members}
 
