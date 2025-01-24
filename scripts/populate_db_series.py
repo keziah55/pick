@@ -135,7 +135,6 @@ def make_series(
     )
 
     series.save()
-    print(f"created series {series}")
 
     for person in refs["director"]:
         series.director.add(person)
@@ -155,7 +154,6 @@ def make_series(
         item.save()
 
     series.save()
-    print(f"updated series {series}")
 
     return series
 
