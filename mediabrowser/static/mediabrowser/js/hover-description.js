@@ -19,8 +19,6 @@ function hover_film_grid(s, row_len, max_rows) {
     
     let iter_size = imgs.length < max_imgs ? imgs.length : max_imgs;
     
-    console.log(iter_size, imgs.length, max_imgs);
-    
     for (var i = 0; i < iter_size; i++) {
         img_src = imgs[i];
         html += _make_img_item(img_src, i, row_len);

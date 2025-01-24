@@ -141,15 +141,7 @@ class VisionSeries(BaseVision):
 
     # parent_series = models.ForeignKey("self",  on_delete=models.CASCADE)
     members = SortedManyToManyField(MediaItem, symmetrical=False)
-
-    @property
-    def year_str(self):
-        return f"{self.year}-{self.year_max}"
-
-    @property
-    def runtime_str(self):
-        return f"{self.runtime}-{self.runtime_max}"
-
+    
 
 class VisionItem(BaseVision):
 
@@ -180,16 +172,6 @@ class VisionItem(BaseVision):
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)
     disc_index = models.CharField(max_length=10, blank=True)
-
-    # parent_series = models.ForeignKey(VisionSeries, on_delete=models.CASCADE)
-
-    @property
-    def year_str(self):
-        return f"{self.year}"
-
-    @property
-    def runtime_str(self):
-        return f"{self.runtime}"
 
 
 # class SoundItem(MediaItem):
