@@ -177,8 +177,6 @@ class PopulateDatabase:
 
     def __init__(self, quiet=False, physical_media=None, database="default"):
 
-        # self._model_field_type_map = self._make_visionitem_field_type_map()
-
         self._created_item_count = {"visionitem": 0, "genre": 0, "keywords": 0, "person": 0}
         self._created_visionitems = []
         self._imdb_time = 0
@@ -599,8 +597,9 @@ class PopulateDatabase:
         language = self._get_patched(movie, patch, "languages", "language", default=[])
 
         colour = self._get_patched(movie, patch, "color info", "colour", default=["Color"])
+        logger.info(f"{colour=}")
         if not isinstance(colour, bool):
-            colour = any(["color" in item.lower() for item in colour])  # boolean
+            colour = any("color" in item.lower() for item in colour)  # boolean
 
         image_url = self._get_patched(movie, patch, "cover url", "image_url", default="")
         if "_V1_" in image_url:
@@ -891,16 +890,16 @@ class PopulateDatabase:
                 warnings.warn(f"Multiple objects with filename '{file}' in database", UserWarning)
             else:
                 skip = False
+                # if len(item) == 0, file added to DB in `if not skip` below
+                
                 if len(item) == 1:
                     item = item[0]
-                    if info is None or int(item.imdb_id) == int(info["media_id"]):
-                        # file in DB and we don't have patch info for it, so skip it
-                        # or
-                        # file in both DB and patch and the IDs match
-                        # TODO check if all given patch fields match current item fields
+                    if info is None or self._item_patch_equal(item, info):
+                        # item is already in DB with no patch data to apply
+                        # or all patch fields match DB item
                         skip = True
                     else:
-                        # file in both DB and patch and the IDs don't match, so re-make it
+                        # file in both DB and patch and the fields don't match, so re-make it
                         item.delete()
                 # (re)create
                 if not skip:
@@ -920,6 +919,16 @@ class PopulateDatabase:
 
         self._write(f"Updated {count} records")
         return count
+
+    @classmethod
+    def _item_patch_equal(cls, item, patch) -> bool:
+        """Return True if all values in `patch` dict are the same as equivalent `item` fields."""
+        for key, value in patch.items():
+            item_key = cls._patch_to_model_map.get(key, key)
+            db_value = getattr(item, item_key)
+            if db_value != value:
+                return False
+        return True
 
     def clear(self, model=VisionItem):
         """Remove all entries from the given `model` table"""
