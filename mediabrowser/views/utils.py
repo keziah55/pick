@@ -284,6 +284,27 @@ def get_top_level_parent(item: Union[VisionItem, VisionSeries]) -> Union[VisionI
     return item
 
 
+def is_single_item_in_series(item: Union[VisionItem, VisionSeries]) -> bool:
+    """
+    Return True if all parents of `item` contain only one member.
+
+    If `item` has no parent series, this returns True.
+    """
+    if item.parent_series is None:
+        return True
+
+    while True:
+        parent = item.parent_series
+        if parent is None:
+            break
+        elif len(parent.members.all()) > 1:
+            return False
+        else:
+            item = parent
+
+    return True
+
+
 _vision_types = {MediaItem.FILM: VisionItem, MediaItem.SERIES: VisionSeries}
 
 

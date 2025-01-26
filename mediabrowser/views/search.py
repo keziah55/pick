@@ -10,6 +10,7 @@ from .utils import (
     get_top_level_parent,
     get_match,
     make_search_regex,
+    is_single_item_in_series,
 )
 from typing import NamedTuple
 from collections import defaultdict
@@ -97,10 +98,7 @@ def _search(search_str, **kwargs) -> dict:
     remove_results: dict[VisionSeries : list[Result]] = defaultdict(list)
 
     for result in results:
-        if (
-            result.film.parent_series is not None
-            and len(result.film.parent_series.members.all()) > 1
-        ):
+        if result.film.parent_series is not None and not is_single_item_in_series(result.film):
             top_parent = get_top_level_parent(result.film)
             remove_results[top_parent].append(result)
 
