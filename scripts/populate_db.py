@@ -393,12 +393,16 @@ class PopulateDatabase:
                 if len(ref_items) == 0:
                     # ref_film doesn't exist (yet) so add to _waiting_for_alt_versions
                     self._waiting_for_alt_versions.append((item, ref_film))
+                    logger.info(
+                        f"Alt version '{ref_film}' for {item} doesn't exist yet; added to list"
+                    )
                 elif len(ref_items) > 1:
                     warnings.warn(
                         f"Multiple objects with filename '{ref_film}' in database", UserWarning
                     )
                 else:
                     item.alt_versions.add(ref_items[0])
+                    logger.info(f"Alt version '{ref_film}' added to {item}")
             item.save(using=self._database)
         return item
 
@@ -891,7 +895,7 @@ class PopulateDatabase:
             else:
                 skip = False
                 # if len(item) == 0, file added to DB in `if not skip` below
-                
+
                 if len(item) == 1:
                     item = item[0]
                     if info is None or self._item_patch_equal(item, info):
@@ -900,6 +904,7 @@ class PopulateDatabase:
                         skip = True
                     else:
                         # file in both DB and patch and the fields don't match, so re-make it
+                        logger.info(f"Deleting and re-creating item for '{file}'")
                         item.delete()
                 # (re)create
                 if not skip:
