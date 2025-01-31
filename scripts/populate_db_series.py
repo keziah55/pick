@@ -80,7 +80,7 @@ def make_series(
 
     for item in items:
 
-        item = _get_dervied_instance(item)
+        item = _get_derived_instance(item)
         derived_items.append(item)
 
         if isinstance(item, VisionSeries):
@@ -158,7 +158,7 @@ def make_series(
     return series
 
 
-def _get_dervied_instance(item):
+def _get_derived_instance(item):
     try:
         item = VisionSeries.objects.get(pk=item.pk)
     except ObjectDoesNotExist:
