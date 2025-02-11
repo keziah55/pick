@@ -72,8 +72,8 @@ class MediaInfo(NamedTuple):
         value = getattr(self, key)
         return value
 
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
+    # def __setitem__(self, key, value):
+    #     setattr(self, key, value)
 
     def as_string(self, key) -> str:
         """
@@ -460,6 +460,7 @@ class PopulateDatabase:
         info : MediaInfo
             Dataclass of info about the given film
         """
+
         t0 = time.monotonic()
         ret = self.__get_movie(title=title, patch=patch, item_type=item_type)
         self._imdb_time += time.monotonic() - t0
