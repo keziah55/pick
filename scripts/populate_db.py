@@ -11,13 +11,12 @@ from pathlib import Path
 import warnings
 import time
 import logging
-from collections import namedtuple
-from dataclasses import dataclass
+from typing import NamedTuple
 from imdb import Cinemagoer
-from imdb.Person import Person as IMDbPerson
 
 from populate_db.read_data_files import read_films_file, read_patch_csv, read_physical_media_csv, item_patch_equal
 from populate_db.progress_bar import ProgressBar
+from populate_db.person_info import make_personinfo, PersonInfo
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -39,29 +38,25 @@ ts = time.strftime("%Y-%m-%d-%H:%M:%S")
 logger = logging.getLogger("populate_db")
 
 
-PersonInfo = namedtuple("PersonInfo", ["id", "name"])
-
-
-@dataclass
-class MediaInfo:
+class MediaInfo(NamedTuple):
     """Class to hold info from IMDb, from which `VisionItem` can be created in database"""
 
     title: str
     image_url: str
     local_img_url: str
-    genre: list
-    keywords: list
+    genre: list[str]
+    keywords: list[str]
     year: int
     runtime: int
-    stars: list  # list of PersonInfo
-    director: list  # list of PersonInfo
+    stars: list[PersonInfo]
+    director: list[PersonInfo]
     description: str
     alt_description: str
     media_id: str
-    alt_title: list
+    alt_title: list[str]
     language: str
     colour: bool
-    alt_versions: list
+    alt_versions: list[str]
     is_alt_version: bool
     imdb_rating: float
     user_rating: float
@@ -145,53 +140,6 @@ class PopulateDatabase:
     def _write(self, s):
         if not self._quiet:
             print(s)
-
-    @staticmethod
-    def _is_id_str(s: str) -> bool:
-        """Return True if string `s` can be cast to int (and thus is an ID)"""
-        try:
-            int(s)
-        except Exception:
-            return False
-        else:
-            return True
-
-    def _name_to_id(self, name: str) -> str:
-        """
-        Given `name` string, return IMDb ID string
-
-        Note that, if `name` is an ID string, it will simply be returned.
-
-        Raises
-        ------
-        RuntimeError
-           If searching for the person's name returned no values.
-        """
-        if not self._is_id_str(name):
-            people = self._cinemagoer.search_person(name)
-            if len(people) == 0:
-                raise RuntimeError(f"Could not find IMDb ID for person '{name}'")
-            name = people[0].getID()
-        return name
-
-    def _make_personinfo(self, person) -> PersonInfo:
-        """
-        Create PersonInfo for given `person`.
-
-        Note that `person` can be an imdb.Person.Person instance, an ID string
-        or a name string.
-        """
-        if isinstance(person, IMDbPerson):
-            id_str = person.getID()
-            name = person["name"]
-        elif self._is_id_str(person):
-            person = self._cinemagoer.get_person(person)
-            id_str = person.getID()
-            name = person["name"]
-        else:
-            id_str = self._name_to_id(person)
-            name = person
-        return PersonInfo(id_str, name)
 
     def _add_to_db(self, filename, media_info):
         """
@@ -437,13 +385,13 @@ class PopulateDatabase:
             stars = ",".split(patch["stars"])
         else:
             stars = movie.get("cast", [])
-        stars = [self._make_personinfo(person) for person in stars]
+        stars = [make_personinfo(person, self._cinemagoer) for person in stars]
 
         if "director" in patch:
             director = ",".split(patch["director"])
         else:
             director = movie.get("director", [])
-        director = [self._make_personinfo(person) for person in director]
+        director = [make_personinfo(person, self._cinemagoer) for person in director]
 
         desc = patch.get("description", movie.get("plot", movie.get("plot outline", "")))
         if isinstance(desc, list):
