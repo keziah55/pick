@@ -7,9 +7,7 @@ Either import `PopulateDatabase` class or run as script. In the latter case,
 see `populate_db.py -h` for options.
 """
 
-import shutil
 from pathlib import Path
-from decimal import Decimal
 import warnings
 import time
 import logging
@@ -17,6 +15,9 @@ from collections import namedtuple
 from dataclasses import dataclass
 from imdb import Cinemagoer
 from imdb.Person import Person as IMDbPerson
+
+from populate_db.read_data_files import read_films_file, read_patch_csv, read_physical_media_csv, item_patch_equal
+from populate_db.progress_bar import ProgressBar
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -36,63 +37,6 @@ from mediabrowser.views.utils import get_match
 
 ts = time.strftime("%Y-%m-%d-%H:%M:%S")
 logger = logging.getLogger("populate_db")
-
-
-def _make_visionitem_field_type_map():
-    field_map = {}
-    for field in VisionItem._meta.fields:
-        field_class_name = field.__class__.__name__.lower()
-        if field.name == "colour":
-            continue
-        if "integer" in field_class_name:
-            field_map[field.name] = int
-        elif "float" in field_class_name:
-            field_map[field.name] = float
-        elif "decimal" in field_class_name:
-            field_map[field.name] = Decimal
-        elif "bool" in field_class_name:
-            field_map[field.name] = bool
-    return field_map
-
-
-class ProgressBar:
-    """Simple ProgressBar object, going up to `maximum`"""
-
-    def __init__(self, maximum):
-        self.mx = maximum
-        try:
-            # get width of terminal
-            width = shutil.get_terminal_size().columns
-            # width of progress bar
-            # 9 characters are needed for percentage etc.
-            self.width = int(width) - 9
-            self.show_bar = True
-        except ValueError:
-            # if we can't get terminal size, show only the percentage
-            self.show_bar = False
-        self.progress(0)
-
-    def progress(self, value):
-        """Update the progress bar
-
-        Parameters
-        ----------
-        value : float
-            Progress value
-        """
-        # calculate percentage progress
-        p = value / self.mx
-        show = f"{p:6.1%}"
-
-        # make bar, if required
-        if self.show_bar:
-            progress = int(self.width * p)
-            remaining = self.width - progress
-            show += " [" + "#" * progress + "-" * remaining + "]"
-
-        # set line ending to either carriage return or new line
-        end = "\r" if p < 1 else "\n"
-        print(show, end=end, flush=True)
 
 
 PersonInfo = namedtuple("PersonInfo", ["id", "name"])
@@ -161,18 +105,7 @@ class PopulateDatabase:
         ("director", "stars"): Person,
     }
 
-    ext = [".avi", ".m4v", ".mkv", ".mov", ".mp4", ".wmv", ".webm"]
-
-    sep = "\t"
-
     digital_default = True
-
-    _patch_to_model_map = {
-        "media_id": "imdb_id",
-        "image_url": "img",
-    }
-
-    _model_field_type_map = _make_visionitem_field_type_map()
 
     def __init__(self, quiet=False, physical_media=None, database="default"):
 
@@ -201,9 +134,7 @@ class PopulateDatabase:
 
         self._waiting_for_alt_versions = []
 
-        self._physical_media = (
-            self._read_physical_media_csv(physical_media) if physical_media is not None else {}
-        )
+        self._physical_media = read_physical_media_csv(physical_media) if physical_media is not None else {}
 
         logging.basicConfig(
             filename=f"populate_db-{ts}.log",
@@ -392,13 +323,9 @@ class PopulateDatabase:
                 if len(ref_items) == 0:
                     # ref_film doesn't exist (yet) so add to _waiting_for_alt_versions
                     self._waiting_for_alt_versions.append((item, ref_film))
-                    logger.info(
-                        f"Alt version '{ref_film}' for {item} doesn't exist yet; added to list"
-                    )
+                    logger.info(f"Alt version '{ref_film}' for {item} doesn't exist yet; added to list")
                 elif len(ref_items) > 1:
-                    warnings.warn(
-                        f"Multiple objects with filename '{ref_film}' in database", UserWarning
-                    )
+                    warnings.warn(f"Multiple objects with filename '{ref_film}' in database", UserWarning)
                 else:
                     item.alt_versions.add(ref_items[0])
                     logger.info(f"Alt version '{ref_film}' added to {item}")
@@ -419,9 +346,7 @@ class PopulateDatabase:
             if len(ref_items) == 0:
                 warnings.warn(f"No object with filename '{ref_film}' in database", UserWarning)
             elif len(ref_items) > 1:
-                warnings.warn(
-                    f"Multiple objects with filename '{ref_film}' in database", UserWarning
-                )
+                warnings.warn(f"Multiple objects with filename '{ref_film}' in database", UserWarning)
             else:
                 ref_item = ref_items[0]
                 if not ref_item.is_alt_version:
@@ -434,125 +359,6 @@ class PopulateDatabase:
                 progress.progress(n + 1)
 
         self._waiting_for_alt_versions = []
-
-    @classmethod
-    def _format_patch_value(cls, value: str, name: str):
-        """
-        Given a value (and header name) from patch dict, cast to appropriate type.
-
-        If string is the appropriate type, return `value` unaltered.
-
-        Parameters
-        ----------
-        value
-            Value read from patch csv.
-        name
-            Header name corresponding to value.
-
-        Returns
-        -------
-        value
-            `value` cast to appropriate type.
-
-        """
-        if name == "disc_index" and value:
-            value = cls.make_disc_index(*value.split("."))
-        else:
-            key = cls._patch_to_model_map.get(name, name)
-
-            if (cast_type := cls._model_field_type_map.get(key, None)) is not None:
-                if cast_type == bool:
-                    match value.lower():
-                        case "true":
-                            value = True
-                        case "false":
-                            value = False
-                        case _:
-                            raise ValueError(f"Cannot cast '{value}' for field '{name}' to bool")
-                else:
-                    value = cast_type(value)
-
-        return value
-
-    @classmethod
-    def _read_films_file(cls, films_txt) -> list:
-        with open(films_txt) as fileobj:
-            files = [
-                Path(file.strip()) for file in list(fileobj) if Path(file.strip()).suffix in cls.ext
-            ]
-        return files
-
-    @classmethod
-    def _read_patch_csv(cls, patch_csv, key="filename") -> dict:
-        """Return dict from csv file"""
-        # make patch dict
-        with open(patch_csv) as fileobj:
-            header, *lines = fileobj.readlines()
-
-        header = header.strip().split(cls.sep)
-        try:
-            key_idx = header.index(key)
-        except ValueError:
-            raise ValueError(f"No such item '{key}' in csv header: {header}")
-
-        key_name = header.pop(key_idx)
-
-        patch = {}
-        for line in lines:
-            values = line.split(cls.sep)
-            key = values.pop(key_idx)
-            if not key.strip():
-                logger.warning(f"Dropping '{key_name}' item {key=} when reading patch csv")
-                continue
-            elif key in patch:
-                logger.warning(f"'{key_name}' item {key=} already in patch dict. Skipping.")
-                continue
-
-            key = cls._format_patch_value(key.strip(), key_name)
-            dct = {
-                header[i]: cls._format_patch_value(value.strip(), header[i])
-                for i, value in enumerate(values)
-                if value
-            }
-            if "imdb_id" in dct:
-                dct["media_id"] = dct.pop("imdb_id")
-            # in case a file is entered twice in the csv, merge the two dicts
-            current = patch.get(key, None)
-            if current is None:
-                patch[key] = dct
-            else:
-                current.update(dct)
-
-        return patch
-
-    @classmethod
-    def _read_physical_media_csv(cls, media_csv) -> dict:  # list:
-        """Return list of films that are available on physical media"""
-        with open(media_csv) as fileobj:
-            header, *lines = fileobj.readlines()
-
-        header = header.lower().strip().split(cls.sep)
-        title_idx = header.index("title")
-        media_type_idx = header.index("media type")
-        case_idx = header.index("case")
-        slot_idx = header.index("slot")
-
-        physical = {}
-        for line in lines:
-            line = line.lower()
-            row = line.strip().split(cls.sep)
-            if len(row) < len(header):
-                break
-            if row[media_type_idx].strip() == "film":
-                # physical.append(row[title_idx])
-                title, case, slot = [row[i] for i in [title_idx, case_idx, slot_idx]]
-                physical[title] = cls.make_disc_index(case, slot)
-
-        return physical
-
-    @staticmethod
-    def make_disc_index(case, slot):
-        return f"{int(case)}.{int(slot):03d}"
 
     @staticmethod
     def _get_patched(movie, patch, imdb_key, patch_key=None, default=None):
@@ -588,10 +394,7 @@ class PopulateDatabase:
 
         alt_title_fields = ["original title", "localized title"]
         alt_title = set(
-            [
-                self._get_patched(movie, patch, field, "alt_title", default=title)
-                for field in alt_title_fields
-            ]
+            [self._get_patched(movie, patch, field, "alt_title", default=title) for field in alt_title_fields]
         )
         if title in alt_title:
             alt_title.remove(title)
@@ -813,11 +616,9 @@ class PopulateDatabase:
             The number of records created
         """
         if films_txt is None:
-            raise ValueError(
-                "You must provide a path to file containing list of films in order to populate DB"
-            )
-        files = self._read_films_file(films_txt)
-        patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
+            raise ValueError("You must provide a path to file containing list of films in order to populate DB")
+        files = read_films_file(films_txt)
+        patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
         return self._populate(files, patch)
 
     def _populate(self, files, patch=None):
@@ -866,12 +667,8 @@ class PopulateDatabase:
         if films_txt is None and patch_csv is None:
             raise ValueError("Please specify films file and/or patch file when calling `update`")
 
-        patch = self._read_patch_csv(patch_csv) if patch_csv is not None else {}
-        files = (
-            self._read_films_file(films_txt)
-            if films_txt is not None
-            else [Path(file) for file in patch.keys()]
-        )
+        patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
+        files = read_films_file(films_txt) if films_txt is not None else [Path(file) for file in patch.keys()]
         return self._update(files, patch)
 
     def _update(self, files, patch=None):
@@ -897,7 +694,7 @@ class PopulateDatabase:
 
                 if len(item) == 1:
                     item = item[0]
-                    if info is None or self._item_patch_equal(item, info):
+                    if info is None or item_patch_equal(item, info):
                         # item is already in DB with no patch data to apply
                         # or all patch fields match DB item
                         skip = True
@@ -923,16 +720,6 @@ class PopulateDatabase:
 
         self._write(f"Updated {count} records")
         return count
-
-    @classmethod
-    def _item_patch_equal(cls, item, patch) -> bool:
-        """Return True if all values in `patch` dict are the same as equivalent `item` fields."""
-        for key, value in patch.items():
-            item_key = cls._patch_to_model_map.get(key, key)
-            db_value = getattr(item, item_key)
-            if db_value != value:
-                return False
-        return True
 
     def clear(self, model=VisionItem):
         """Remove all entries from the given `model` table"""
@@ -966,13 +753,9 @@ if __name__ == "__main__":
         help="Call update with path to films file and/or patch csv",
         action="store_true",
     )
-    parser.add_argument(
-        "-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true"
-    )
+    parser.add_argument("-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true")
     parser.add_argument("-q", "--quiet", help="Don't write anything to stdout", action="store_true")
-    parser.add_argument(
-        "-v", "--verbose", help="Print list of new VisionItems", action="store_true"
-    )
+    parser.add_argument("-v", "--verbose", help="Print list of new VisionItems", action="store_true")
 
     args = parser.parse_args()
 
