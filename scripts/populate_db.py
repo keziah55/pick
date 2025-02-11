@@ -34,7 +34,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, VisionSeries, Genre, Keyword, Person
 from mediabrowser.views.utils import get_match
 
-
 ts = time.strftime("%Y-%m-%d-%H:%M:%S")
 logger = logging.getLogger("populate_db")
 
@@ -448,7 +447,7 @@ class PopulateDatabase:
         value
             Value read from patch csv.
         name
-            Header name cooresponding to value.
+            Header name corresponding to value.
 
         Returns
         -------
