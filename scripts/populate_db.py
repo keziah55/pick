@@ -11,12 +11,11 @@ from pathlib import Path
 import warnings
 import time
 import logging
-from typing import NamedTuple
-from imdb import Cinemagoer
 
-from populate_db.read_data_files import read_films_file, read_patch_csv, read_physical_media_csv, item_patch_equal
+from populate_db.read_data_files import read_films_file, read_patch_csv, item_patch_equal
 from populate_db.progress_bar import ProgressBar
-from populate_db.person_info import make_personinfo, PersonInfo
+from populate_db.person_info import PersonInfo
+from populate_db.media_info import MediaInfoProcessor, MediaInfo
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -32,63 +31,10 @@ if __name__ == "__main__":
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, VisionSeries, Genre, Keyword, Person
-from mediabrowser.views.utils import get_match
+
 
 ts = time.strftime("%Y-%m-%d-%H:%M:%S")
 logger = logging.getLogger("populate_db")
-
-
-class MediaInfo(NamedTuple):
-    """Class to hold info from IMDb, from which `VisionItem` can be created in database"""
-
-    title: str
-    image_url: str
-    local_img_url: str
-    genre: list[str]
-    keywords: list[str]
-    year: int
-    runtime: int
-    stars: list[PersonInfo]
-    director: list[PersonInfo]
-    description: str
-    alt_description: str
-    media_id: str
-    alt_title: list[str]
-    language: str
-    colour: bool
-    alt_versions: list[str]
-    is_alt_version: bool
-    imdb_rating: float
-    user_rating: float
-    bonus_features: bool
-    digital: bool
-    physical: bool
-    disc_index: str
-
-    def __repr__(self):
-        return f"MediaInfo<{self.title} ({self.year}), {self.media_id=}>"
-
-    def __getitem__(self, key):
-        value = getattr(self, key)
-        return value
-
-    # def __setitem__(self, key, value):
-    #     setattr(self, key, value)
-
-    def as_string(self, key) -> str:
-        """
-        Return field `key` as a string.
-
-        If the value is a list, it is converted to a comma-delimited string.
-        """
-        value = self[key]
-        if isinstance(value, list):
-            value = ",".join(value)
-        elif isinstance(value, int):
-            value = str(value)
-        if "," in value:
-            value = f'"{value}"'
-        return value
 
 
 class PopulateDatabase:
@@ -99,8 +45,6 @@ class PopulateDatabase:
         "keywords": Keyword,
         ("director", "stars"): Person,
     }
-
-    digital_default = True
 
     def __init__(self, quiet=False, physical_media=None, database="default"):
 
@@ -113,8 +57,7 @@ class PopulateDatabase:
 
         self._database = database
 
-        self._cinemagoer = Cinemagoer()
-        self._movie_cache = {}
+        self._media_info_processor = MediaInfoProcessor(physical_media)
 
         self._direct_fields = []
         self._ref_fields = []
@@ -128,8 +71,6 @@ class PopulateDatabase:
                 self._direct_fields.append(field.name)
 
         self._waiting_for_alt_versions = []
-
-        self._physical_media = read_physical_media_csv(physical_media) if physical_media is not None else {}
 
         logging.basicConfig(
             filename=f"populate_db-{ts}.log",
@@ -271,9 +212,13 @@ class PopulateDatabase:
                 if len(ref_items) == 0:
                     # ref_film doesn't exist (yet) so add to _waiting_for_alt_versions
                     self._waiting_for_alt_versions.append((item, ref_film))
-                    logger.info(f"Alt version '{ref_film}' for {item} doesn't exist yet; added to list")
+                    logger.info(
+                        f"Alt version '{ref_film}' for {item} doesn't exist yet; added to list"
+                    )
                 elif len(ref_items) > 1:
-                    warnings.warn(f"Multiple objects with filename '{ref_film}' in database", UserWarning)
+                    warnings.warn(
+                        f"Multiple objects with filename '{ref_film}' in database", UserWarning
+                    )
                 else:
                     item.alt_versions.add(ref_items[0])
                     logger.info(f"Alt version '{ref_film}' added to {item}")
@@ -294,7 +239,9 @@ class PopulateDatabase:
             if len(ref_items) == 0:
                 warnings.warn(f"No object with filename '{ref_film}' in database", UserWarning)
             elif len(ref_items) > 1:
-                warnings.warn(f"Multiple objects with filename '{ref_film}' in database", UserWarning)
+                warnings.warn(
+                    f"Multiple objects with filename '{ref_film}' in database", UserWarning
+                )
             else:
                 ref_item = ref_items[0]
                 if not ref_item.is_alt_version:
@@ -307,141 +254,6 @@ class PopulateDatabase:
                 progress.progress(n + 1)
 
         self._waiting_for_alt_versions = []
-
-    @staticmethod
-    def _get_patched(movie, patch, imdb_key, patch_key=None, default=None):
-        """Get `patch_key` from `patch`, falling back to `imdb_key` from `movie`"""
-        if patch_key is None:
-            patch_key = imdb_key
-        value = patch.get(patch_key, movie.get(imdb_key, default))
-        if value is None:
-            # found instance where key was in movie, but it returned None
-            value = default
-        return value
-
-    def _get_media_info(self, movie, patch=None) -> MediaInfo:
-        """
-        Return dataclass of info about the film from the given `movie`
-
-        Parameters
-        ----------
-        movie : cinemagoer.Movie
-            Movie object
-        patch : dict, optional
-            Dict of values to use instead of those from `movie`
-
-        Returns
-        -------
-        info : MediaInfo
-            Dataclass of info about the given film
-        """
-        if patch is None:
-            patch = {}
-
-        title = self._get_patched(movie, patch, "title", default="")
-
-        alt_title_fields = ["original title", "localized title"]
-        alt_title = set(
-            [self._get_patched(movie, patch, field, "alt_title", default=title) for field in alt_title_fields]
-        )
-        if title in alt_title:
-            alt_title.remove(title)
-        alt_title = list(alt_title)
-
-        language = self._get_patched(movie, patch, "languages", "language", default=[])
-
-        colour = self._get_patched(movie, patch, "color info", "colour", default=["Color"])
-        logger.info(f"{colour=}")
-        if not isinstance(colour, bool):
-            colour = any("color" in item.lower() for item in colour)  # boolean
-
-        image_url = self._get_patched(movie, patch, "cover url", "image_url", default="")
-        if "_V1_" in image_url:
-            head, tail = image_url.split("_V1_")
-            if tail:
-                image_url = head + "_V1_FMjpg_UX1000_.jpg"
-
-        local_img_url = patch.get("local_img", None)
-
-        genre = self._get_patched(movie, patch, "genres", "genre", default=[])
-        if isinstance(genre, str):
-            genre = [s.strip() for s in genre.split(",") if s]
-
-        # list of keywords
-        keywords = self._get_patched(movie, patch, "keywords", default=[])
-        if isinstance(keywords, str):
-            keywords = [s.strip() for s in keywords.split(",") if s]
-
-        # get release year
-        year = patch.get("year", int(movie.get("year", 0)))
-
-        # get runtime
-        runtime = patch.get(
-            "runtime", int(movie.get("runtimes", [0])[0])
-        )  # runtimes from imdb is list of strings, want single int
-
-        # get list of actors and director(s)
-        if "stars" in patch:
-            stars = ",".split(patch["stars"])
-        else:
-            stars = movie.get("cast", [])
-        stars = [make_personinfo(person, self._cinemagoer) for person in stars]
-
-        if "director" in patch:
-            director = ",".split(patch["director"])
-        else:
-            director = movie.get("director", [])
-        director = [make_personinfo(person, self._cinemagoer) for person in director]
-
-        desc = patch.get("description", movie.get("plot", movie.get("plot outline", "")))
-        if isinstance(desc, list):
-            desc = desc[0]
-
-        alt_desc = patch.get("alt_description", "")
-
-        media_id = patch.get("media_id", movie.getID())
-
-        alt_versions = patch.get("alt_versions", "")
-        alt_versions = [fname for fname in alt_versions.split(",") if fname]
-
-        imdb_rating = self._get_patched(movie, patch, "rating", "imdb_rating", default=0)
-        user_rating = patch.get("user_rating", 0)
-
-        bonus_features = patch.get("bonus_features", False)
-        digital = patch.get("digital", self.digital_default)
-
-        disc_index = patch.get("disc_index", self._physical_media.get(title.lower(), ""))
-        physical = patch.get("physical", disc_index != "")
-
-        is_alt_version = patch.get("is_alt_version", False)
-
-        info = MediaInfo(
-            title,
-            image_url,
-            local_img_url,
-            genre,
-            keywords,
-            year,
-            runtime,
-            stars,
-            director,
-            desc,
-            alt_desc,
-            media_id,
-            alt_title,
-            language,
-            colour,
-            alt_versions,
-            is_alt_version,
-            imdb_rating,
-            user_rating,
-            bonus_features,
-            digital,
-            physical,
-            disc_index,
-        )
-
-        return info
 
     def _get_movie(self, title=None, patch=None, item_type="film") -> MediaInfo:
         """
@@ -458,95 +270,17 @@ class PopulateDatabase:
         Returns
         -------
         info : MediaInfo
-            Dataclass of info about the given film
+            Named tuple of info about the given film
         """
 
         t0 = time.monotonic()
-        ret = self.__get_movie(title=title, patch=patch, item_type=item_type)
+        ret = self._media_info_processor.get_media_info(
+            patch=patch, title=title, item_type=item_type
+        )
         self._imdb_time += time.monotonic() - t0
         if ret is None:
             logger.warning(f"Could not get media info for {title=} {patch=}")
         return ret
-
-    def __get_movie(self, title=None, patch=None, item_type="film") -> MediaInfo:
-        if title is None and patch is None:
-            raise ValueError("PopulateDatabase._get_movie needs either title or patch")
-
-        infoset = ["main", "keywords"]
-
-        if patch is not None:
-            logger.info(f"{patch=}")
-            media_id = patch["media_id"]
-
-            if patch.get("is_alt_version", False):
-                movie = self._movie_cache.get(media_id, None)
-                if movie is None:
-                    logger.warning(f"No cached version for {title=} id={media_id}")
-                else:
-                    logger.info(f"Got {movie} from cache")
-                    try:
-                        info = self._get_media_info(movie, patch)
-                    except Exception as err:
-                        info = None
-                        logger.warning(f"{title}; _get_media_info: {err}")
-                    return info
-
-            try:
-                movie = self._cinemagoer.get_movie(media_id)
-            except Exception as err:
-                logger.warning(f"{media_id}; get_movie from media_id: {err}")
-                return None
-            else:
-                logger.info(f"Got {movie} by ID {media_id} from cinemagoer")
-                title = movie.get("title")
-        else:
-            try:
-                movies = self._cinemagoer.search_movie(title)
-            except Exception as err:
-                logger.warning(f"{title}; search_movie from title: {err}")
-                return None
-
-            if len(movies) == 0:
-                logger.warning(f"{title}; search_movie")
-                return None
-
-            logger.info(f"Got {len(movies)} possible matches:\n{movies}")
-
-            best_match = None
-            for movie in movies:
-                m = get_match(title, movie.get("title"))
-                if best_match is None or m > best_match[1]:
-                    best_match = (movie, m)
-
-            logger.info(f"Got best match {best_match[0]} with score {best_match[1]}")
-            movie = best_match[0]
-
-            # movie = movies[0]
-            # logger.info(f"Got {movie} by search for '{title}' from cinemagoer")
-
-        # if movie is None:
-        #     logger.warning(f"{title}; no imdb results")
-        #     return None
-
-        try:
-            self._cinemagoer.update(movie, infoset)
-        except Exception as err:
-            logger.warning(f"{title}; update: {err}")
-            return None
-
-        if patch is not None and patch.get("alt_versions", None) is not None:
-            media_id = patch.get("media_id", movie.getID())
-            self._movie_cache[media_id] = movie
-            logger.info(f"Caching movie with key {media_id}")
-
-        try:
-            info = self._get_media_info(movie, patch)
-        except Exception as err:
-            info = None
-            logger.warning(f"{title}; _get_media_info: {err}")
-        else:
-            logger.info(f"Made MediaInfo object {info}")
-        return info
 
     def populate(self, films_txt, patch_csv=None) -> int:
         """
@@ -565,7 +299,9 @@ class PopulateDatabase:
             The number of records created
         """
         if films_txt is None:
-            raise ValueError("You must provide a path to file containing list of films in order to populate DB")
+            raise ValueError(
+                "You must provide a path to file containing list of films in order to populate DB"
+            )
         files = read_films_file(films_txt)
         patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
         return self._populate(files, patch)
@@ -617,7 +353,11 @@ class PopulateDatabase:
             raise ValueError("Please specify films file and/or patch file when calling `update`")
 
         patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
-        files = read_films_file(films_txt) if films_txt is not None else [Path(file) for file in patch.keys()]
+        files = (
+            read_films_file(films_txt)
+            if films_txt is not None
+            else [Path(file) for file in patch.keys()]
+        )
         return self._update(files, patch)
 
     def _update(self, files, patch=None):
@@ -702,9 +442,13 @@ if __name__ == "__main__":
         help="Call update with path to films file and/or patch csv",
         action="store_true",
     )
-    parser.add_argument("-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true")
+    parser.add_argument(
+        "-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true"
+    )
     parser.add_argument("-q", "--quiet", help="Don't write anything to stdout", action="store_true")
-    parser.add_argument("-v", "--verbose", help="Print list of new VisionItems", action="store_true")
+    parser.add_argument(
+        "-v", "--verbose", help="Print list of new VisionItems", action="store_true"
+    )
 
     args = parser.parse_args()
 
