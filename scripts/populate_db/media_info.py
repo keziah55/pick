@@ -100,7 +100,7 @@ class MediaInfoProcessor:
 
         infoset = ["main", "keywords"]
 
-        if patch is not None:
+        if patch is not None and "media_id" in patch:
             movie = self._get_movie_from_patch(patch)
         else:
             movie = self._get_movie_from_imdb(title)

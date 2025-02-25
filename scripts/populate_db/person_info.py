@@ -8,7 +8,7 @@ class PersonInfo(NamedTuple):
     """IMDb ID for person."""
     name: str
     """Person's name."""
-    alias: Optional[str]
+    alias: Optional[str] = None
     """Optional other name by which this person is known,"""
 
 

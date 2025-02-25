@@ -178,6 +178,7 @@ class PopulateDatabase:
 
                         if model_class == Person:
                             # if making a new Person, ensure we have the ID and name
+                            # TODO check if PersonInfo has alias field
                             args = ()
                             kwargs = {"imdb_id": value, "name": person_name}
                         else:
@@ -225,7 +226,7 @@ class PopulateDatabase:
             item.save(using=self._database)
         return item
 
-    def _check_alt_verions(self):
+    def _check_alt_versions(self):
         """Iterate through `_waiting_for_alt_versions` and add alt_versions to items"""
         if len(self._waiting_for_alt_versions) == 0:
             return
@@ -329,7 +330,7 @@ class PopulateDatabase:
                 progress.progress(n + 1)
 
         self._write("Checking for remaining references...")
-        self._check_alt_verions()
+        self._check_alt_versions()
 
     def update(self, films_txt=None, patch_csv=None) -> int:
         """
@@ -390,19 +391,25 @@ class PopulateDatabase:
                             item.delete()
                     # (re)create
                     if not skip:
+                        if file.suffix == "" and "digital" not in info:
+                            info["digital"] = False
+                        
                         media_info = self._get_movie(file.stem, patch=info)
                         if media_info is None:
                             continue
-                        if file.suffix == "":
-                            # if filename is name from dvds list (i.e. not actual filename with ext)
-                            # set digital to False
-                            media_info["digital"] = False
+                        # if file.suffix == "":
+                        #     # if filename is name from dvds list (i.e. not actual filename with ext)
+                        #     # set digital to False
+                        #     media_info["digital"] = False
                         self._add_to_db(file, media_info)
                         count += 1
                         logger.info(f"Updated {file} in DB")
 
                 if progress is not None:
                     progress.progress(n)
+
+        self._write("Checking for remaining references...")
+        self._check_alt_versions()
 
         self._write(f"Updated {count} records")
         return count

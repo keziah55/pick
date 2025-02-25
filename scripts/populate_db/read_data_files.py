@@ -80,7 +80,7 @@ def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[dict[str:str]
         # in case a file is entered twice in the csv, merge the two dicts
         current = patch.get(key, None)
         if current is None:
-            patch[key] = dct
+            patch[Path(key)] = dct
         else:
             current.update(dct)
 
@@ -93,7 +93,7 @@ def make_combined_dict(films_txt=None, patch_csv=None) -> dict[dict[str:str]]:
     patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
     if films_txt is not None:
         files = read_films_file(films_txt)
-        films_dct = {str(film): {} for film in files if str(film) not in patch}
+        films_dct = {film: {} for film in files if film not in patch}
         patch.update(films_dct)
     return patch
 
