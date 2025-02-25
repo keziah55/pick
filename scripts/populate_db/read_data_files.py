@@ -38,8 +38,12 @@ def read_films_file(films_txt) -> list:
     return files
 
 
-def read_patch_csv(patch_csv, key="filename", logger=None) -> dict:
-    """Return dict from csv file"""
+def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[dict[str:str]]:
+    """
+    Return dict from csv file.
+    
+    Returns nested dict. Outer dict keys are filenames; values are dict of header: value pairs.
+    """
     # make patch dict
     with open(patch_csv) as fileobj:
         header, *lines = fileobj.readlines()

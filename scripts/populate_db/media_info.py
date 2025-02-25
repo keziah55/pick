@@ -2,8 +2,8 @@ import logging
 from typing import NamedTuple, Optional
 from imdb import Cinemagoer
 from imdb.Movie import Movie
-from populate_db.read_data_files import read_physical_media_csv
-from populate_db.person_info import make_personinfo, PersonInfo
+from .read_data_files import read_physical_media_csv
+from .person_info import make_personinfo, PersonInfo
 from mediabrowser.views.utils import get_match
 
 logger = logging.getLogger("populate_db")

@@ -12,10 +12,10 @@ import warnings
 import time
 import logging
 
-from populate_db.read_data_files import read_films_file, read_patch_csv, item_patch_equal
-from populate_db.progress_bar import ProgressBar
-from populate_db.person_info import PersonInfo
-from populate_db.media_info import MediaInfoProcessor, MediaInfo
+from .read_data_files import read_films_file, read_patch_csv, item_patch_equal
+from .progress_bar import ProgressBar
+from .person_info import PersonInfo
+from .media_info import MediaInfoProcessor, MediaInfo
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -70,7 +70,7 @@ class PopulateDatabase:
             else:
                 self._direct_fields.append(field.name)
 
-        self._waiting_for_alt_versions = []
+        self._waiting_for_alt_versions: list[tuple[VisionItem, str]] = []
 
         logging.basicConfig(
             filename=f"populate_db-{ts}.log",
@@ -202,7 +202,7 @@ class PopulateDatabase:
                     item.save(using=self._database)
         return item
 
-    def _add_alt_versions(self, item, media_info) -> VisionItem:
+    def _add_alt_versions(self, item: VisionItem, media_info: MediaInfo) -> VisionItem:
         """Add references to any alternative versions"""
         if len(media_info.alt_versions) == 0:
             return item
@@ -306,6 +306,7 @@ class PopulateDatabase:
         patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
         return self._populate(files, patch)
 
+
     def _populate(self, files, patch=None):
         """Do populate. See `populate` for args."""
 
@@ -360,7 +361,25 @@ class PopulateDatabase:
         )
         return self._update(files, patch)
 
-    def _update(self, files, patch=None):
+    def _make_combined_dict(self, films_txt=None, patch_csv=None):
+        # first, iterate over patch
+        #   if filename in DB, check if it matches patch
+        #     if not, update
+        #   else
+        #     add new
+        # then iterate over films list
+        # can start by filtering out any filenames that are already in patch
+        # then iterate, adding new
+
+        patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
+        if films_txt is not None:
+            files = read_films_file(films_txt)
+            films_dct = {str(film): {} for film in files if str(film) not in patch}
+            patch.update(films_dct)
+        return patch
+
+
+    def _update_old(self, files, patch=None):
         """Do update. See `update` for args."""
 
         if patch is None:
