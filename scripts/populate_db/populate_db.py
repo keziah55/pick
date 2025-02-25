@@ -12,7 +12,7 @@ import warnings
 import time
 import logging
 
-from .read_data_files import read_films_file, read_patch_csv, item_patch_equal
+from .read_data_files import read_films_file, read_patch_csv, item_patch_equal, make_combined_dict
 from .progress_bar import ProgressBar
 from .person_info import PersonInfo
 from .media_info import MediaInfoProcessor, MediaInfo
@@ -306,7 +306,6 @@ class PopulateDatabase:
         patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
         return self._populate(files, patch)
 
-
     def _populate(self, files, patch=None):
         """Do populate. See `populate` for args."""
 
@@ -353,78 +352,57 @@ class PopulateDatabase:
         if films_txt is None and patch_csv is None:
             raise ValueError("Please specify films file and/or patch file when calling `update`")
 
-        patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
-        files = (
-            read_films_file(films_txt)
-            if films_txt is not None
-            else [Path(file) for file in patch.keys()]
-        )
-        return self._update(files, patch)
+        dct = make_combined_dict(films_txt, patch_csv)
 
-    def _make_combined_dict(self, films_txt=None, patch_csv=None):
-        # first, iterate over patch
-        #   if filename in DB, check if it matches patch
-        #     if not, update
-        #   else
-        #     add new
-        # then iterate over films list
-        # can start by filtering out any filenames that are already in patch
-        # then iterate, adding new
+        return self._update(dct)
 
-        patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
-        if films_txt is not None:
-            files = read_films_file(films_txt)
-            films_dct = {str(film): {} for film in files if str(film) not in patch}
-            patch.update(films_dct)
-        return patch
-
-
-    def _update_old(self, files, patch=None):
+    def _update(self, dct):
         """Do update. See `update` for args."""
-
-        if patch is None:
-            patch = {}
-
-        progress = ProgressBar(len(files)) if not self._quiet and len(files) > 0 else None
 
         count = 0
 
-        for n, file in enumerate(files):
+        if len(dct) > 0:
 
-            info = patch.get(str(file), None)
+            progress = ProgressBar(len(dct)) if not self._quiet else None
+            n = 0  # progress counter
 
-            item = VisionItem.objects.using(self._database).filter(filename=file)
-            if len(item) > 1:
-                warnings.warn(f"Multiple objects with filename '{file}' in database", UserWarning)
-            else:
-                skip = False
-                # if len(item) == 0, file added to DB in `if not skip` below
+            for file, info in dct.items():
+                n += 1
 
-                if len(item) == 1:
-                    item = item[0]
-                    if info is None or item_patch_equal(item, info):
-                        # item is already in DB with no patch data to apply
-                        # or all patch fields match DB item
-                        skip = True
-                    else:
-                        # file in both DB and patch and the fields don't match, so re-make it
-                        logger.info(f"Deleting and re-creating item for '{file}'")
-                        item.delete()
-                # (re)create
-                if not skip:
-                    media_info = self._get_movie(file.stem, patch=info)
-                    if media_info is None:
-                        continue
-                    if file.suffix == "":
-                        # if filename is name from dvds list (i.e. not actual filename with ext)
-                        # set digital to False
-                        media_info["digital"] = False
-                    self._add_to_db(file, media_info)
-                    count += 1
-                    logger.info(f"Updated {file} in DB")
+                item = VisionItem.objects.using(self._database).filter(filename=file)
+                if len(item) > 1:
+                    warnings.warn(
+                        f"Multiple objects with filename '{file}' in database", UserWarning
+                    )
+                else:
+                    skip = False
+                    # if len(item) == 0, file added to DB in `if not skip` below
 
-            if progress is not None:
-                progress.progress(n + 1)
+                    if len(item) == 1:
+                        item = item[0]
+                        if info is None or item_patch_equal(item, info):
+                            # item is already in DB with no patch data to apply
+                            # or all patch fields match DB item
+                            skip = True
+                        else:
+                            # file in both DB and patch and the fields don't match, so re-make it
+                            logger.info(f"Deleting and re-creating item for '{file}'")
+                            item.delete()
+                    # (re)create
+                    if not skip:
+                        media_info = self._get_movie(file.stem, patch=info)
+                        if media_info is None:
+                            continue
+                        if file.suffix == "":
+                            # if filename is name from dvds list (i.e. not actual filename with ext)
+                            # set digital to False
+                            media_info["digital"] = False
+                        self._add_to_db(file, media_info)
+                        count += 1
+                        logger.info(f"Updated {file} in DB")
+
+                if progress is not None:
+                    progress.progress(n)
 
         self._write(f"Updated {count} records")
         return count

@@ -23,9 +23,9 @@ def _make_visionitem_field_type_map():
 _model_field_type_map = _make_visionitem_field_type_map()
 
 _patch_to_model_map = {
-        "media_id": "imdb_id",
-        "image_url": "img",
-    }
+    "media_id": "imdb_id",
+    "image_url": "img",
+}
 
 _ext = [".avi", ".m4v", ".mkv", ".mov", ".mp4", ".wmv", ".webm"]
 
@@ -41,7 +41,7 @@ def read_films_file(films_txt) -> list:
 def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[dict[str:str]]:
     """
     Return dict from csv file.
-    
+
     Returns nested dict. Outer dict keys are filenames; values are dict of header: value pairs.
     """
     # make patch dict
@@ -70,7 +70,11 @@ def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[dict[str:str]
             continue
 
         key = _format_patch_value(key.strip(), key_name)
-        dct = {header[i]: _format_patch_value(value.strip(), header[i]) for i, value in enumerate(values) if value}
+        dct = {
+            header[i]: _format_patch_value(value.strip(), header[i])
+            for i, value in enumerate(values)
+            if value
+        }
         if "imdb_id" in dct:
             dct["media_id"] = dct.pop("imdb_id")
         # in case a file is entered twice in the csv, merge the two dicts
@@ -80,6 +84,17 @@ def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[dict[str:str]
         else:
             current.update(dct)
 
+    return patch
+
+
+def make_combined_dict(films_txt=None, patch_csv=None) -> dict[dict[str:str]]:
+    """Read `patch_csv` and add empty entries for any values in `films_txt` that are not in patch."""
+
+    patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
+    if films_txt is not None:
+        files = read_films_file(films_txt)
+        films_dct = {str(film): {} for film in files if str(film) not in patch}
+        patch.update(films_dct)
     return patch
 
 
