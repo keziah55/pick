@@ -1,5 +1,5 @@
 from typing import NamedTuple, Optional
-from imdb import Cinemagoer
+from imdb.parser.http import IMDbHTTPAccessSystem as CinemagoerType  # used for type hint
 from imdb.Person import Person as IMDbPerson
 
 
@@ -22,7 +22,7 @@ def _is_id_str(s: str) -> bool:
         return True
 
 
-def _name_to_id(name: str, cinemagoer: Cinemagoer) -> str:
+def _name_to_id(name: str, cinemagoer: CinemagoerType) -> str:
     """
     Given `name` string, return IMDb ID string
 
@@ -41,7 +41,7 @@ def _name_to_id(name: str, cinemagoer: Cinemagoer) -> str:
     return name
 
 
-def make_personinfo(person, cinemagoer: Cinemagoer) -> PersonInfo:
+def make_personinfo(person, cinemagoer: CinemagoerType) -> PersonInfo:
     """
     Create PersonInfo for given `person`.
 
