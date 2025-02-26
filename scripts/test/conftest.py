@@ -15,6 +15,10 @@ def patch_csv(data_dir):
     return data_dir.joinpath("minimal_db.csv")
 
 @pytest.fixture
+def physical_media_csv(data_dir):
+    return data_dir.joinpath("physical_media_minimal.csv")
+
+@pytest.fixture
 def expected_patch_filenames():
     return [
         Path("Before_Midnight.mkv"),

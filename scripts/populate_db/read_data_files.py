@@ -1,5 +1,6 @@
 from pathlib import Path
 from decimal import Decimal
+from typing import Any
 from mediabrowser.models import VisionItem
 
 
@@ -32,13 +33,13 @@ _ext = [".avi", ".m4v", ".mkv", ".mov", ".mp4", ".wmv", ".webm"]
 _sep = "\t"
 
 
-def read_films_file(films_txt) -> list:
+def read_films_file(films_txt) -> list[Path]:
     with open(films_txt) as fileobj:
         files = [Path(file.strip()) for file in list(fileobj) if Path(file.strip()).suffix in _ext]
     return files
 
 
-def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[dict[str:str]]:
+def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[Path, dict[str, Any]]:
     """
     Return dict from csv file.
 
@@ -87,7 +88,7 @@ def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[dict[str:str]
     return patch
 
 
-def make_combined_dict(films_txt=None, patch_csv=None) -> dict[dict[str:str]]:
+def make_combined_dict(films_txt=None, patch_csv=None) -> dict[Path, dict[str, Any]]:
     """Read `patch_csv` and add empty entries for any values in `films_txt` that are not in patch."""
 
     patch = read_patch_csv(patch_csv) if patch_csv is not None else {}

@@ -11,8 +11,9 @@ from pathlib import Path
 import warnings
 import time
 import logging
+from typing import Any
 
-from .read_data_files import read_films_file, read_patch_csv, item_patch_equal, make_combined_dict
+from .read_data_files import item_patch_equal, make_combined_dict
 from .progress_bar import ProgressBar
 from .person_info import PersonInfo
 from .media_info import MediaInfoProcessor, MediaInfo
@@ -283,63 +284,16 @@ class PopulateDatabase:
             logger.warning(f"Could not get media info for {title=} {patch=}")
         return ret
 
-    def populate(self, films_txt, patch_csv=None) -> int:
-        """
-        Read file of film file names and create database entries for all
-
-        Parameters
-        ----------
-        films_txt : str
-            Path to file containing list of file names
-        patch_csv : str
-            Path to csv file of values to use instead of those returned by Cinemagoer
-
-        Returns
-        -------
-        count : int
-            The number of records created
-        """
-        if films_txt is None:
-            raise ValueError(
-                "You must provide a path to file containing list of films in order to populate DB"
-            )
-        files = read_films_file(films_txt)
-        patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
-        return self._populate(files, patch)
-
-    def _populate(self, files, patch=None):
-        """Do populate. See `populate` for args."""
-
-        if patch is None:
-            patch = {}
-
-        progress = ProgressBar(len(files)) if not self._quiet and len(files) > 0 else None
-
-        for n, file in enumerate(files):
-
-            info = patch.get(str(file), None)
-
-            media_info = self._get_movie(file.stem, patch=info)
-            if media_info is None:
-                continue
-            else:
-                self._add_to_db(file, media_info)
-                logger.info(f"Created {file} in DB")
-
-            if progress is not None:
-                progress.progress(n + 1)
-
-        self._write("Checking for remaining references...")
-        self._check_alt_versions()
-
     def update(self, films_txt=None, patch_csv=None) -> int:
         """
-        If `films_txt` is not None, add any new entries to the database, using
-        `patch_csv`, if provided.
+        Add any new entries to database or update existing ones.
+
+        First, iterate over data in `patch_csv`. Then, anything listed in `films_txt` that was not
+        added/updated by patch data is added.
 
         If `patch_csv` is provided, the corresponding item is retrieved from database.
-        If the IDs don't match, the item will be deleted from the database and a
-        new record will be created using the patch.
+        If any fields in the patched data don't match the DB item, it is deleted from the database
+        and a new record is created using the patch.
         If there is no item in the database with the given filename, it is created.
 
         Either `films_txt` or `patch_csv` can be given or both. Passing no args
@@ -347,7 +301,7 @@ class PopulateDatabase:
 
         Returns
         -------
-        count : int
+        int
             The number of records updated
         """
         if films_txt is None and patch_csv is None:
@@ -357,53 +311,33 @@ class PopulateDatabase:
 
         return self._update(dct)
 
-    def _update(self, dct):
-        """Do update. See `update` for args."""
+    def _update(self, dct: dict[Path, dict[str, str]]) -> int:
+        """
+        Update/add DB entries.
+
+        Parameters
+        ----------
+        dct
+            Dict of patch data and films list, as returned by `make_combined_dict`.
+
+        Returns
+        -------
+        int
+            The number of items created or updated.
+        """
 
         count = 0
 
         if len(dct) > 0:
 
             progress = ProgressBar(len(dct)) if not self._quiet else None
-            n = 0  # progress counter
 
-            for file, info in dct.items():
-                n += 1
+            for n, (file, info) in enumerate(dct.items()):
 
-                item = VisionItem.objects.using(self._database).filter(filename=file)
-                if len(item) > 1:
-                    warnings.warn(
-                        f"Multiple objects with filename '{file}' in database", UserWarning
-                    )
-                else:
-                    skip = False
-                    # if len(item) == 0, file added to DB in `if not skip` below
+                item_updated = self._update_item(file, info)
 
-                    if len(item) == 1:
-                        item = item[0]
-                        if info is None or item_patch_equal(item, info):
-                            # item is already in DB with no patch data to apply
-                            # or all patch fields match DB item
-                            skip = True
-                        else:
-                            # file in both DB and patch and the fields don't match, so re-make it
-                            logger.info(f"Deleting and re-creating item for '{file}'")
-                            item.delete()
-                    # (re)create
-                    if not skip:
-                        if file.suffix == "" and "digital" not in info:
-                            info["digital"] = False
-                        
-                        media_info = self._get_movie(file.stem, patch=info)
-                        if media_info is None:
-                            continue
-                        # if file.suffix == "":
-                        #     # if filename is name from dvds list (i.e. not actual filename with ext)
-                        #     # set digital to False
-                        #     media_info["digital"] = False
-                        self._add_to_db(file, media_info)
-                        count += 1
-                        logger.info(f"Updated {file} in DB")
+                if item_updated:
+                    count += 1
 
                 if progress is not None:
                     progress.progress(n)
@@ -413,6 +347,42 @@ class PopulateDatabase:
 
         self._write(f"Updated {count} records")
         return count
+
+    def _update_item(self, file: Path, info: dict[str:Any]) -> bool:
+        """
+        Update or create DB item for the given `file` and `info`.
+        
+        Return True if an item was created/updated; otherwise False.
+        """
+
+        item = VisionItem.objects.using(self._database).filter(filename=file)
+
+        if len(item) > 1:
+            warnings.warn(f"Multiple objects with filename '{file}' in database", UserWarning)
+            return False
+
+        if len(item) == 1:
+            item = item[0]
+            if info is None or item_patch_equal(item, info):
+                # item is already in DB with no patch data to apply
+                # or all patch fields match DB item
+                # skip = True
+                return False
+            else:
+                # file in both DB and patch and the fields don't match, so re-make it
+                logger.info(f"Deleting and re-creating item for '{file}'")
+                item.delete()
+
+        # if not returned yet, create or recreate item in DB
+        if file.suffix == "" and "digital" not in info:
+            info["digital"] = False
+
+        if (media_info := self._get_movie(file.stem, patch=info)) is not None:
+            self._add_to_db(file, media_info)
+            logger.info(f"Updated {file} in DB")
+            return True
+
+        return False
 
     def clear(self, model=VisionItem):
         """Remove all entries from the given `model` table"""
@@ -441,12 +411,6 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--patch", help="Path to patch csv")
     parser.add_argument("-m", "--physical-media", help="Path to physical media csv")
     parser.add_argument(
-        "-u",
-        "--update",
-        help="Call update with path to films file and/or patch csv",
-        action="store_true",
-    )
-    parser.add_argument(
         "-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true"
     )
     parser.add_argument("-q", "--quiet", help="Don't write anything to stdout", action="store_true")
@@ -463,10 +427,7 @@ if __name__ == "__main__":
         pop_db.clear(VisionItem)
         pop_db.clear(VisionSeries)
 
-    if args.update:
-        pop_db.update(args.films, args.patch)
-    else:
-        pop_db.populate(args.films, args.patch)
+    pop_db.update(args.films, args.patch)
 
     if not args.quiet:
         indent = "  "
