@@ -2,7 +2,7 @@ import logging
 from typing import NamedTuple, Optional
 from imdb import Cinemagoer
 from imdb.Movie import Movie
-from .read_data_files import read_physical_media_csv
+from .read_data_files import read_physical_media_csv, read_alias_csv
 from .person_info import make_personinfo, PersonInfo
 from mediabrowser.views.utils import get_match
 
@@ -63,12 +63,13 @@ class MediaInfoProcessor:
 
     digital_default = True
 
-    def __init__(self, physical_media=None):
+    def __init__(self, physical_media=None, alias_csv=None):
         self._movie_cache = {}
         self._cinemagoer = Cinemagoer()
         self._physical_media = (
             read_physical_media_csv(physical_media) if physical_media is not None else {}
         )
+        self._aliases = read_alias_csv(alias_csv) if alias_csv is not None else {}
 
     def get_media_info(
         self, patch: Optional[dict] = None, title: Optional[str] = None, item_type="film"
@@ -199,6 +200,9 @@ class MediaInfoProcessor:
             value = default
         return value
 
+    def _make_person_info(self, person):
+        return make_personinfo(person, self._cinemagoer, self._aliases)
+
     def _make_media_info(self, movie: Movie, patch=None) -> MediaInfo:
         """
         Return named tuple of info about the film from the given `movie`.
@@ -267,13 +271,13 @@ class MediaInfoProcessor:
             stars = ",".split(patch["stars"])
         else:
             stars = movie.get("cast", [])
-        stars = [make_personinfo(person, self._cinemagoer) for person in stars]
+        stars = [self._make_person_info(person) for person in stars]
 
         if "director" in patch:
             director = ",".split(patch["director"])
         else:
             director = movie.get("director", [])
-        director = [make_personinfo(person, self._cinemagoer) for person in director]
+        director = [self._make_person_info(person) for person in director]
 
         desc = patch.get("description", movie.get("plot", movie.get("plot outline", "")))
         if isinstance(desc, list):

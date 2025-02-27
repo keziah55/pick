@@ -28,7 +28,7 @@ logging.basicConfig(
 class PopulateDatabase:
     """Class to create records in database from list of file names and/or csv file."""
 
-    def __init__(self, quiet=False, physical_media=None, database="default"):
+    def __init__(self, quiet=False, physical_media=None, alias_csv=None, database="default"):
 
         self._created_item_count = {"visionitem": 0, "genre": 0, "keywords": 0, "person": 0}
         self._created_visionitems = []
@@ -39,7 +39,7 @@ class PopulateDatabase:
 
         self._database = database
 
-        self._media_info_processor = MediaInfoProcessor(physical_media)
+        self._media_info_processor = MediaInfoProcessor(physical_media, alias_csv)
 
         # fields that are ManyToMany references
         self._ref_fields = ["genre", "keywords", "director", "stars"]

@@ -2,7 +2,7 @@ import pytest
 
 from ..populate_db import PopulateDatabase
 from ..populate_db.read_data_files import read_patch_csv, make_combined_dict
-from mediabrowser.models import VisionItem
+from mediabrowser.models import VisionItem, Person
 
 DATABASE = "db_test"
 
@@ -34,6 +34,7 @@ def test_populate_db(
     films_txt,
     patch_csv,
     physical_media_csv,
+    alias_csv,
     expected_patch_filenames,
     expected_films_filenames,
     monkeypatch,
@@ -55,12 +56,14 @@ def test_populate_db(
 
     monkeypatch.setattr(read_data_files, "read_patch_csv", patch_no_disc_index)
 
-    pop_db = PopulateDatabase(physical_media=physical_media_csv, quiet=False, database=DATABASE)
+    pop_db = PopulateDatabase(
+        physical_media=physical_media_csv, alias_csv=alias_csv, quiet=False, database=DATABASE
+    )
     n = pop_db.update(films_txt=films_txt, patch_csv=patch_csv)
 
     assert n == len(expected_films_filenames) + len(expected_patch_filenames)
 
-    expected_created_items = {"visionitem": 22, "genre": 15, "person": 1381, "keywords": 0}
+    expected_created_items = {"visionitem": 23, "genre": 16, "person": 1458, "keywords": 0}
 
     for key, expected_count in expected_created_items.items():
         assert pop_db._created_item_count[key] == expected_count
@@ -73,3 +76,7 @@ def test_populate_db(
             assert (
                 item.disc_index == info["disc_index"]
             ), f"{file=}, expected disc index {info['disc_index']}, got {item.disc_index}"
+
+    people = Person.objects.using(DATABASE).filter(name="Charles Chaplin")
+    assert len(people) == 1
+    assert people[0].alias == "Charlie Chaplin"

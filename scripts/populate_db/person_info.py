@@ -41,7 +41,7 @@ def _name_to_id(name: str, cinemagoer: CinemagoerType) -> str:
     return name
 
 
-def make_personinfo(person, cinemagoer: CinemagoerType) -> PersonInfo:
+def make_personinfo(person, cinemagoer: CinemagoerType, aliases: dict[str:str]) -> PersonInfo:
     """
     Create PersonInfo for given `person`.
 
@@ -58,4 +58,7 @@ def make_personinfo(person, cinemagoer: CinemagoerType) -> PersonInfo:
     else:
         id_str = _name_to_id(person)
         name = person
-    return PersonInfo(id_str, name)
+
+    alias = aliases.get(name, None)
+
+    return PersonInfo(id_str, name, alias)

@@ -175,3 +175,10 @@ def item_patch_equal(item, patch) -> bool:
 
 def _make_disc_index(case, slot):
     return f"{int(case)}.{int(slot):03d}"
+
+
+def read_alias_csv(alias_csv: Path) -> dict[str, str]:
+    """Return dict of name:alias pairs."""
+    text = alias_csv.read_text()
+    _, *lines = text.split("\n")
+    return dict(*zip([line.split(_sep) for line in lines if line]))

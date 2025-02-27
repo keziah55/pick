@@ -19,6 +19,10 @@ def physical_media_csv(data_dir):
     return data_dir.joinpath("physical_media_minimal.csv")
 
 @pytest.fixture
+def alias_csv(data_dir):
+    return data_dir.joinpath("aliases.csv")
+
+@pytest.fixture
 def expected_patch_filenames():
     return [
         Path("Before_Midnight.mkv"),
@@ -46,4 +50,4 @@ def expected_patch_filenames():
 
 @pytest.fixture
 def expected_films_filenames():
-    return [Path("Drive.mkv")]
+    return [Path("Drive.mkv"), Path("The Great Dictator.mkv")]
