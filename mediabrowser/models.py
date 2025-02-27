@@ -28,13 +28,6 @@ class BaseSlug(models.Model):
         abstract = True
 
 
-# class MediaSeries(BaseSlug):
-#     title = models.CharField(max_length=200, primary_key=True, unique=True)
-
-#     def __str__(self):
-#         return self.title
-
-
 class Person(models.Model):
     imdb_id = models.PositiveIntegerField(primary_key=True, unique=True)
     name = models.CharField(max_length=200)
@@ -81,13 +74,9 @@ class MediaItem(BaseSlug):
     img = models.CharField(max_length=500)  # url to image
     local_img = models.ImageField(null=True)
     media_type = models.CharField(max_length=50, choices=MEDIA_TYPE_CHOICES)
-    # children = SortedManyToManyField("self")
 
     def __str__(self):
         return f"{self.title} ({self.year})"
-
-    # class Meta:
-    #     abstract = True  # False
 
 
 class BaseVision(MediaItem):
@@ -115,18 +104,8 @@ class BaseVision(MediaItem):
 
     parent_series = models.ForeignKey("VisionSeries", on_delete=models.CASCADE, null=True)
 
-    # class Meta:
-    # abstract = True
-
 
 class VisionSeries(BaseVision):
-    # director = SortedManyToManyField(Person, related_name="director")
-    # stars = SortedManyToManyField(Person, related_name="stars")
-    # genre = models.ManyToManyField(Genre)
-    # keywords = models.ManyToManyField(Keyword)
-
-    # description = models.TextField(blank=True)
-    # alt_description = models.TextField(blank=True)
 
     # inherited `year` should be regarded as `year_min`
     year_max = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
@@ -139,35 +118,19 @@ class VisionSeries(BaseVision):
     #     validators=[MinValueValidator(0), MaxValueValidator(5)],
     # )
 
-    # parent_series = models.ForeignKey("self",  on_delete=models.CASCADE)
     members = SortedManyToManyField(MediaItem, symmetrical=False)
-    
+
 
 class VisionItem(BaseVision):
 
-    # runtime = models.PositiveSmallIntegerField()  # runtime in minutes
     imdb_id = models.PositiveIntegerField()
     language = models.CharField(max_length=1000, blank=True)
     colour = models.BooleanField(default=True)
 
     alt_title = models.CharField(max_length=1000, blank=True)
-    # director = SortedManyToManyField(Person, related_name="director")
-    # stars = SortedManyToManyField(Person, related_name="stars")
-    # genre = models.ManyToManyField(Genre)
-    # keywords = models.ManyToManyField(Keyword)
-    # description = models.TextField(blank=True)
-    # alt_description = models.TextField(blank=True)
 
     alt_versions = models.ManyToManyField("self", symmetrical=False)
     is_alt_version = models.BooleanField(default=False)
-    # imdb_rating = models.FloatField(
-    #     default=0,
-    #     validators=[MinValueValidator(0), MaxValueValidator(10)],
-    # )
-    # user_rating = models.FloatField(
-    #     default=3,
-    #     validators=[MinValueValidator(0), MaxValueValidator(5)],
-    # )
     bonus_features = models.BooleanField(default=False)
     digital = models.BooleanField(default=True)
     physical = models.BooleanField(default=False)
