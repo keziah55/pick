@@ -29,23 +29,21 @@ if __name__ == "__main__":
 
     django.setup()
 
-from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
-from mediabrowser.models import VisionItem, VisionSeries, Genre, Keyword, Person
+from mediabrowser.models import VisionItem, VisionSeries, Person
 
 
 ts = time.strftime("%Y-%m-%d-%H:%M:%S")
 logger = logging.getLogger("populate_db")
+logging.basicConfig(
+    filename=f"populate_db-{ts}.log",
+    level=logging.INFO,
+    format="%(levelname)s: %(name)s: %(asctime)s: %(message)s",
+)
 
 
 class PopulateDatabase:
     """Class to create records in database from list of file names and/or csv file."""
-
-    field_map = {
-        "genre": Genre,
-        "keywords": Keyword,
-        ("director", "stars"): Person,
-    }
 
     def __init__(self, quiet=False, physical_media=None, database="default"):
 
@@ -60,39 +58,25 @@ class PopulateDatabase:
 
         self._media_info_processor = MediaInfoProcessor(physical_media)
 
-        self._direct_fields = []
-        self._ref_fields = []
-
-        for field in VisionItem._meta.get_fields():
-            if field.name == "id":
-                continue
-            if isinstance(field, (models.ManyToManyField, models.ForeignKey)):
-                self._ref_fields.append(field.name)
-            else:
-                self._direct_fields.append(field.name)
+        # fields that are ManyToMany references
+        self._ref_fields = ["genre", "keywords", "director", "stars"]
 
         self._waiting_for_alt_versions: list[tuple[VisionItem, str]] = []
-
-        logging.basicConfig(
-            filename=f"populate_db-{ts}.log",
-            level=logging.INFO,
-            format="%(levelname)s: %(name)s: %(asctime)s: %(message)s",
-        )
 
     def _write(self, s):
         if not self._quiet:
             print(s)
 
-    def _add_to_db(self, filename, media_info):
+    def _add_to_db(self, filename: Path, media_info: MediaInfo):
         """
-        Create a `VisionItem` in the database for `media_info`
+        Create a `VisionItem` in the database for `media_info`.
 
         Parameters
         ----------
-        filename : str
-            File name of film
-        media_info : MediaInfo
-            Dataclass with info
+        filename
+            File name of film.
+        media_info
+            Object with info for this VisionItem.
 
         Returns
         -------
@@ -154,81 +138,76 @@ class PopulateDatabase:
         item : VisionItem
             Updated `item`
         """
-        # iterate over list of genres, keywords etc
-        # make new entry if necessary
-        for name, model_class in self.field_map.items():
-            # get db model class
-            if not isinstance(name, (list, tuple)):
-                # stars and director are both Person
-                # turn genre and keyword into list, so can always iterate
-                name = [name]
-            for n in name:
-                # iterate over list in MediaInfo dataclass
-                for value in media_info[n]:
 
-                    if isinstance(value, PersonInfo):
-                        person_name = value.name
-                        value = value.id
+        for name in self._ref_fields:
+            model_class = type(getattr(VisionItem, name).field.related_model())
 
-                    try:
-                        # get ref if it exists
-                        m = model_class.objects.using(self._database).get(pk=value)
+            for value in media_info[name]:
 
-                    except ObjectDoesNotExist:
-                        # otherwise, make new
+                if isinstance(value, PersonInfo):
+                    # PersonInfo.id is primary key for Person models
+                    person_name = value.name
+                    value = value.id
 
-                        if model_class == Person:
-                            # if making a new Person, ensure we have the ID and name
-                            # TODO check if PersonInfo has alias field
-                            args = ()
-                            kwargs = {"imdb_id": value, "name": person_name}
-                        else:
-                            # if not Person, Model arg is just `value`
-                            args = (value,)
-                            kwargs = {}
+                try:
+                    # get ref if it exists
+                    m = model_class.objects.using(self._database).get(pk=value)
 
-                        # make new model instance
-                        m = model_class(*args, **kwargs)
-                        m.save(using=self._database)
+                except ObjectDoesNotExist:
+                    # otherwise, make new
 
-                        if n in ["director", "stars"]:
-                            key = "person"
-                        else:
-                            key = n
-                        self._created_item_count[key] += 1
+                    if model_class == Person:
+                        # if making a new Person, ensure we have the ID and name
+                        # TODO check if PersonInfo has alias field
+                        args = ()
+                        kwargs = {"imdb_id": value, "name": person_name}
+                    else:
+                        # if not Person, Model arg is just `value`
+                        args = (value,)
+                        kwargs = {}
 
-                    # add to VisionItem
-                    # e.g. item.genre.add(m)
-                    attr = getattr(item, n)
-                    attr.add(m)
-                    item.save(using=self._database)
+                    # make new model instance
+                    m = model_class(*args, **kwargs)
+                    m.save(using=self._database)
+
+                    self._created_item_count[model_class.__name__.lower()] += 1
+
+                # add to VisionItem
+                # e.g. item.genre.add(m)
+                attr = getattr(item, name)
+                attr.add(m)
+                item.save(using=self._database)
         return item
 
     def _add_alt_versions(self, item: VisionItem, media_info: MediaInfo) -> VisionItem:
-        """Add references to any alternative versions"""
+        """
+        Add references to any alternative versions.
+
+        If `VisionItem` for the alt version doesn't exist yet, append to `_waiting_for_alt_versions`
+        list. After populating the DB, call `_check_alt_versions` to add these.
+        """
+
         if len(media_info.alt_versions) == 0:
             return item
-        else:
-            for ref_film in media_info.alt_versions:
-                ref_items = VisionItem.objects.using(self._database).filter(filename=ref_film)
-                if len(ref_items) == 0:
-                    # ref_film doesn't exist (yet) so add to _waiting_for_alt_versions
-                    self._waiting_for_alt_versions.append((item, ref_film))
-                    logger.info(
-                        f"Alt version '{ref_film}' for {item} doesn't exist yet; added to list"
-                    )
-                elif len(ref_items) > 1:
-                    warnings.warn(
-                        f"Multiple objects with filename '{ref_film}' in database", UserWarning
-                    )
-                else:
-                    item.alt_versions.add(ref_items[0])
-                    logger.info(f"Alt version '{ref_film}' added to {item}")
-            item.save(using=self._database)
+
+        for ref_film in media_info.alt_versions:
+            ref_items = VisionItem.objects.using(self._database).filter(filename=ref_film)
+            if len(ref_items) == 0:
+                # ref_film doesn't exist (yet) so add to _waiting_for_alt_versions
+                self._waiting_for_alt_versions.append((item, ref_film))
+                logger.info(f"Alt version '{ref_film}' for {item} doesn't exist yet; added to list")
+            elif len(ref_items) > 1:
+                warnings.warn(
+                    f"Multiple objects with filename '{ref_film}' in database", UserWarning
+                )
+            else:
+                item.alt_versions.add(ref_items[0])
+                logger.info(f"Alt version '{ref_film}' added to {item}")
+        item.save(using=self._database)
         return item
 
     def _check_alt_versions(self):
-        """Iterate through `_waiting_for_alt_versions` and add alt_versions to items"""
+        """Iterate through `_waiting_for_alt_versions` and add alt_versions to items."""
         if len(self._waiting_for_alt_versions) == 0:
             return
 
@@ -248,7 +227,7 @@ class PopulateDatabase:
                 ref_item = ref_items[0]
                 if not ref_item.is_alt_version:
                     ref_item.is_alt_version = True
-                    ref_item.save()
+                    ref_item.save(using=self._database)
                 item.alt_versions.add(ref_item)
                 item.save(using=self._database)
 
@@ -351,7 +330,7 @@ class PopulateDatabase:
     def _update_item(self, file: Path, info: dict[str:Any]) -> bool:
         """
         Update or create DB item for the given `file` and `info`.
-        
+
         Return True if an item was created/updated; otherwise False.
         """
 

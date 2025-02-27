@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from ..populate_db import PopulateDatabase
@@ -61,6 +59,11 @@ def test_populate_db(
     n = pop_db.update(films_txt=films_txt, patch_csv=patch_csv)
 
     assert n == len(expected_films_filenames) + len(expected_patch_filenames)
+
+    expected_created_items = {"visionitem": 22, "genre": 15, "person": 1381, "keywords": 0}
+
+    for key, expected_count in expected_created_items.items():
+        assert pop_db._created_item_count[key] == expected_count
 
     # check that info from physical media csv was applied correctly
     patch = read_patch_csv_orig(patch_csv)
