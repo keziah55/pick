@@ -129,8 +129,7 @@ class PopulateDatabase:
 
                 if isinstance(value, PersonInfo):
                     # PersonInfo.id is primary key for Person models
-                    person_name = value.name
-                    value = value.id
+                    value, person_name, person_alias = value
 
                 try:
                     # get ref if it exists
@@ -143,7 +142,7 @@ class PopulateDatabase:
                         # if making a new Person, ensure we have the ID and name
                         # TODO check if PersonInfo has alias field
                         args = ()
-                        kwargs = {"imdb_id": value, "name": person_name}
+                        kwargs = {"imdb_id": value, "name": person_name, "alias": person_alias}
                     else:
                         # if not Person, Model arg is just `value`
                         args = (value,)
