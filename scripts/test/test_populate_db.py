@@ -84,11 +84,13 @@ def test_populate_db(
     assert people[0].alias == "Charlie Chaplin"
 
 
-def test_read_alias_csv(alias_csv):
+@pytest.mark.parametrize("person", ["Charles Chaplin", "0000122", "122"])
+def test_alias(alias_csv, person):
     dct = read_alias_csv(alias_csv)
 
     cinemagoer = Cinemagoer()
 
-    person_info = make_personinfo("Charles Chaplin", cinemagoer, dct)
+    person_info = make_personinfo(person, cinemagoer, dct)
     assert person_info.name == "Charles Chaplin"
     assert person_info.alias == "Charlie Chaplin"
+    assert person_info.id == "0000122"
