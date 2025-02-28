@@ -1,7 +1,9 @@
 import pytest
 
 from ..populate_db import PopulateDatabase
-from ..populate_db.read_data_files import read_patch_csv, make_combined_dict
+from ..populate_db.read_data_files import read_patch_csv, read_alias_csv, make_combined_dict
+from ..populate_db.person_info import make_personinfo
+from imdb import Cinemagoer
 from mediabrowser.models import VisionItem, Person
 
 DATABASE = "db_test"
@@ -80,3 +82,13 @@ def test_populate_db(
     people = Person.objects.using(DATABASE).filter(name="Charles Chaplin")
     assert len(people) == 1
     assert people[0].alias == "Charlie Chaplin"
+
+
+def test_read_alias_csv(alias_csv):
+    dct = read_alias_csv(alias_csv)
+
+    cinemagoer = Cinemagoer()
+
+    person_info = make_personinfo("Charles Chaplin", cinemagoer, dct)
+    assert person_info.name == "Charles Chaplin"
+    assert person_info.alias == "Charlie Chaplin"

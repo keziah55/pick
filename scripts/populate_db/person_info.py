@@ -56,9 +56,10 @@ def make_personinfo(person, cinemagoer: CinemagoerType, aliases: dict[str:str]) 
         id_str = person.getID()
         name = person["name"]
     else:
-        id_str = _name_to_id(person)
+        id_str = _name_to_id(person, cinemagoer)
         name = person
 
-    alias = aliases.get(name, None)
+    if (alias := aliases.get(int(id_str), None)) is not None:
+        alias = alias["alias"]
 
     return PersonInfo(id_str, name, alias)

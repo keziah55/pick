@@ -45,6 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--films", help="Path to films text file")
     parser.add_argument("-p", "--patch", help="Path to patch csv")
     parser.add_argument("-m", "--physical-media", help="Path to physical media csv")
+    parser.add_argument("-a", "--aliases", help="Path to aliases csv")
     parser.add_argument(
         "-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true"
     )
@@ -55,14 +56,28 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    files = {
+        "films": args.films,
+        "patch": args.patch,
+        "physical_media": args.physical_media,
+        "aliases": args.aliases,
+    }
+    for key, value in files.items():
+        if value is not None:
+            p = files[key] = Path(value)
+            if not p.exists():
+                raise FileNotFoundError(f"'{key}' file '{p}' does not exist.")
+
     t0 = time.monotonic()
-    pop_db = PopulateDatabase(quiet=args.quiet, physical_media=args.physical_media)
+    pop_db = PopulateDatabase(
+        quiet=args.quiet, physical_media=files["physical_media"], alias_csv=files["aliases"]
+    )
 
     if args.clear:
         pop_db.clear(VisionItem)
         pop_db.clear(VisionSeries)
 
-    pop_db.update(args.films, args.patch)
+    pop_db.update(files["films"], files["patch"])
 
     if not args.quiet:
         indent = "  "

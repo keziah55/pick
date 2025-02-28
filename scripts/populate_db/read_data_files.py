@@ -1,27 +1,36 @@
 from pathlib import Path
 from decimal import Decimal
 from typing import Any
-from mediabrowser.models import VisionItem
+import logging
+from mediabrowser.models import VisionItem, Person, Genre, Keyword, VisionSeries
 
 
-def _make_visionitem_field_type_map():
-    field_map = {}
-    for field in VisionItem._meta.fields:
-        field_class_name = field.__class__.__name__.lower()
-        if field.name == "colour":
-            continue
-        if "integer" in field_class_name:
-            field_map[field.name] = int
-        elif "float" in field_class_name:
-            field_map[field.name] = float
-        elif "decimal" in field_class_name:
-            field_map[field.name] = Decimal
-        elif "bool" in field_class_name:
-            field_map[field.name] = bool
-    return field_map
+logger = logging.getLogger("populate_db")
 
 
-_model_field_type_map = _make_visionitem_field_type_map()
+def _make_model_field_type_map() -> dict[str, dict[str, type]]:
+    """For each model, make dict of field types."""
+    model_map = {}
+    models = [VisionItem, Person, Genre, Keyword, VisionSeries]
+    for model in models:
+        model_map[model.__name__] = field_map = {}
+        for field in model._meta.fields:
+            field_class_name = field.__class__.__name__.lower()
+            if field.name == "colour":
+                continue
+            if "integer" in field_class_name:
+                field_map[field.name] = int
+            elif "float" in field_class_name:
+                field_map[field.name] = float
+            elif "decimal" in field_class_name:
+                field_map[field.name] = Decimal
+            elif "bool" in field_class_name:
+                field_map[field.name] = bool
+
+    return model_map
+
+
+_model_field_type_map = _make_model_field_type_map()
 
 _patch_to_model_map = {
     "media_id": "imdb_id",
@@ -39,14 +48,20 @@ def read_films_file(films_txt) -> list[Path]:
     return files
 
 
-def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[Path, dict[str, Any]]:
+def read_patch_csv(patch_csv, key="filename") -> dict[Path, dict[str, Any]]:
     """
     Return dict from csv file.
 
     Returns nested dict. Outer dict keys are filenames; values are dict of header: value pairs.
     """
-    # make patch dict
-    with open(patch_csv) as fileobj:
+    patch = _read_csv_to_rows(patch_csv, key, VisionItem)
+    for key, dct in patch.items():
+        if "imdb_id" in dct:
+            patch[key]["media_id"] = dct.pop("imdb_id")
+    return patch
+
+def _read_csv_to_rows(csv_file: Path, key:str, model_class:type) -> dict[Path, dict[str, Any]]:
+    with open(csv_file) as fileobj:
         header, *lines = fileobj.readlines()
 
     header = header.strip().split(_sep)
@@ -62,26 +77,23 @@ def read_patch_csv(patch_csv, key="filename", logger=None) -> dict[Path, dict[st
         values = line.split(_sep)
         key = values.pop(key_idx)
         if not key.strip():
-            if logger is not None:
-                logger.warning(f"Dropping '{key_name}' item {key=} when reading patch csv")
+            logger.warning(f"Dropping '{key_name}' item {key=} when reading csv")
             continue
         elif key in patch:
-            if logger is not None:
-                logger.warning(f"'{key_name}' item {key=} already in patch dict. Skipping.")
+            logger.warning(f"'{key_name}' item {key=} already in dict. Skipping.")
             continue
 
-        key = _format_patch_value(key.strip(), key_name)
+        key = _format_patch_value(key.strip(), key_name, model_class)
         dct = {
-            header[i]: _format_patch_value(value.strip(), header[i])
+            header[i]: _format_patch_value(value.strip(), header[i], model_class)
             for i, value in enumerate(values)
             if value
         }
-        if "imdb_id" in dct:
-            dct["media_id"] = dct.pop("imdb_id")
+        
         # in case a file is entered twice in the csv, merge the two dicts
         current = patch.get(key, None)
         if current is None:
-            patch[Path(key)] = dct
+            patch[key] = dct
         else:
             current.update(dct)
 
@@ -124,7 +136,7 @@ def read_physical_media_csv(media_csv) -> dict:  # list:
     return physical
 
 
-def _format_patch_value(value: str, name: str):
+def _format_patch_value(value: str, name: str, model_class: type):
     """
     Given a value (and header name) from patch dict, cast to appropriate type.
 
@@ -143,22 +155,37 @@ def _format_patch_value(value: str, name: str):
         `value` cast to appropriate type.
 
     """
-    if name == "disc_index" and value:
-        value = _make_disc_index(*value.split("."))
+    model_name = model_class.__name__
+    if model_name not in _model_field_type_map:
+        raise ValueError(
+            f"Unknown model '{model_name}'. "
+            f"Valid values are: {', '.join(_model_field_type_map.keys())}"
+        )
     else:
-        key = _patch_to_model_map.get(name, name)
+        field_map = _model_field_type_map[model_name]
 
-        if (cast_type := _model_field_type_map.get(key, None)) is not None:
-            if cast_type == bool:
-                match value.lower():
-                    case "true":
-                        value = True
-                    case "false":
-                        value = False
-                    case _:
-                        raise ValueError(f"Cannot cast '{value}' for field '{name}' to bool")
-            else:
-                value = cast_type(value)
+    if not value:
+        return value
+
+    match name:
+        case "disc_index":
+            value = _make_disc_index(*value.split("."))
+        case "filename":
+            value = Path(value)
+        case _:
+            key = _patch_to_model_map.get(name, name)
+
+            if (cast_type := field_map.get(key, None)) is not None:
+                if cast_type == bool:
+                    match value.lower():
+                        case "true":
+                            value = True
+                        case "false":
+                            value = False
+                        case _:
+                            raise ValueError(f"Cannot cast '{value}' for field '{name}' to bool")
+                else:
+                    value = cast_type(value)
 
     return value
 
@@ -179,6 +206,6 @@ def _make_disc_index(case, slot):
 
 def read_alias_csv(alias_csv: Path) -> dict[str, str]:
     """Return dict of name:alias pairs."""
-    text = alias_csv.read_text()
-    _, *lines = text.split("\n")
-    return dict(*zip([line.split(_sep) for line in lines if line]))
+    return _read_csv_to_rows(alias_csv, key="imdb_id", model_class=Person)
+
+ 

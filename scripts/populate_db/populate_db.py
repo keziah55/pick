@@ -5,7 +5,7 @@ from pathlib import Path
 import warnings
 import time
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from .read_data_files import item_patch_equal, make_combined_dict
 from .progress_bar import ProgressBar
@@ -28,7 +28,13 @@ logging.basicConfig(
 class PopulateDatabase:
     """Class to create records in database from list of file names and/or csv file."""
 
-    def __init__(self, quiet=False, physical_media=None, alias_csv=None, database="default"):
+    def __init__(
+        self,
+        quiet=False,
+        physical_media: Optional[Path] = None,
+        alias_csv: Optional[Path] = None,
+        database="default",
+    ):
 
         self._created_item_count = {"visionitem": 0, "genre": 0, "keywords": 0, "person": 0}
         self._created_visionitems = []
