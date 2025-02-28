@@ -20,13 +20,13 @@ if __name__ == "__main__":
 
 from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, VisionSeries, MediaItem
-from populate_db import ProgressBar
+from .progress_bar import ProgressBar
 
 
-def write_series_to_db(csv_file: Path, csv_sep="\t", sort_by_year=True):
+def write_series_to_db(csv_file: Path, csv_sep="\t", sort_by_year=True, quiet:bool=False):
     header, *rows = [line.split(csv_sep) for line in csv_file.read_text().split("\n") if line]
 
-    progress = ProgressBar(len(rows))
+    progress = ProgressBar(len(rows)) if not quiet else None
 
     for n, row in enumerate(rows):
         name, search_str, pks, description, img = row
@@ -48,7 +48,8 @@ def write_series_to_db(csv_file: Path, csv_sep="\t", sort_by_year=True):
         else:
             make_series(members, name)
 
-        progress.progress(n + 1)
+        if progress is not None:
+            progress.progress(n + 1)
 
 
 def make_series(

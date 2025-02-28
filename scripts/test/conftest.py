@@ -23,6 +23,10 @@ def alias_csv(data_dir):
     return data_dir.joinpath("aliases.csv")
 
 @pytest.fixture
+def series_csv(data_dir):
+    return data_dir.joinpath("minimal_media_series.csv")
+
+@pytest.fixture
 def expected_patch_filenames():
     return [
         Path("Before_Midnight.mkv"),

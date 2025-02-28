@@ -60,9 +60,29 @@ def read_patch_csv(patch_csv, key="filename") -> dict[Path, dict[str, Any]]:
             patch[key]["media_id"] = dct.pop("imdb_id")
     return patch
 
-def _read_csv_to_rows(csv_file: Path, key:str, model_class:type) -> dict[Path, dict[str, Any]]:
-    with open(csv_file) as fileobj:
-        header, *lines = fileobj.readlines()
+
+def _read_csv_to_rows(csv_file: Path, key: str, model_class: type) -> dict[Path, dict[str, Any]]:
+    """
+    Read csv file and return dict of rows.
+
+    Parameters
+    ----------
+    csv_file
+        Path to file to read.
+    key
+        Field (from csv header) to use a return dic key.
+    model_class
+        Model class that this data represents.
+
+    Returns
+    -------
+    dict[Path, dict[str, Any]]
+        Outer dict uses given `key`; inner dict pairs each remaining header field with the value
+        for each row.
+
+    """
+    text = csv_file.read_text()
+    header, *lines = [line for line in text.split("\n") if line]
 
     header = header.strip().split(_sep)
     try:
@@ -75,6 +95,7 @@ def _read_csv_to_rows(csv_file: Path, key:str, model_class:type) -> dict[Path, d
     patch = {}
     for line in lines:
         values = line.split(_sep)
+        
         key = values.pop(key_idx)
         if not key.strip():
             logger.warning(f"Dropping '{key_name}' item {key=} when reading csv")
@@ -89,7 +110,7 @@ def _read_csv_to_rows(csv_file: Path, key:str, model_class:type) -> dict[Path, d
             for i, value in enumerate(values)
             if value
         }
-        
+
         # in case a file is entered twice in the csv, merge the two dicts
         current = patch.get(key, None)
         if current is None:
@@ -204,8 +225,10 @@ def _make_disc_index(case, slot):
     return f"{int(case)}.{int(slot):03d}"
 
 
-def read_alias_csv(alias_csv: Path) -> dict[str, str]:
+def read_alias_csv(alias_csv: Path) -> dict[Path, dict[str, Any]]:
     """Return dict of name:alias pairs."""
     return _read_csv_to_rows(alias_csv, key="imdb_id", model_class=Person)
 
- 
+
+def read_series_csv(series_csv: Path) -> dict[Path, dict[str, Any]]:
+    return _read_csv_to_rows(series_csv, key="series_name", model_class=VisionSeries)

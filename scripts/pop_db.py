@@ -22,7 +22,7 @@ if __name__ == "__main__":
     django.setup()
 
 from mediabrowser.models import VisionItem, VisionSeries
-from populate_db import PopulateDatabase
+from populate_db import PopulateDatabase, write_series_to_db
 
 
 if __name__ == "__main__":
@@ -46,6 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--patch", help="Path to patch csv")
     parser.add_argument("-m", "--physical-media", help="Path to physical media csv")
     parser.add_argument("-a", "--aliases", help="Path to aliases csv")
+    parser.add_argument("-s", "--series", help="Path to series csv")
     parser.add_argument(
         "-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true"
     )
@@ -61,6 +62,7 @@ if __name__ == "__main__":
         "patch": args.patch,
         "physical_media": args.physical_media,
         "aliases": args.aliases,
+        "series": args.series,
     }
     for key, value in files.items():
         if value is not None:
@@ -68,33 +70,46 @@ if __name__ == "__main__":
             if not p.exists():
                 raise FileNotFoundError(f"'{key}' file '{p}' does not exist.")
 
-    t0 = time.monotonic()
-    pop_db = PopulateDatabase(
-        quiet=args.quiet, physical_media=files["physical_media"], alias_csv=files["aliases"]
-    )
+    if any([args.films, args.patch, args.clear]):
 
-    if args.clear:
-        pop_db.clear(VisionItem)
-        pop_db.clear(VisionSeries)
+        t0 = time.monotonic()
 
-    pop_db.update(files["films"], files["patch"])
+        pop_db = PopulateDatabase(
+            quiet=args.quiet, physical_media=files["physical_media"], alias_csv=files["aliases"]
+        )
 
-    if not args.quiet:
-        indent = "  "
+        if args.clear:
+            pop_db.clear(VisionItem)
+            pop_db.clear(VisionSeries)
 
-        t = time.monotonic() - t0
-        s = format_time(t)
-        print(f"Completed in {s}")
+        if not args.quiet:
+            print("Populating items...")
 
-        print("\nBreakdown:")
-        print(f"Getting data from IMDb took {format_time(pop_db._imdb_time)}")
-        print(f"Writing data to DB took     {format_time(pop_db._db_time)}")
+        pop_db.update(files["films"], files["patch"])
 
-        print("Created models in DB:")
-        s = "\n".join([f"{indent}{k}: {v}" for k, v in pop_db._created_item_count.items()])
-        print(s)
+        if not args.quiet:
+            indent = "  "
 
-        if args.verbose:
-            print("\nCreated VisionItems:")
-            s = "\n".join([f"{indent}{name}" for name in pop_db._created_visionitems])
+            t = time.monotonic() - t0
+            s = format_time(t)
+            print(f"Completed in {s}")
+
+            print("\nBreakdown:")
+            print(f"Getting data from IMDb took {format_time(pop_db._imdb_time)}")
+            print(f"Writing data to DB took     {format_time(pop_db._db_time)}")
+
+            print("Created models in DB:")
+            s = "\n".join([f"{indent}{k}: {v}" for k, v in pop_db._created_item_count.items()])
             print(s)
+
+            if args.verbose:
+                print("\nCreated VisionItems:")
+                s = "\n".join([f"{indent}{name}" for name in pop_db._created_visionitems])
+                print(s)
+
+            print()
+
+    if args.series:
+        if not args.quiet:
+            print("Populating series...")
+        write_series_to_db(files["series"], quiet=args.quiet)

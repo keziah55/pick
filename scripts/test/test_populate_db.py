@@ -1,7 +1,7 @@
 import pytest
 
 from ..populate_db import PopulateDatabase
-from ..populate_db.read_data_files import read_patch_csv, read_alias_csv, make_combined_dict
+from ..populate_db.read_data_files import read_patch_csv, read_alias_csv, read_series_csv, make_combined_dict
 from ..populate_db.person_info import make_personinfo
 from imdb import Cinemagoer
 from mediabrowser.models import VisionItem, Person
@@ -94,3 +94,9 @@ def test_alias(alias_csv, person):
     assert person_info.name == "Charles Chaplin"
     assert person_info.alias == "Charlie Chaplin"
     assert person_info.id == "0000122"
+
+
+def test_read_series(series_csv):
+    dct = read_series_csv(series_csv)
+    print()
+    print(dct)
