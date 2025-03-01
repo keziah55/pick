@@ -1,10 +1,10 @@
 import pytest
 
-from ..populate_db import PopulateDatabase
+from ..populate_db import PopulateDatabase, write_series_to_db
 from ..populate_db.read_data_files import read_patch_csv, read_alias_csv, read_series_csv, make_combined_dict
 from ..populate_db.person_info import make_personinfo
 from imdb import Cinemagoer
-from mediabrowser.models import VisionItem, Person
+from mediabrowser.models import VisionItem, VisionSeries, Person
 
 DATABASE = "db_test"
 
@@ -37,6 +37,7 @@ def test_populate_db(
     patch_csv,
     physical_media_csv,
     alias_csv,
+    series_csv,
     expected_patch_filenames,
     expected_films_filenames,
     monkeypatch,
@@ -50,7 +51,7 @@ def test_populate_db(
         patch = read_patch_csv_orig(patch_csv)
 
         for file in patch.keys():
-            patch[file].pop("disc_index")
+            patch[file].pop("disc_index", None)
 
         return patch
 
@@ -73,7 +74,7 @@ def test_populate_db(
     # check that info from physical media csv was applied correctly
     patch = read_patch_csv_orig(patch_csv)
     for file, info in patch.items():
-        if info["disc_index"] != "":
+        if info.get("disc_index", "") != "":
             item = VisionItem.objects.using(DATABASE).get(filename=str(file))
             assert (
                 item.disc_index == info["disc_index"]
@@ -82,6 +83,15 @@ def test_populate_db(
     people = Person.objects.using(DATABASE).filter(name="Charles Chaplin")
     assert len(people) == 1
     assert people[0].alias == "Charlie Chaplin"
+
+    pop_db.write_series_to_db(series_csv)
+
+    series = VisionSeries.objects.using(DATABASE).all()
+    print(series)
+    assert len(series) == 6
+    for s in series:
+        print(s.members)
+        assert len(s.members) > 0
 
 
 @pytest.mark.parametrize("person", ["Charles Chaplin", "0000122", "122"])

@@ -7,37 +7,33 @@ from pathlib import Path
 import warnings
 from typing import Union, Optional
 
-if __name__ == "__main__":
-    # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
-    import sys
-    import os
-
-    sys.path.append(str(Path(__file__).parents[1]))
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pick.settings")
-    import django
-
-    django.setup()
-
-from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, VisionSeries, MediaItem
 from .progress_bar import ProgressBar
+from .read_data_files import read_series_csv
+from .get_db_items import get_derived_instance, get_item
 
 
-def write_series_to_db(csv_file: Path, csv_sep="\t", sort_by_year=True, quiet:bool=False):
-    header, *rows = [line.split(csv_sep) for line in csv_file.read_text().split("\n") if line]
+def write_series_to_db(csv_file: Path, sort_by_year=True, quiet: bool = False, database="default"):
 
-    progress = ProgressBar(len(rows)) if not quiet else None
+    data = read_series_csv(csv_file)
 
-    for n, row in enumerate(rows):
-        name, search_str, pks, description, img = row
+    progress = ProgressBar(len(data)) if not quiet else None
+
+    for n, (name, dct) in enumerate(data.items()):
+
+        pks = dct.get("items", None)
+        search_str = dct.get("item_title_contains", "")
+        description = dct.get("description", None)
 
         if pks:
-            members = [_get_item(pk) for pk in pks.split(",")]
+            members = [get_item(pk) for pk in pks.split(",")]
         else:
             if not search_str:
                 search_str = name
-            members = list(VisionItem.objects.filter(title__icontains=search_str))
-            members += list(VisionSeries.objects.filter(title__icontains=search_str))
+            members = list(VisionItem.objects.using(database).filter(title__icontains=search_str))
+            members += list(
+                VisionSeries.objects.using(database).filter(title__icontains=search_str)
+            )
 
             # sort in chronological order
             if sort_by_year:
@@ -46,7 +42,7 @@ def write_series_to_db(csv_file: Path, csv_sep="\t", sort_by_year=True, quiet:bo
         if len(members) == 0:
             warnings.warn(f"Could not find VisionItem/VisionSeries for {name=}")
         else:
-            make_series(members, name)
+            make_series(members, name, description)
 
         if progress is not None:
             progress.progress(n + 1)
@@ -56,6 +52,7 @@ def make_series(
     items: list[Union[VisionItem, VisionSeries]],
     title: str,
     description: Optional[str] = None,
+    database: str = "default,",
 ) -> VisionSeries:
 
     # items = [MediaItem.objects.get(pk=pk) for pk in item_pks]
@@ -81,7 +78,7 @@ def make_series(
 
     for item in items:
 
-        item = _get_derived_instance(item)
+        item = get_derived_instance(item)
         derived_items.append(item)
 
         if isinstance(item, VisionSeries):
@@ -135,7 +132,7 @@ def make_series(
         imdb_rating=imdb_rating,
     )
 
-    series.save()
+    series.save(using=database)
 
     for person in refs["director"]:
         series.director.add(person)
@@ -152,43 +149,8 @@ def make_series(
     for item in derived_items:
         series.members.add(item)
         item.parent_series = series
-        item.save()
+        item.save(using=database)
 
-    series.save()
+    series.save(using=database)
 
     return series
-
-
-def _get_derived_instance(item):
-    try:
-        item = VisionSeries.objects.get(pk=item.pk)
-    except ObjectDoesNotExist:
-        try:
-            item = VisionItem.objects.get(pk=item.pk)
-        except ObjectDoesNotExist:
-            msg = f"Item {item.pk} {item} is neither a VisionSeries nor a VisionItem."
-            raise RuntimeError(msg)
-    return item
-
-
-def _get_item(pk):
-    try:
-        item = VisionItem.objects.get(pk=pk)
-    except ObjectDoesNotExist:
-        try:
-            item = VisionSeries.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            raise ValueError(f"No VisionItem or VisionSeries found for {pk}")
-    return item
-
-
-if __name__ == "__main__":
-
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("file", help="media series csv file")
-
-    args = parser.parse_args()
-
-    write_series_to_db(Path(args.file))
