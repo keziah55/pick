@@ -1,7 +1,12 @@
 import pytest
 
-from ..populate_db import PopulateDatabase, write_series_to_db
-from ..populate_db.read_data_files import read_patch_csv, read_alias_csv, read_series_csv, make_combined_dict
+from ..populate_db import PopulateDatabase
+from ..populate_db.read_data_files import (
+    read_patch_csv,
+    read_alias_csv,
+    read_series_csv,
+    make_combined_dict,
+)
 from ..populate_db.person_info import make_personinfo
 from imdb import Cinemagoer
 from mediabrowser.models import VisionItem, VisionSeries, Person
@@ -87,11 +92,18 @@ def test_populate_db(
     pop_db.write_series_to_db(series_csv)
 
     series = VisionSeries.objects.using(DATABASE).all()
-    print(series)
     assert len(series) == 6
     for s in series:
-        print(s.members)
-        assert len(s.members) > 0
+        assert len(s.members.all()) > 0
+
+    expected_series = {
+        "james bond": ["skyfall", "spectre", "no time to die"],
+        "before trilogy": ["before sunrise", "before sunset", "before midnight"],
+    }
+    for series_title, member_titles in expected_series.items():
+        series = VisionSeries.objects.using(DATABASE).filter(title__iexact=series_title)
+        assert len(series) == 1
+        assert [item.title.lower() for item in series[0].members.all()] == member_titles
 
 
 @pytest.mark.parametrize("person", ["Charles Chaplin", "0000122", "122"])

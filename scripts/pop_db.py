@@ -112,4 +112,4 @@ if __name__ == "__main__":
     if args.series:
         if not args.quiet:
             print("Populating series...")
-        write_series_to_db(files["series"], quiet=args.quiet)
+        pop_db.write_series_to_db(files["series"], quiet=args.quiet)

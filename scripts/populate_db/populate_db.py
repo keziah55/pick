@@ -23,9 +23,10 @@ class PopulateDatabase(PopulateDBVisionItemMixin, PopulateDBVisionSeriesMixin):
         alias_csv: Optional[Path] = None,
         database="default",
     ):
-        super().__init__()
-        self._quiet = quiet
         self._database = database
+        super().__init__()
+        
+        self._quiet = quiet
         self._media_info_processor = MediaInfoProcessor(physical_media, alias_csv)
 
     def _write(self, s):

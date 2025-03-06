@@ -1,7 +1,7 @@
-series_name	item_title_contains	items	description	img
-The Lord of the Rings				
-James Bond		16,17,18		
-Before Trilogy		2,3,1		
-Men In Black				
-The Qatsi Trilogy	qatsi			
-Die Hard				
+series_name	item_title_contains	items	titles	description	img
+The Lord of the Rings					
+James Bond			skyfall;spectre;no time to die		
+Before Trilogy		2,3,1			
+Men In Black					
+The Qatsi Trilogy	qatsi				
+Die Hard					
