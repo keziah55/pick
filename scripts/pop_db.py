@@ -22,7 +22,7 @@ if __name__ == "__main__":
     django.setup()
 
 from mediabrowser.models import VisionItem, VisionSeries
-from populate_db import PopulateDatabase, write_series_to_db
+from populate_db import PopulateDatabase
 
 
 if __name__ == "__main__":
