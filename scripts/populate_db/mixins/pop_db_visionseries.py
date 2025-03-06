@@ -41,7 +41,7 @@ class PopulateDBVisionSeriesMixin(object):
             description = dct.get("description", None)
 
             if pks is not None:
-                members = [self._get_item(pk) for pk in pks.split(",")]
+                members = [self._get_item(pk) for pk in pks.split(";")]
             elif titles is not None:
                 titles = [s.strip() for s in titles.split(";")]
                 members = [
