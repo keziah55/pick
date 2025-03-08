@@ -158,13 +158,17 @@ def make_search_regex(search_str: str) -> str:
     return search_regex
 
 
-def get_match(target: str, guesses: Union[str, list[str]]) -> float:
+def get_match(
+    target: str,
+    guesses: Union[str, list[str]],
+    remove: Optional[list[str]] = ["the", "and", "a", "&"],
+) -> float:
     """Compare guesses with target and return best score."""
     if isinstance(guesses, str):
         guesses = [guesses]
 
-    target_lst = _get_words(target)
-    guesses = [_get_words(s) for s in guesses]
+    target_lst = _get_words(target, remove=remove)
+    guesses = [_get_words(s, remove=remove) for s in guesses]
     intersect = [_get_intersect_size(target_lst, guess) for guess in guesses]
 
     all_guess_words = set([s for sublist in guesses for s in sublist])
@@ -175,12 +179,14 @@ def get_match(target: str, guesses: Union[str, list[str]]) -> float:
     return m
 
 
-def _get_words(s):
+def _get_words(s, remove=None):
     """Return list of words in string, as lower case, with non-alphnumeric characters removed"""
-    s = re.sub(r"'", "", s)  # remove apostrophes
-    words = [
-        word.lower() for word in re.split(r"\W", s) if word
-    ]  # split on all other non-alpha characters
+    if remove is None:
+        remove = []
+    # remove apostrophes
+    s = re.sub(r"'", "", s)
+    # split on all other non-alpha characters
+    words = [word.lower() for word in re.split(r"\W", s) if word and word not in remove]
     return words
 
 

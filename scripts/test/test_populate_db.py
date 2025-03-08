@@ -4,9 +4,9 @@ from ..populate_db import PopulateDatabase
 from ..populate_db.read_data_files import (
     read_patch_csv,
     read_alias_csv,
-    read_series_csv,
     make_combined_dict,
 )
+from ..populate_db.media_info import MediaInfoProcessor
 from ..populate_db.person_info import make_personinfo
 from imdb import Cinemagoer
 from mediabrowser.models import VisionItem, VisionSeries, Person
@@ -118,7 +118,15 @@ def test_alias(alias_csv, person):
     assert person_info.id == "0000122"
 
 
-def test_read_series(series_csv):
-    dct = read_series_csv(series_csv)
-    print()
-    print(dct)
+@pytest.mark.parametrize(
+    "title,expected_id", [
+        ("Thelma and Louise", "0103074"), 
+        ("Fantastic_Mr_Fox", "0432283"),
+        ("The Man Who Knew Too Much (1934)", "0025452"),
+        ("Willy Wonka and the Chocolate Factory", "0067992")]
+)
+def test_get_from_imdb(title, expected_id):
+    media_info_proc = MediaInfoProcessor()
+
+    movie = media_info_proc._get_movie_from_imdb(title)
+    assert movie.getID() == expected_id

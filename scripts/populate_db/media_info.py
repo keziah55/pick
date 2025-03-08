@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import NamedTuple, Optional
 from imdb import Cinemagoer
 from imdb.Movie import Movie
@@ -161,11 +162,20 @@ class MediaInfoProcessor:
         if movie is None:
             logger.warning(f"No cached movie for id={media_id}")
         else:
-            logger.info(f"Got {movie} from cache")
+            logger.info(f"Got {movie} from cache with id={media_id}")
         return movie
 
     def _get_movie_from_imdb(self, title) -> Optional[Movie]:
         """Get `Movie` from IMDb by searching for title."""
+
+        title = re.sub("_", " ", title)
+        if (m:=re.search(r"(?P<title>.+)\((?P<year>\d{4})\)", title)) is not None:
+            year = int(m.group("year"))
+            title = m.group("title").strip()
+        else:
+            year = None
+
+        logger.info(f"Search IMDb for {title=}")
         try:
             movies = self._cinemagoer.search_movie(title)
         except Exception as err:
@@ -175,6 +185,9 @@ class MediaInfoProcessor:
         if len(movies) == 0:
             logger.warning(f"{title}; search_movie")
             return None
+        
+        if year is not None:
+            movies = [movie for movie in movies if movie.get("year") == year]
 
         logger.info(f"Got {len(movies)} possible matches:\n{movies}")
 
