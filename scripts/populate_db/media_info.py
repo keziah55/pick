@@ -72,6 +72,8 @@ class MediaInfoProcessor:
         )
         self._aliases = read_alias_csv(alias_csv) if alias_csv is not None else {}
 
+        self._media_types = ["movie"]
+
     def get_media_info(
         self, patch: Optional[dict] = None, title: Optional[str] = None, item_type="film"
     ) -> Optional[MediaInfo]:
@@ -100,8 +102,6 @@ class MediaInfoProcessor:
         if title is None and patch is None:
             raise ValueError("PopulateDatabase._get_movie needs either title or patch")
 
-        infoset = ["main", "keywords"]
-
         if patch is not None and "media_id" in patch:
             movie = self._get_movie_from_patch(patch)
         else:
@@ -110,10 +110,15 @@ class MediaInfoProcessor:
         if movie is None:
             return None
 
+        infoset = ["main", "keywords"]
         try:
             self._cinemagoer.update(movie, infoset)
         except Exception as err:
             logger.warning(f"{title}; update: {err}")
+            return None
+
+        if (media_type := movie.get("kind")) not in self._media_types:
+            logger.warning(f"{title}: got movie {movie} of type {media_type}")
             return None
 
         if patch is not None and patch.get("alt_versions", None) is not None:
@@ -167,13 +172,30 @@ class MediaInfoProcessor:
 
     def _get_movie_from_imdb(self, title) -> Optional[Movie]:
         """Get `Movie` from IMDb by searching for title."""
+        title, year = self._parse_title(title)
+        movies = self._search_imdb_by_title(title, year)
+        if movies is None:
+            return None
+        else:
+            return self._get_best_match(title, movies)
 
+    @staticmethod
+    def _parse_title(title) -> tuple[str, Optional[int]]:
+        """Return title and optionally year, from file title."""
         title = re.sub("_", " ", title)
-        if (m:=re.search(r"(?P<title>.+)\((?P<year>\d{4})\)", title)) is not None:
+
+        if (m := re.search(r"(?P<title>.+) (\(?[E|e]xtended\)?)", title)) is not None:
+            title = m.group("title").strip()
+
+        if (m := re.search(r"(?P<title>.+)\((?P<year>\d{4})\)", title)) is not None:
             year = int(m.group("year"))
             title = m.group("title").strip()
         else:
             year = None
+
+        return title, year
+
+    def _search_imdb_by_title(self, title, year=None) -> Optional[list[Movie]]:
 
         logger.info(f"Search IMDb for {title=}")
         try:
@@ -185,16 +207,23 @@ class MediaInfoProcessor:
         if len(movies) == 0:
             logger.warning(f"{title}; search_movie")
             return None
-        
+
         if year is not None:
             movies = [movie for movie in movies if movie.get("year") == year]
 
+        movies = [movie for movie in movies if "cover url" in movie.data]
+
         logger.info(f"Got {len(movies)} possible matches:\n{movies}")
 
+        return movies
+
+    def _get_best_match(self, title: str, movies: list[Movie]) -> Movie:
         best_match = None
         for movie in movies:
             m = get_match(title, movie.get("title"))
             if best_match is None or m > best_match[1]:
+                if movie.get("kind") not in self._media_types:
+                    continue
                 best_match = (movie, m)
 
         logger.info(f"Got best match {best_match[0]} with score {best_match[1]}")
