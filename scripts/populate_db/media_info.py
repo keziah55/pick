@@ -215,6 +215,9 @@ class MediaInfoProcessor:
 
         logger.info(f"Got {len(movies)} possible matches:\n{movies}")
 
+        if len(movies) == 0:
+            movies = None
+
         return movies
 
     def _get_best_match(self, title: str, movies: list[Movie]) -> Movie:
