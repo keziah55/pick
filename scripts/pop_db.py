@@ -112,4 +112,11 @@ if __name__ == "__main__":
     if args.series:
         if not args.quiet:
             print("Populating series...")
-        pop_db.write_series_to_db(files["series"], quiet=args.quiet)
+
+        t1 = time.monotonic()
+        n = pop_db.write_series_to_db(files["series"], quiet=args.quiet)
+
+        if not args.quiet:
+            s = format_time(t)
+            print(f"Completed in {s}")
+            print(f"\nCreated {n} series in DB")
