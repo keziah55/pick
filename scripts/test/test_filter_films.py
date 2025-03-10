@@ -5,9 +5,12 @@ from ..populate_db.progress_bar import ProgressBar
 from pathlib import Path
 from pprint import pprint
 
+import pytest
+
 DATABASE = "default"
 
 
+@pytest.mark.skip("manual testing")
 def test_filter_films():
     print()
 
