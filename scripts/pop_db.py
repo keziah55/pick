@@ -8,7 +8,7 @@ see `populate_db.py -h` for options.
 """
 
 from pathlib import Path
-import time
+from datetime import datetime, timedelta
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -26,17 +26,6 @@ from populate_db import PopulateDatabase, StdoutWriter, HtmlWriter
 
 
 if __name__ == "__main__":
-
-    def format_time(t):
-        # take t in seconds, return string
-        t /= 60
-        hours, minssecs = divmod(t, 60)
-        mins, secs = divmod((minssecs * 60), 60)
-        if hours > 0:
-            s = f"{hours:02.0f}h{mins:02.0f}m{secs:02.0f}s"
-        else:
-            s = f"{mins:02.0f}m{secs:02.0f}s"
-        return s
 
     import argparse
 
@@ -89,38 +78,38 @@ if __name__ == "__main__":
 
     if args.films or args.patch:
 
-        t0 = time.monotonic()
+        t0 = datetime.now()
+        writer.write(f"{t0}")
         writer.write("Populating items...")
         pop_db.update(files["films"], files["patch"])
 
         if not args.quiet:
             indent = "  "
 
-            t = time.monotonic() - t0
-            s = format_time(t)
-            writer.write(f"Completed in {s}")
+            t = datetime.now() - t0
+            writer.write(f"Completed in {t}")
 
             writer.write("\nBreakdown:")
-            writer.write(f"Getting data from IMDb took {format_time(pop_db._imdb_time)}")
-            writer.write(f"Writing data to DB took     {format_time(pop_db._db_time)}")
+            writer.write(f"Getting data from IMDb took {timedelta(seconds=pop_db._imdb_time)}")
+            writer.write(f"Writing data to DB took     {timedelta(seconds=pop_db._db_time)}")
 
             writer.write("Created models in DB:")
-            s = "\n".join([f"{indent}{k}: {v}" for k, v in pop_db._created_item_count.items()])
-            writer.write(s)
+            for k, v in pop_db._created_item_count.items():
+                writer.write(f"{indent}{k}: {v}")
 
             if args.verbose:
                 writer.write("\nCreated VisionItems:")
-                s = "\n".join([f"{indent}{name}" for name in pop_db._created_visionitems])
-                writer.write(s)
+                for name in pop_db._created_visionitems:
+                    writer.write(f"{indent}{name}")
 
             writer.write("\n")
 
     if args.series:
         writer.write("Populating series...")
 
-        t1 = time.monotonic()
+        t1 = datetime.now()
         n = pop_db.write_series_to_db(files["series"])
 
-        s = format_time(t)
-        writer.write(f"Completed in {s}")
+        t = datetime.now() - t0
+        writer.write(f"Completed in {t}")
         writer.write(f"\nCreated {n} series in DB")
