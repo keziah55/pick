@@ -2,7 +2,7 @@ import shutil
 from abc import abstractmethod, ABC
 
 
-class BaseProgressBar:
+class BaseProgressBar(ABC):
     def __init__(self, maximum: float):
         self._max = maximum
 
@@ -63,13 +63,7 @@ class ProgressBar(BaseProgressBar):
         self._write_func(show, end=end, flush=True)
 
 
-class HtmlProgressBar:
-    def __init__(self, maximum: float):
-        self._max = maximum
-
-    @property
-    def complete(self) -> bool:
-        return self._complete
+class HtmlProgressBar(BaseProgressBar):
 
     def _progress(self, value):
         p = f"{100 * value / self._max:6.1f}"
