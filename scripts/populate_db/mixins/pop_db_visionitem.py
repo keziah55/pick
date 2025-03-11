@@ -4,7 +4,7 @@ import time
 from typing import Any
 
 from ..read_data_files import item_patch_equal, make_combined_dict
-from ..progress_bar import ProgressBar
+# from ..progress_bar import ProgressBar
 from ..person_info import PersonInfo
 from ..media_info import MediaInfo
 from ..logger import get_logger
@@ -175,8 +175,10 @@ class PopulateDBVisionItemMixin(object):
         if len(self._waiting_for_alt_versions) == 0:
             return
 
-        if not self._quiet:
-            progress = ProgressBar(len(self._waiting_for_alt_versions))
+        # if not self._quiet:
+        #     progress = ProgressBar(len(self._waiting_for_alt_versions))
+
+        self._writer.make_progress_bar(len(self._waiting_for_alt_versions))
 
         for n, (item, ref_film) in enumerate(self._waiting_for_alt_versions):
 
@@ -195,8 +197,9 @@ class PopulateDBVisionItemMixin(object):
                 item.alt_versions.add(ref_item)
                 item.save(using=self._database)
 
-            if not self._quiet:
-                progress.progress(n + 1)
+            # if not self._quiet:
+            #     progress.progress(n + 1)
+            self._writer.update_progress(n + 1)
 
         self._waiting_for_alt_versions = []
 
@@ -273,7 +276,9 @@ class PopulateDBVisionItemMixin(object):
 
         if len(dct) > 0:
 
-            progress = ProgressBar(len(dct)) if not self._quiet else None
+            # progress = ProgressBar(len(dct)) if not self._quiet else None
+
+            self._writer.make_progress_bar(len(dct))
 
             for n, (file, info) in enumerate(dct.items()):
 
@@ -282,8 +287,9 @@ class PopulateDBVisionItemMixin(object):
                 if item_updated:
                     count += 1
 
-                if progress is not None:
-                    progress.progress(n)
+                # if progress is not None:
+                #     progress.progress(n)
+                self._writer.update_progress(n + 1)
 
         self._write("Checking for remaining references...")
         self._check_alt_versions()

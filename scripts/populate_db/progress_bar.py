@@ -1,10 +1,39 @@
 import shutil
+from abc import abstractmethod, ABC
 
-class ProgressBar:
+
+class BaseProgressBar:
+    def __init__(self, maximum: float):
+        self._max = maximum
+
+    @property
+    def complete(self) -> bool:
+        return self._complete
+
+    def progress(self, value: float):
+        """
+        Update the progress bar.
+
+        Parameters
+        ----------
+        value : float
+            Progress value
+        """
+        self._complete = value >= self._max
+        return self._progress(value)
+
+    @abstractmethod
+    def _progress(self, value: float):
+        pass
+
+
+class ProgressBar(BaseProgressBar):
     """Simple ProgressBar object, going up to `maximum`"""
 
-    def __init__(self, maximum):
-        self.mx = maximum
+    def __init__(self, maximum, write_func=None):
+        super().__init__(maximum=maximum)
+        self._write_func = write_func if write_func is not None else print
+
         try:
             # get width of terminal
             width = shutil.get_terminal_size().columns
@@ -17,16 +46,10 @@ class ProgressBar:
             self.show_bar = False
         self.progress(0)
 
-    def progress(self, value):
-        """Update the progress bar
+    def _progress(self, value):
 
-        Parameters
-        ----------
-        value : float
-            Progress value
-        """
         # calculate percentage progress
-        p = value / self.mx
+        p = value / self._max
         show = f"{p:6.1%}"
 
         # make bar, if required
@@ -37,4 +60,21 @@ class ProgressBar:
 
         # set line ending to either carriage return or new line
         end = "\r" if p < 1 else "\n"
-        print(show, end=end, flush=True)
+        self._write_func(show, end=end, flush=True)
+
+
+class HtmlProgressBar:
+    def __init__(self, maximum: float):
+        self._max = maximum
+
+    @property
+    def complete(self) -> bool:
+        return self._complete
+
+    def _progress(self, value):
+        p = f"{100 * value / self._max:6.1f}"
+        lines = [
+            f'<label for="progress-bar">{p}%</label>'
+            f'<progress id="progress-bar" max="100" value="{p}">{p}%</progress>'
+        ]
+        return "\n".join(lines)

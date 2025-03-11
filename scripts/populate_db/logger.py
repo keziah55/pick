@@ -1,5 +1,6 @@
 import time
 import logging
+from pathlib import Path
 
 _logging_initialised = False
 
@@ -9,8 +10,13 @@ def initialise_logging():
 
     ts = time.strftime("%Y-%m-%d-%H:%M:%S")
     logger = logging.getLogger("populate_db")
+
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True, parents=True)
+    log_file = str(log_dir.joinpath(f"populate_db-{ts}.log"))
+
     logging.basicConfig(
-        filename=f"populate_db-{ts}.log",
+        filename=log_file,
         level=logging.INFO,
         format="%(levelname)s: %(name)s: %(asctime)s: %(message)s",
     )

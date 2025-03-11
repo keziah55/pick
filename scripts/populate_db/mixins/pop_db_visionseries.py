@@ -5,7 +5,7 @@ import itertools
 from functools import partial
 
 from ..read_data_files import read_series_csv
-from ..progress_bar import ProgressBar
+# from ..progress_bar import ProgressBar
 from ..get_db_items import get_derived_instance, get_item, filter_visionitem_visionseries
 from ..logger import get_logger
 
@@ -26,11 +26,12 @@ class PopulateDBVisionSeriesMixin(object):
             f = partial(func, database=self._database)
             setattr(self, name, f)
 
-    def write_series_to_db(self, csv_file: Path, sort_by_year=True, quiet: bool = False) -> int:
+    def write_series_to_db(self, csv_file: Path, sort_by_year=True) -> int:
 
         data = read_series_csv(csv_file)
 
-        progress = ProgressBar(len(data)) if not quiet else None
+        # progress = ProgressBar(len(data)) if not self._quiet else None
+        self._writer.make_progress_bar(len(data))
         count = 0
 
         for n, (name, dct) in enumerate(data.items()):
@@ -68,8 +69,9 @@ class PopulateDBVisionSeriesMixin(object):
                 self._make_series(members, name, description)
                 count += 1
 
-            if progress is not None:
-                progress.progress(n + 1)
+            # if progress is not None:
+            #     progress.progress(n + 1)
+            self._writer.update_progress(n + 1)
 
         return count
 
