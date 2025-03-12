@@ -72,7 +72,7 @@ class MediaInfoProcessor:
         )
         self._aliases = read_alias_csv(alias_csv) if alias_csv is not None else {}
 
-        self._media_types = ["movie"]
+        self._media_types = ["movie", "tv movie", "tv series", "episode"]
 
     def get_media_info(
         self, patch: Optional[dict] = None, title: Optional[str] = None, item_type="film"
