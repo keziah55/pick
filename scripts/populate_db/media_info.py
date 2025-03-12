@@ -230,7 +230,7 @@ class MediaInfoProcessor:
                 best_match = (movie, m)
 
         if best_match is None:
-            logger.warning(f"Could not find match for {title} from movie list")
+            logger.error(f"Could not find match for {title} from movie list")
             return None
         else:
             logger.info(f"Got best match {best_match[0]} with score {best_match[1]}")
