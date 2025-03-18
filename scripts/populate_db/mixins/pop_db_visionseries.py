@@ -49,8 +49,6 @@ class PopulateDBVisionSeriesMixin(object):
                 )
                 continue
 
-            print(members)
-
             try:
                 series = VisionSeries.objects.get(title__iexact=name)
             except ObjectDoesNotExist:
@@ -71,10 +69,8 @@ class PopulateDBVisionSeriesMixin(object):
     ) -> Optional[list[Union[VisionItem, VisionSeries]]]:
 
         if pks is not None:
-            print(pks)
-            members = [self._get_item(pk) for pk in pks]  # .split(";")]
+            members = [self._get_item(pk) for pk in pks]
         elif titles is not None:
-            # titles = [s.strip() for s in titles.split(";")]
             members = [
                 self._filter_visionitem_visionseries(title__iexact=title) for title in titles
             ]
@@ -105,7 +101,6 @@ class PopulateDBVisionSeriesMixin(object):
         description: Optional[str] = None,
     ) -> VisionSeries:
 
-        # items = [MediaItem.objects.get(pk=pk) for pk in item_pks]
         derived_items = []
 
         filename = ""

@@ -101,7 +101,8 @@ def test_populate_db(
     assert n == 0
 
     # series
-    pop_db.write_series_to_db(series_csv)
+    n = pop_db.write_series_to_db(series_csv)
+    assert n == 6
 
     series = VisionSeries.objects.using(DATABASE).all()
     assert len(series) == 6
@@ -116,6 +117,9 @@ def test_populate_db(
         series = VisionSeries.objects.using(DATABASE).filter(title__iexact=series_title)
         assert len(series) == 1
         assert [item.title.lower() for item in series[0].members.all()] == member_titles
+
+    n = pop_db.write_series_to_db(series_csv)
+    assert n == 0
 
 
 @pytest.mark.parametrize("person", ["Charles Chaplin", "0000122", "122"])
