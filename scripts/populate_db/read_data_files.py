@@ -39,7 +39,8 @@ _patch_to_model_map = {
 
 _ext = [".avi", ".m4v", ".mkv", ".mov", ".mp4", ".wmv", ".webm"]
 
-_sep = "\t"
+_sep = "\t"  # csv item separator
+_list_sep = ";"  # item list separator in csv field
 
 
 def read_films_file(films_txt) -> list[Path]:
@@ -54,14 +55,21 @@ def read_patch_csv(patch_csv, key="filename") -> dict[Path, dict[str, Any]]:
 
     Returns nested dict. Outer dict keys are filenames; values are dict of header: value pairs.
     """
-    patch = _read_csv_to_rows(patch_csv, key, VisionItem)
+    patch = _read_csv_to_rows(
+        patch_csv,
+        key,
+        VisionItem,
+        list_keys=["alt_versions", "stars", "directors", "genre", "keyword"],
+    )
     for key, dct in patch.items():
         if "imdb_id" in dct:
             patch[key]["media_id"] = dct.pop("imdb_id")
     return patch
 
 
-def _read_csv_to_rows(csv_file: Path, key: str, model_class: type) -> dict[Path, dict[str, Any]]:
+def _read_csv_to_rows(
+    csv_file: Path, key: str, model_class: type, list_keys: list[str] = None
+) -> dict[Path, dict[str, Any]]:
     """
     Read csv file and return dict of rows.
 
@@ -73,6 +81,8 @@ def _read_csv_to_rows(csv_file: Path, key: str, model_class: type) -> dict[Path,
         Field (from csv header) to use a return dic key.
     model_class
         Model class that this data represents.
+    list_keys
+        Keys that (may) contain list of semicolon-separated values.
 
     Returns
     -------
@@ -81,8 +91,38 @@ def _read_csv_to_rows(csv_file: Path, key: str, model_class: type) -> dict[Path,
         for each row.
 
     """
+    if not csv_file.exists():
+        raise FileNotFoundError(f"csv file '{csv_file}' does not exist")
+
     text = csv_file.read_text()
-    header, *lines = [line for line in text.split("\n") if line]
+    return _csv_to_rows(text, key=key, model_class=model_class, list_keys=list_keys)
+
+
+def _csv_to_rows(
+    csv_data: str, key: str, model_class: type, list_keys: list[str] = None
+) -> dict[Path, dict[str, Any]]:
+    """
+    Read csv file and return dict of rows.
+
+    Parameters
+    ----------
+    csv_data
+        Data from csv file
+    key
+        Field (from csv header) to use a return dic key.
+    model_class
+        Model class that this data represents.
+    list_keys
+        Keys that (may) contain list of semicolon-separated values.
+
+    Returns
+    -------
+    dict[Path, dict[str, Any]]
+        Outer dict uses given `key`; inner dict pairs each remaining header field with the value
+        for each row.
+
+    """
+    header, *lines = [line for line in csv_data.split("\n") if line]
 
     header = header.strip().split(_sep)
     try:
@@ -92,10 +132,13 @@ def _read_csv_to_rows(csv_file: Path, key: str, model_class: type) -> dict[Path,
 
     key_name = header.pop(key_idx)
 
+    if list_keys is None:
+        list_keys = []
+
     patch = {}
     for line in lines:
         values = line.split(_sep)
-        
+
         key = values.pop(key_idx)
         if not key.strip():
             logger.warning(f"Dropping '{key_name}' item {key=} when reading csv")
@@ -105,11 +148,20 @@ def _read_csv_to_rows(csv_file: Path, key: str, model_class: type) -> dict[Path,
             continue
 
         key = _format_patch_value(key.strip(), key_name, model_class)
-        dct = {
-            header[i]: _format_patch_value(value.strip(), header[i], model_class)
-            for i, value in enumerate(values)
-            if value
-        }
+        dct = {}
+        for i, value in enumerate(values):
+            if not value:
+                continue
+
+            if header[i] in list_keys:
+                value = [
+                    _format_patch_value(val.strip(), header[i], model_class)
+                    for val in value.split(_list_sep)
+                ]
+            else:
+                value = _format_patch_value(value.strip(), header[i], model_class)
+
+            dct[header[i]] = value
 
         # in case a file is entered twice in the csv, merge the two dicts
         current = patch.get(key, None)
@@ -127,7 +179,8 @@ def make_combined_dict(films_txt=None, patch_csv=None) -> dict[Path, dict[str, A
     patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
     if films_txt is not None:
         files = read_films_file(films_txt)
-        films_dct = {film: {} for film in files if film not in patch}
+        # films_dct = {film: {} for film in files if film not in patch}
+        films_dct = {film: None for film in files if film not in patch}
         patch.update(films_dct)
     return patch
 
@@ -208,6 +261,9 @@ def _format_patch_value(value: str, name: str, model_class: type):
                 else:
                     value = cast_type(value)
 
+    if isinstance(value, str):
+        value = value.strip()
+
     return value
 
 
@@ -216,7 +272,14 @@ def item_patch_equal(item, patch) -> bool:
     for key, value in patch.items():
         item_key = _patch_to_model_map.get(key, key)
         db_value = getattr(item, item_key)
+        if hasattr(db_value, "all"):
+            db_value = db_value.all()
+            if hasattr(db_value[0], "filename"):
+                db_value = [item.filename for item in db_value]
+            else:
+                db_value = [item.name for item in db_value]
         if db_value != value:
+            print(f"****{key=}, {item_key=}, {db_value=}, {value=}; return False****")
             return False
     return True
 
@@ -231,4 +294,12 @@ def read_alias_csv(alias_csv: Path) -> dict[Path, dict[str, Any]]:
 
 
 def read_series_csv(series_csv: Path) -> dict[Path, dict[str, Any]]:
-    return _read_csv_to_rows(series_csv, key="series_name", model_class=VisionSeries)
+    dct = _read_csv_to_rows(
+        series_csv, key="series_name", model_class=VisionSeries, list_keys=["titles", "items"]
+    )
+
+    for name, data in dct.items():
+        if "items" in data:
+            dct[name]["items"] = [int(pk) for pk in data["items"]]
+
+    return dct

@@ -1,14 +1,15 @@
 from pathlib import Path
-import warnings
 from typing import Union, Optional
 import itertools
 from functools import partial
 
 from ..read_data_files import read_series_csv
+
 # from ..progress_bar import ProgressBar
 from ..get_db_items import get_derived_instance, get_item, filter_visionitem_visionseries
 from ..logger import get_logger
 
+from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, VisionSeries, MediaItem
 
 
@@ -41,39 +42,61 @@ class PopulateDBVisionSeriesMixin(object):
             search_str = dct.get("item_title_contains", "")
             description = dct.get("description", None)
 
-            if pks is not None:
-                members = [self._get_item(pk) for pk in pks.split(";")]
-            elif titles is not None:
-                titles = [s.strip() for s in titles.split(";")]
-                members = [
-                    self._filter_visionitem_visionseries(title__iexact=title) for title in titles
-                ]
-                if any(len(sublist) != 1 for sublist in members):
-                    logger.warning(f"Could not identify series members from {members}")
+            members = self._get_members(name, pks, titles, search_str, sort_by_year)
+            if members is None:
+                logger.warning(
+                    f"Cannot find members for series '{name}', with {pks=}, {titles=}, {search_str=}"
+                )
+                continue
+
+            print(members)
+
+            try:
+                series = VisionSeries.objects.get(title__iexact=name)
+            except ObjectDoesNotExist:
+                pass
+            else:
+                if [m.pk for m in series.members.all()] == [m.pk for m in members]:
                     continue
-                else:
-                    members = list(itertools.chain(*members))
 
-            else:
-                if not search_str:
-                    search_str = name
-                members = self._filter_visionitem_visionseries(title__icontains=search_str)
+            self._make_series(members, name, description)
+            count += 1
 
-                # sort in chronological order
-                if sort_by_year:
-                    members.sort(key=lambda item: item.year)
-
-            if len(members) == 0:
-                warnings.warn(f"Could not find VisionItem/VisionSeries for {name=}")
-            else:
-                self._make_series(members, name, description)
-                count += 1
-
-            # if progress is not None:
-            #     progress.progress(n + 1)
             self._writer.update_progress(n + 1)
 
         return count
+
+    def _get_members(
+        self, name, pks, titles, search_str, sort_by_year
+    ) -> Optional[list[Union[VisionItem, VisionSeries]]]:
+
+        if pks is not None:
+            print(pks)
+            members = [self._get_item(pk) for pk in pks]  # .split(";")]
+        elif titles is not None:
+            # titles = [s.strip() for s in titles.split(";")]
+            members = [
+                self._filter_visionitem_visionseries(title__iexact=title) for title in titles
+            ]
+            if any(len(sublist) != 1 for sublist in members):
+                logger.warning(f"Could not identify series members from {members}")
+                return None
+            else:
+                members = list(itertools.chain(*members))
+
+        else:
+            if not search_str:
+                search_str = name
+            members = self._filter_visionitem_visionseries(title__icontains=search_str)
+
+            # sort in chronological order
+            if sort_by_year:
+                members.sort(key=lambda item: item.year)
+
+        if len(members) == 0:
+            return None
+        else:
+            return members
 
     def _make_series(
         self,

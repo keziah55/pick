@@ -105,6 +105,7 @@ if __name__ == "__main__":
             writer.write("\n")
 
     if args.series:
+        writer.write(f"{t0}")
         writer.write("Populating series...")
 
         t1 = datetime.now()

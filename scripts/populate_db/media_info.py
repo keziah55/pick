@@ -72,7 +72,7 @@ class MediaInfoProcessor:
         )
         self._aliases = read_alias_csv(alias_csv) if alias_csv is not None else {}
 
-        self._media_types = ["movie", "tv movie", "tv series", "episode"]
+        self._media_types = ["movie", "tv movie", "tv series", "episode", "short"]
 
     def get_media_info(
         self, patch: Optional[dict] = None, title: Optional[str] = None, item_type="film"
@@ -336,8 +336,8 @@ class MediaInfoProcessor:
 
         media_id = patch.get("media_id", movie.getID())
 
-        alt_versions = patch.get("alt_versions", "")
-        alt_versions = [fname for fname in alt_versions.split(",") if fname]
+        alt_versions = patch.get("alt_versions", [])
+        # alt_versions = [fname for fname in alt_versions.split(",") if fname]
 
         imdb_rating = self._get_patched(movie, patch, "rating", "imdb_rating", default=0)
         user_rating = patch.get("user_rating", 0)

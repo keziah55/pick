@@ -37,10 +37,8 @@ class PopulateDatabase(PopulateDBVisionItemMixin, PopulateDBVisionSeriesMixin):
 
     def _write(self, s):
         self._writer.write(s)
-        # if not self._quiet:
-        # print(s)
 
     def clear(self, model=VisionItem):
         """Remove all entries from the given `model` table"""
-        model.objects.using(self._database).delete()
-        self._write("Cleared database")
+        num, _ = model.objects.using(self._database).delete()
+        self._write(f"Cleared {num} items from database")

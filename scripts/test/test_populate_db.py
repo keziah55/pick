@@ -1,9 +1,12 @@
 import pytest
 
+from pathlib import Path
+
 from ..populate_db import PopulateDatabase
 from ..populate_db.read_data_files import (
     read_patch_csv,
     read_alias_csv,
+    read_series_csv,
     make_combined_dict,
 )
 from ..populate_db.media_info import MediaInfoProcessor
@@ -25,13 +28,13 @@ def test_combine_patch_films_list(
         assert len(combined_dct[fname]) > 0
 
     for fname in expected_films_filenames:
-        assert len(combined_dct[fname]) == 0
+        assert combined_dct[fname] is None
 
     patch_dct = make_combined_dict(None, patch_csv)
     assert set(patch_dct.keys()) == set(expected_patch_filenames)
 
     films_dct = make_combined_dict(films_txt, None)
-    assert films_dct == {fname: {} for fname in expected_films_filenames}
+    assert films_dct == {fname: None for fname in expected_films_filenames}
 
     assert make_combined_dict(None, None) == {}
 
@@ -45,6 +48,7 @@ def test_populate_db(
     series_csv,
     expected_patch_filenames,
     expected_films_filenames,
+    expected_imdb_ids,
     monkeypatch,
 ):
     print()
@@ -71,7 +75,7 @@ def test_populate_db(
 
     assert n == len(expected_films_filenames) + len(expected_patch_filenames)
 
-    expected_created_items = {"visionitem": 23, "genre": 16, "person": 1458, "keywords": 0}
+    expected_created_items = {"visionitem": 24, "genre": 16, "person": 1507, "keywords": 0}
 
     for key, expected_count in expected_created_items.items():
         assert pop_db._created_item_count[key] == expected_count
@@ -89,6 +93,14 @@ def test_populate_db(
     assert len(people) == 1
     assert people[0].alias == "Charlie Chaplin"
 
+    # check all items are correct
+    for item in VisionItem.objects.using(DATABASE).all():
+        assert expected_imdb_ids[item.filename] == item.imdb_id
+
+    n = pop_db.update(films_txt=films_txt, patch_csv=patch_csv)
+    assert n == 0
+
+    # series
     pop_db.write_series_to_db(series_csv)
 
     series = VisionSeries.objects.using(DATABASE).all()
@@ -119,14 +131,31 @@ def test_alias(alias_csv, person):
 
 
 @pytest.mark.parametrize(
-    "title,expected_id", [
-        ("Thelma and Louise", "0103074"), 
+    "title,expected_id",
+    [
+        ("Thelma and Louise", "0103074"),
         ("Fantastic_Mr_Fox", "0432283"),
         ("The Man Who Knew Too Much (1934)", "0025452"),
-        ("Willy Wonka and the Chocolate Factory", "0067992")]
+        ("Willy Wonka and the Chocolate Factory", "0067992"),
+    ],
 )
 def test_get_from_imdb(title, expected_id):
     media_info_proc = MediaInfoProcessor()
 
     movie = media_info_proc._get_movie_from_imdb(title)
     assert movie.getID() == expected_id
+
+
+def test_read_patch_csv(data_dir):
+    patch_csv = data_dir.joinpath("patch_alt_versions.csv")
+    patch = read_patch_csv(patch_csv)
+    assert patch[Path('Blade Runner.mkv')]["alt_versions"] == [
+        "blade_runner_directors_cut.mkv",
+        "blade_runner_theatrical_cut.mkv",
+    ]
+
+
+# def test_read_series_csv(series_csv):
+#     data = read_series_csv(series_csv)
+#     print()
+#     print(data)
