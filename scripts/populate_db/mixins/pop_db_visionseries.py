@@ -5,7 +5,6 @@ from functools import partial
 
 from ..read_data_files import read_series_csv
 
-# from ..progress_bar import ProgressBar
 from ..get_db_items import get_derived_instance, get_item, filter_visionitem_visionseries
 from ..logger import get_logger
 
@@ -27,42 +26,50 @@ class PopulateDBVisionSeriesMixin(object):
             f = partial(func, database=self._database)
             setattr(self, name, f)
 
-    def write_series_to_db(self, csv_file: Path, sort_by_year=True) -> int:
+    def populate_series(self, csv_file: Path, sort_by_year=True) -> int:
 
         data = read_series_csv(csv_file)
 
-        # progress = ProgressBar(len(data)) if not self._quiet else None
         self._writer.make_progress_bar(len(data))
         count = 0
 
         for n, (name, dct) in enumerate(data.items()):
 
-            pks = dct.get("items", None)
-            titles = dct.get("titles", None)
-            search_str = dct.get("item_title_contains", "")
-            description = dct.get("description", None)
-
-            members = self._get_members(name, pks, titles, search_str, sort_by_year)
-            if members is None:
-                logger.warning(
-                    f"Cannot find members for series '{name}', with {pks=}, {titles=}, {search_str=}"
-                )
-                continue
-
-            try:
-                series = VisionSeries.objects.get(title__iexact=name)
-            except ObjectDoesNotExist:
-                pass
-            else:
-                if [m.pk for m in series.members.all()] == [m.pk for m in members]:
-                    continue
-
-            self._make_series(members, name, description)
-            count += 1
+            series_created = self._populate_series(name, dct, sort_by_year)
+            if series_created:
+                count += 1
 
             self._writer.update_progress(n + 1)
 
         return count
+
+    def _populate_series(self, name, dct, sort_by_year) -> bool:
+
+        try:
+            series = VisionSeries.objects.using(self._database).get(title__iexact=name)
+        except ObjectDoesNotExist:
+            pass
+        else:
+            logger.warning(f"Series '{name}' already exists in DB: {series}. Skipping.")
+            return False
+
+        pks = dct.get("items", None)
+        titles = dct.get("titles", None)
+        search_str = dct.get("item_title_contains", "")
+        description = dct.get("description", None)
+
+        members = self._get_members(name, pks, titles, search_str, sort_by_year)
+        if members is None:
+            logger.warning(
+                f"Cannot find members for series '{name}', with {pks=}, {titles=}, {search_str=}"
+            )
+            return False
+
+        # make series in DB
+        logger.info(f"making series '{name}' with {members=}")
+        self._make_series(members, name, description)
+
+        return True
 
     def _get_members(
         self, name, pks, titles, search_str, sort_by_year

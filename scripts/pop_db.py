@@ -81,7 +81,7 @@ if __name__ == "__main__":
         t0 = datetime.now()
         writer.write(f"{t0}")
         writer.write("Populating items...")
-        pop_db.update(files["films"], files["patch"])
+        pop_db.populate_items(files["films"], files["patch"])
 
         if not args.quiet:
             indent = "  "
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         writer.write("Populating series...")
 
         t1 = datetime.now()
-        n = pop_db.write_series_to_db(files["series"])
+        n = pop_db.populate_series(files["series"])
 
         t = datetime.now() - t0
         writer.write(f"Completed in {t}")

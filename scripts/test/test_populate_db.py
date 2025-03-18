@@ -71,7 +71,7 @@ def test_populate_db(
     pop_db = PopulateDatabase(
         physical_media=physical_media_csv, alias_csv=alias_csv, quiet=False, database=DATABASE
     )
-    n = pop_db.update(films_txt=films_txt, patch_csv=patch_csv)
+    n = pop_db.populate_items(films_txt=films_txt, patch_csv=patch_csv)
 
     assert n == len(expected_films_filenames) + len(expected_patch_filenames)
 
@@ -97,11 +97,11 @@ def test_populate_db(
     for item in VisionItem.objects.using(DATABASE).all():
         assert expected_imdb_ids[item.filename] == item.imdb_id
 
-    n = pop_db.update(films_txt=films_txt, patch_csv=patch_csv)
+    n = pop_db.populate_items(films_txt=films_txt, patch_csv=patch_csv)
     assert n == 0
 
     # series
-    n = pop_db.write_series_to_db(series_csv)
+    n = pop_db.populate_series(series_csv)
     assert n == 6
 
     series = VisionSeries.objects.using(DATABASE).all()
@@ -118,7 +118,7 @@ def test_populate_db(
         assert len(series) == 1
         assert [item.title.lower() for item in series[0].members.all()] == member_titles
 
-    n = pop_db.write_series_to_db(series_csv)
+    n = pop_db.populate_series(series_csv)
     assert n == 0
 
 

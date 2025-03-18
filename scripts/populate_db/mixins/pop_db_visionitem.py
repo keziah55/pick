@@ -230,7 +230,7 @@ class PopulateDBVisionItemMixin(object):
             logger.warning(f"Could not get media info for {title=} {patch=}")
         return ret
 
-    def update(self, films_txt=None, patch_csv=None) -> int:
+    def populate_items(self, films_txt=None, patch_csv=None) -> int:
         """
         Add any new entries to database or update existing ones.
 
@@ -255,9 +255,9 @@ class PopulateDBVisionItemMixin(object):
 
         dct = make_combined_dict(films_txt, patch_csv)
 
-        return self._update(dct)
+        return self._populate_items(dct)
 
-    def _update(self, dct: dict[Path, dict[str, str]]) -> int:
+    def _populate_items(self, dct: dict[Path, dict[str, str]]) -> int:
         """
         Update/add DB entries.
 
@@ -276,8 +276,6 @@ class PopulateDBVisionItemMixin(object):
 
         if len(dct) > 0:
 
-            # progress = ProgressBar(len(dct)) if not self._quiet else None
-
             self._writer.make_progress_bar(len(dct))
 
             for n, (file, info) in enumerate(dct.items()):
@@ -287,8 +285,6 @@ class PopulateDBVisionItemMixin(object):
                 if item_updated:
                     count += 1
 
-                # if progress is not None:
-                #     progress.progress(n)
                 self._writer.update_progress(n + 1)
 
         self._write("Checking for remaining references...")
