@@ -87,19 +87,7 @@ def cast_vision_item(item: MediaItem, database="default") -> Union[VisionItem, V
         )
 
 
-def get_derived_instance(item, database="default"):
-    try:
-        item = VisionSeries.objects.using(database).get(pk=item.pk)
-    except ObjectDoesNotExist:
-        try:
-            item = VisionItem.objects.using(database).get(pk=item.pk)
-        except ObjectDoesNotExist:
-            msg = f"Item {item.pk} {item} is neither a VisionSeries nor a VisionItem."
-            raise RuntimeError(msg)
-    return item
-
-
-def get_media_item_by_pk(pk: int, database="default")-> Union[VisionItem, VisionSeries]:
+def get_media_item_by_pk(pk: int, database="default") -> Union[VisionItem, VisionSeries]:
     """Return either `VisionItem` or `VisionSeries` with the given `pk."""
     try:
         item = VisionItem.objects.using(database).get(pk=pk)

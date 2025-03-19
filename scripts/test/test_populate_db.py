@@ -94,7 +94,9 @@ def test_populate_db(
     assert people[0].alias == "Charlie Chaplin"
 
     # check all items are correct
-    for item in VisionItem.objects.using(DATABASE).all():
+    items = VisionItem.objects.using(DATABASE).all()
+    assert len(items) == 24
+    for item in items:
         assert expected_imdb_ids[item.filename] == item.imdb_id
 
     n = pop_db.populate_items(films_txt=films_txt, patch_csv=patch_csv)

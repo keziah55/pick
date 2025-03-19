@@ -11,7 +11,7 @@ from ..logger import get_logger
 from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, VisionSeries, MediaItem
 from mediabrowser.views.utils import (
-    get_derived_instance,
+    cast_vision_item,
     get_media_item_by_pk,
     filter_visionitem_visionseries,
 )
@@ -26,7 +26,7 @@ class PopulateDBVisionSeriesMixin(object):
         super().__init__(*args, **kwargs)
 
         # wrap db util funcs to automatically use self._database
-        for func in [get_derived_instance, get_media_item_by_pk, filter_visionitem_visionseries]:
+        for func in [cast_vision_item, get_media_item_by_pk, filter_visionitem_visionseries]:
             name = f"_{func.__name__}"
             f = partial(func, database=self._database)
             setattr(self, name, f)
@@ -135,7 +135,7 @@ class PopulateDBVisionSeriesMixin(object):
 
         for item in items:
 
-            item = self._get_derived_instance(item)
+            item = self._cast_vision_item(item)
             derived_items.append(item)
 
             if isinstance(item, VisionSeries):

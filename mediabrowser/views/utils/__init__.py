@@ -10,7 +10,6 @@ from .vision_item_series import (
     cast_vision_item,
     get_top_level_parent,
     is_single_item_in_series,
-    get_derived_instance,
     get_media_item_by_pk,
     filter_visionitem_visionseries,
 )
@@ -25,7 +24,6 @@ __all__ = [
     "cast_vision_item",
     "get_top_level_parent",
     "is_single_item_in_series",
-    "get_derived_instance",
     "get_media_item_by_pk",
     "filter_visionitem_visionseries",
 ]
