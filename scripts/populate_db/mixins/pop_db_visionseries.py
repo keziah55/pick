@@ -5,11 +5,16 @@ from functools import partial
 
 from ..read_data_files import read_series_csv
 
-from ..get_db_items import get_derived_instance, get_item, filter_visionitem_visionseries
+# from ..get_db_items import get_derived_instance, get_item, filter_visionitem_visionseries
 from ..logger import get_logger
 
 from django.core.exceptions import ObjectDoesNotExist
 from mediabrowser.models import VisionItem, VisionSeries, MediaItem
+from mediabrowser.views.utils import (
+    get_derived_instance,
+    get_media_item_by_pk,
+    filter_visionitem_visionseries,
+)
 
 
 logger = get_logger()
@@ -21,7 +26,7 @@ class PopulateDBVisionSeriesMixin(object):
         super().__init__(*args, **kwargs)
 
         # wrap db util funcs to automatically use self._database
-        for func in [get_derived_instance, get_item, filter_visionitem_visionseries]:
+        for func in [get_derived_instance, get_media_item_by_pk, filter_visionitem_visionseries]:
             name = f"_{func.__name__}"
             f = partial(func, database=self._database)
             setattr(self, name, f)
@@ -76,7 +81,7 @@ class PopulateDBVisionSeriesMixin(object):
     ) -> Optional[list[Union[VisionItem, VisionSeries]]]:
 
         if pks is not None:
-            members = [self._get_item(pk) for pk in pks]
+            members = [self._get_media_item_by_pk(pk) for pk in pks]
         elif titles is not None:
             members = [
                 self._filter_visionitem_visionseries(title__iexact=title) for title in titles
