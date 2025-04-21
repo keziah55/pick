@@ -4,7 +4,6 @@
 Utility functions and imports that may be useful in an interactive session.
 """
 
-import os
 from mediabrowser.models import VisionItem, Genre, Keyword, Person, MediaItem, VisionSeries
 
 
@@ -30,14 +29,6 @@ def search_items(s: str):
         print(item, item.pk)
     return items
 
-
-print(
-    """
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pick.settings")
-import django
-django.setup()
-"""
-)
 
 __all__ = [
     "VisionItem",
