@@ -85,8 +85,8 @@ def _search(search_str, **kwargs) -> dict:
     results = _search_vision_items(
         results, search_str, search_regex, genre_filters, **filter_kwargs
     )
-    print("\nvision item results")
-    pprint(results)
+    # print("\nvision item results")
+    # pprint(results)
     # print([result for result in results if "godfather" in result.film.title.lower()])
 
     if search_str:
@@ -98,9 +98,8 @@ def _search(search_str, **kwargs) -> dict:
                 results, search_str, search_regex, genre_filters, **filter_kwargs
             )
 
-    print("\n+ people and keyword results")
-    pprint(results)
-    # print([result for result in results if "godfather" in result.film.title.lower()])
+    # print("\n+ people and keyword results")
+    # pprint(results)
 
     # dict of parent: members for Results to remove
     remove_results: dict[VisionSeries : list[Result]] = defaultdict(list)
@@ -110,8 +109,8 @@ def _search(search_str, **kwargs) -> dict:
             top_parent = get_top_level_parent(result.film)
             remove_results[top_parent].append(result)
 
-    print("\nremove results")
-    pprint(remove_results)
+    # print("\nremove results")
+    # pprint(remove_results)
 
     for series_item, members in remove_results.items():
         best_match = max(member.match for member in members)
@@ -119,12 +118,12 @@ def _search(search_str, **kwargs) -> dict:
 
     all_remove_items = {item.film.pk for members in remove_results.values() for item in members}
 
-    print("\nall remove items")
-    pprint(all_remove_items)
+    # print("\nall remove items")
+    # pprint(all_remove_items)
 
-    print("\nfilter")
-    for result in results:
-        print(f"{result} filtered: {result.film.pk not in all_remove_items}")
+    # print("\nfilter")
+    # for result in results:
+    #     print(f"{result} filtered: {result.film.pk not in all_remove_items}")
 
 
     results = [result for result in results if result.film.pk not in all_remove_items]
@@ -138,9 +137,10 @@ def _search(search_str, **kwargs) -> dict:
     
 
 
-    print("\nfinal results")
-    for result in results:
-        print(result.pk, result)
+    # print("\nfinal results")
+    # for result in results:
+    #     print(result.pk, result)
+
     # pprint(results)
     # print([result for result in results if "godfather" in result.film.title.lower()])
 
