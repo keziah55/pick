@@ -7,7 +7,7 @@ Pick is a media browser, built using django.
 ```
 python -m venv .venv
 source .venv/bin/activate 
-python -m pip install -r requirements-3.12.txt
+python -m pip install -r requirements.txt
 ```
 
 You may need to either copy or link `el-pagination.js` from the venv into `static`, for example:
