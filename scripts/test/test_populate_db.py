@@ -14,6 +14,7 @@ from ..populate_db.person_info import make_personinfo
 from imdb import Cinemagoer
 from mediabrowser.models import VisionItem, VisionSeries, Person
 
+
 DATABASE = "db_test"
 
 
@@ -155,7 +156,7 @@ def test_get_from_imdb(title, expected_id):
 def test_read_patch_csv(data_dir):
     patch_csv = data_dir.joinpath("patch_alt_versions.csv")
     patch = read_patch_csv(patch_csv)
-    assert patch[Path('Blade Runner.mkv')]["alt_versions"] == [
+    assert patch[Path("Blade Runner.mkv")]["alt_versions"] == [
         "blade_runner_directors_cut.mkv",
         "blade_runner_theatrical_cut.mkv",
     ]

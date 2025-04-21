@@ -14,6 +14,7 @@ from .utils import (
 )
 from typing import NamedTuple
 from collections import defaultdict
+from pprint import pprint
 
 
 class Result(NamedTuple):
@@ -84,6 +85,9 @@ def _search(search_str, **kwargs) -> dict:
     results = _search_vision_items(
         results, search_str, search_regex, genre_filters, **filter_kwargs
     )
+    print("\nvision item results")
+    pprint(results)
+    # print([result for result in results if "godfather" in result.film.title.lower()])
 
     if search_str:
         # only search people and keywords if given a search string
@@ -94,6 +98,10 @@ def _search(search_str, **kwargs) -> dict:
                 results, search_str, search_regex, genre_filters, **filter_kwargs
             )
 
+    print("\n+ people and keyword results")
+    pprint(results)
+    # print([result for result in results if "godfather" in result.film.title.lower()])
+
     # dict of parent: members for Results to remove
     remove_results: dict[VisionSeries : list[Result]] = defaultdict(list)
 
@@ -102,13 +110,24 @@ def _search(search_str, **kwargs) -> dict:
             top_parent = get_top_level_parent(result.film)
             remove_results[top_parent].append(result)
 
+    print("\nremove results")
+    pprint(remove_results)
+
     for series_item, members in remove_results.items():
         best_match = max(member.match for member in members)
         results.append(Result(best_match, series_item))
 
-    all_remove_items = {item for members in remove_results.values() for item in members}
+    all_remove_items = {item.film.pk for members in remove_results.values() for item in members}
 
-    results = [result for result in results if result not in all_remove_items]
+    print("\nall remove items")
+    pprint(all_remove_items)
+
+    print("\nfilter")
+    for result in results:
+        print(f"{result} filtered: {result.film.pk not in all_remove_items}")
+
+
+    results = [result for result in results if result.film.pk not in all_remove_items]
 
     results = sorted(
         results,
@@ -116,6 +135,14 @@ def _search(search_str, **kwargs) -> dict:
         reverse=True,
     )
     results = [result.film for result in results]
+    
+
+
+    print("\nfinal results")
+    for result in results:
+        print(result.pk, result)
+    # pprint(results)
+    # print([result for result in results if "godfather" in result.film.title.lower()])
 
     # args to be substituted into the templates
     context = {"film_list": results, "search_str": search_str}

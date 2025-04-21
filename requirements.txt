@@ -4,4 +4,4 @@ django-el-pagination~=4.1.2
 django-sortedm2m==4.0.0
 pytest
 pytest-cov
-pytest-django
+pytest-django==4.10.0
