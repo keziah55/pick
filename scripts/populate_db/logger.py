@@ -1,14 +1,19 @@
-import time
 import logging
 from pathlib import Path
+from datetime import datetime
+import pytz
 
 _logging_initialised = False
+
+
+def timestamp():
+    return datetime.now(pytz.timezone("Europe/London"))
 
 
 def initialise_logging():
     global _logging_initialised
 
-    ts = time.strftime("%Y-%m-%d-%H:%M:%S")
+    ts = timestamp().strftime("%Y-%m-%d-%H:%M:%S")
     logger = logging.getLogger("populate_db")
 
     log_dir = Path("logs")

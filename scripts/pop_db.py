@@ -8,7 +8,7 @@ see `populate_db.py -h` for options.
 """
 
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 if __name__ == "__main__":
     # https://docs.djangoproject.com/en/4.2/topics/settings/#calling-django-setup-is-required-for-standalone-django-usage
@@ -23,6 +23,7 @@ if __name__ == "__main__":
 
 from mediabrowser.models import VisionItem, VisionSeries
 from populate_db import PopulateDatabase, StdoutWriter, HtmlWriter
+from populate_db.logger import timestamp
 
 
 if __name__ == "__main__":
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 
     if args.films or args.patch:
 
-        t0 = datetime.now()
+        t0 = timestamp()
         writer.write(f"{t0}")
         writer.write("Populating items...")
         pop_db.populate_items(files["films"], files["patch"])
@@ -86,7 +87,7 @@ if __name__ == "__main__":
         if not args.quiet:
             indent = "  "
 
-            t = datetime.now() - t0
+            t = timestamp() - t0
             writer.write(f"Completed in {t}")
 
             writer.write("\nBreakdown:")
@@ -108,9 +109,9 @@ if __name__ == "__main__":
         writer.write(f"{t0}")
         writer.write("Populating series...")
 
-        t1 = datetime.now()
+        t1 = timestamp()
         n = pop_db.populate_series(files["series"])
 
-        t = datetime.now() - t0
+        t = timestamp() - t0
         writer.write(f"Completed in {t}")
         writer.write(f"\nCreated {n} series in DB")

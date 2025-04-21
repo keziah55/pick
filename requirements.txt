@@ -3,6 +3,7 @@ cinemagoer==2023.5.1
 django-el-pagination~=4.1.2
 django-sortedm2m==4.0.0
 Pillow~=11.2.1
+pytz
 pytest
 pytest-cov
 pytest-django==4.10.0

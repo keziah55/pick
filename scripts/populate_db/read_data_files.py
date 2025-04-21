@@ -272,14 +272,15 @@ def item_patch_equal(item, patch) -> bool:
     for key, value in patch.items():
         item_key = _patch_to_model_map.get(key, key)
         db_value = getattr(item, item_key)
-        if hasattr(db_value, "all"):
-            db_value = db_value.all()
+        if hasattr(db_value, "model"):
+            model_cls = item.alt_versions.model
+            db_value = [model_cls.objects.get(pk=pk) for pk in item.alt_versions.related_val]
             if hasattr(db_value[0], "filename"):
                 db_value = [item.filename for item in db_value]
             else:
                 db_value = [item.name for item in db_value]
         if db_value != value:
-            print(f"****{key=}, {item_key=}, {db_value=}, {value=}; return False****")
+
             return False
     return True
 
