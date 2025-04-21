@@ -31,13 +31,13 @@ def search_items(s: str):
     return items
 
 
-def setup_django():
-    """Set paths, import django and call `django.setup()`."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pick.settings")
-    import django
-
-    django.setup()
-
+print(
+    """
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pick.settings")
+import django
+django.setup()
+"""
+)
 
 __all__ = [
     "VisionItem",
@@ -47,5 +47,4 @@ __all__ = [
     "MediaItem",
     "search_items",
     "VisionSeries",
-    "setup_django",
 ]
