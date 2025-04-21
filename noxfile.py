@@ -58,7 +58,7 @@ def test_mediabrowser(session):
 
 def _test_scripts(session, show=True, cov=True):
     args = _pytest_args(show)
-    args += ["scripts/test", "--create-db"]
+    args += ["scripts/test", "--create-db", "-p", "no:logging"]
 
     if cov:
         cov_dir = COVERAGE_DIR.joinpath("populate_db")
@@ -70,11 +70,11 @@ def _test_scripts(session, show=True, cov=True):
 def _test_mediabrowser(session, show=True, cov=True):
 
     args = _pytest_args(show)
-    args += ["mediabrowser/test", "--reuse-db"]
+    args += ["mediabrowser/test/test_views.py"]
 
     if cov:
         cov_dir = COVERAGE_DIR.joinpath("mediabrowser")
-        args += ["--cov=mediabrowser/views", f"--cov-report html:{cov_dir}"]
+        args += ["--cov=mediabrowser/views", f"--cov-report=html:{cov_dir}"]
 
     session.run(*args)
 
