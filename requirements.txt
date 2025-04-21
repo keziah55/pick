@@ -1,0 +1,7 @@
+django ~= 5.2
+cinemagoer==2023.5.1
+django-el-pagination~=4.1.2
+django-sortedm2m==4.0.0
+pytest
+pytest-cov
+pytest-django
