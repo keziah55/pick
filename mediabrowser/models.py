@@ -110,7 +110,7 @@ class VisionSeries(BaseVision):
     # inherited `year` should be regarded as `year_min`
     year_max = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
     # inherited `runtime` should be regarded as `runtime_min`
-    runtime_max = models.PositiveSmallIntegerField(validators=[MinValueValidator(1900)])
+    runtime_max = models.PositiveSmallIntegerField()
 
     # make this read only?
     # user_rating = models.FloatField(

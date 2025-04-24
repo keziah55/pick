@@ -1,5 +1,6 @@
 import logging
 import re
+import warnings
 from typing import NamedTuple, Optional
 from imdb import Cinemagoer
 from imdb.Movie import Movie
@@ -73,6 +74,7 @@ class MediaInfoProcessor:
         self._aliases = read_alias_csv(alias_csv) if alias_csv is not None else {}
 
         self._media_types = ["movie", "tv movie", "tv series", "episode", "short"]
+        self._infoset = ["main", "keywords"]
 
     def get_media_info(
         self, patch: Optional[dict] = None, title: Optional[str] = None, item_type="film"
@@ -110,12 +112,14 @@ class MediaInfoProcessor:
         if movie is None:
             return None
 
-        infoset = ["main", "keywords"]
-        try:
-            self._cinemagoer.update(movie, infoset)
-        except Exception as err:
-            logger.warning(f"{title}; update: {err}")
-            return None
+        if len(movie.infoset2keys) == 0:
+            # movie infoset have have been updated already when getting best match
+            # if so, don't need to update again
+            try:
+                self._cinemagoer.update(movie, self._infoset)
+            except Exception as err:
+                logger.warning(f"{title}; update: {err}")
+                return None
 
         if (media_type := movie.get("kind")) not in self._media_types:
             logger.warning(f"{title}: got movie {movie} of type {media_type}")
@@ -173,11 +177,11 @@ class MediaInfoProcessor:
     def _get_movie_from_imdb(self, title) -> Optional[Movie]:
         """Get `Movie` from IMDb by searching for title."""
         title, year = self._parse_title(title)
-        movies = self._search_imdb_by_title(title, year)
+        movies = self._search_imdb_by_title(title)
         if movies is None:
             return None
         else:
-            return self._get_best_match(title, movies)
+            return self._get_best_match(title, movies, year=year)
 
     @staticmethod
     def _parse_title(title) -> tuple[str, Optional[int]]:
@@ -195,7 +199,7 @@ class MediaInfoProcessor:
 
         return title, year
 
-    def _search_imdb_by_title(self, title, year=None) -> Optional[list[Movie]]:
+    def _search_imdb_by_title(self, title) -> Optional[list[Movie]]:
 
         logger.info(f"Search IMDb for {title=}")
         try:
@@ -205,35 +209,56 @@ class MediaInfoProcessor:
             return None
 
         if len(movies) == 0:
-            logger.warning(f"{title}; search_movie")
+            logger.warning(f"Found no possible matches for {title=}")
             return None
+        else:
+            logger.info(f"Got {len(movies)} possible matches")
 
-        if year is not None:
-            movies = [movie for movie in movies if movie.get("year") == year]
-
-        movies = [movie for movie in movies if "cover url" in movie.data]
-
-        logger.info(f"Got {len(movies)} possible matches:\n{movies}")
+        movies = [
+            movie
+            for movie in movies
+            if "cover url" in movie.data and movie.get("kind") in self._media_types
+        ]
 
         if len(movies) == 0:
-            movies = None
+            logger.warning(f"After filtering, found no possible matches for {title=}")
+            return None
+        else:
+            logger.info(f"After filtering, got {len(movies)} possible matches:\n{movies}")
 
         return movies
 
-    def _get_best_match(self, title: str, movies: list[Movie]) -> Movie:
+    def _get_best_match(self, title: str, movies: list[Movie], year=None) -> Movie:
+        logger.info("Checking for best match...")
+
+        if year is not None:
+            # year is no longer returned in the default data
+            if len(movies) > 0 and (y := movies[0].get("year")) is not None:
+                warnings.warn(f"Year is in default movie data: {movies[0]} ({y})")
+
         best_match = None
+
         for movie in movies:
             m = get_match(title, movie.get("title"))
-            if best_match is None or m > best_match[1]:
-                if movie.get("kind") not in self._media_types:
+            if m < 0.5:
+                continue
+
+            if year is not None:
+                self._cinemagoer.update(movie, self._infoset)
+                if movie.get("year") != year:
                     continue
+
+            if best_match is None or m > best_match[1]:
                 best_match = (movie, m)
 
         if best_match is None:
             logger.error(f"Could not find match for {title} from movie list")
             return None
         else:
-            logger.info(f"Got best match {best_match[0]} with score {best_match[1]}")
+            s = f"{best_match[0]}"
+            if (y := best_match[0].get("year")) is not None:
+                s += f" ({y})"
+            logger.info(f"Got best match {s} with score {best_match[1]:.3f}")
             movie = best_match[0]
 
             return movie
