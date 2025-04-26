@@ -1,7 +1,7 @@
 from typing import Union
 import itertools
 
-from ...models import VisionItem, VisionSeries, MediaItem
+from ...models import VisionItem, VisionSeries, MediaItem, BaseVision
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -87,6 +87,17 @@ def cast_vision_item(item: MediaItem, database="default") -> Union[VisionItem, V
         )
 
 
+def cast_vision_items(
+    items: list[BaseVision | MediaItem | VisionItem | VisionSeries],
+) -> list[VisionItem | VisionSeries]:
+    """If any item in `items` is not a VisionItem or VisionSeries, cast to appropriate type."""
+    items = [
+        cast_vision_item(item) if type(item) not in [VisionItem, VisionSeries] else item
+        for item in items
+    ]
+    return items
+
+
 def get_media_item_by_pk(pk: int, database="default") -> Union[VisionItem, VisionSeries]:
     """Return either `VisionItem` or `VisionSeries` with the given `pk."""
     try:
@@ -106,3 +117,18 @@ def filter_visionitem_visionseries(database="default", **kwargs) -> list[VisionI
         for model_cls in [VisionItem, VisionSeries]
     ]
     return list(itertools.chain(*results))
+
+
+def filter_items_from_series(
+    item_list: list[VisionItem | VisionSeries],
+) -> list[VisionItem | VisionSeries]:
+    """Given list of VisionItems and VisionSeries, remove items that are members of series."""
+
+    series_pks = [item.pk for item in item_list if item.media_type == MediaItem.SERIES]
+    item_list = [
+        item
+        for item in item_list
+        if item.parent_series is None or item.parent_series.pk not in series_pks
+    ]
+
+    return item_list

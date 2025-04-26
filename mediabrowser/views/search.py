@@ -1,21 +1,18 @@
 from django.shortcuts import render
 from django.db.models import Q
-from ..models import VisionItem, VisionSeries, Keyword, Person, MediaItem, BaseVision
+from ..models import VisionItem, VisionSeries, Keyword, Person, MediaItem
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 from .utils import (
     get_filter_kwargs,
     GenreFilters,
     set_search_filters,
     get_context_from_request,
-    get_top_level_parent,
     get_match,
     make_search_regex,
-    is_single_item_in_series,
-    cast_vision_item,
+    cast_vision_items,
+    filter_items_from_series,
 )
 from typing import NamedTuple
-from collections import defaultdict
-from pprint import pprint
 
 
 class Result(NamedTuple):
@@ -116,17 +113,10 @@ def _search(search_str, **kwargs) -> dict:
     )
     results = [result.film for result in results]
 
-    series_pks = [result.pk for result in results if result.media_type == MediaItem.SERIES]
-    results = [
-        result
-        for result in results
-        if result.parent_series is None or result.parent_series.pk not in series_pks
-    ]
+    results = cast_vision_items(results)
+    results = filter_items_from_series(results)
 
-    results = [
-        cast_vision_item(result) if type(result) not in [VisionItem, VisionSeries] else result
-        for result in set(results)
-    ]
+    # results = list(set(results))
 
     # args to be substituted into the templates
     context = {"film_list": results, "search_str": search_str}
