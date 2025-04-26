@@ -163,10 +163,15 @@ def get_match(
     target: str,
     guesses: Union[str, list[str]],
     remove: Optional[list[str]] = ["the", "and", "a", "&"],
-) -> float:
+) -> tuple[bool, float]:
     """Compare guesses with target and return best score."""
     if isinstance(guesses, str):
         guesses = [guesses]
+
+    target = target.lower()
+    guesses = [guess.lower() for guess in guesses]
+
+    full_target_match = any(target in guess for guess in guesses)
 
     target_lst = _get_words(target, remove=remove)
     guesses = [_get_words(s, remove=remove) for s in guesses]
@@ -177,7 +182,7 @@ def get_match(
 
     m = max(intersect) / total_num_words
 
-    return m
+    return full_target_match, m
 
 
 def _get_words(s, remove=None):

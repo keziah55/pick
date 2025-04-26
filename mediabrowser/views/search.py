@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
-from ..models import VisionItem, VisionSeries, Keyword, Person
+from ..models import VisionItem, VisionSeries, Keyword, Person, MediaItem, BaseVision
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE
 from .utils import (
     get_filter_kwargs,
@@ -11,6 +11,7 @@ from .utils import (
     get_match,
     make_search_regex,
     is_single_item_in_series,
+    cast_vision_item,
 )
 from typing import NamedTuple
 from collections import defaultdict
@@ -23,12 +24,15 @@ class Result(NamedTuple):
 
     Attributes
     ----------
+    full_target_match
+        True if the target string is in the film's fields in its entirety
     match
-        How well this film matched the search filters
+        Proportion of target words contained in film's fields
     film
         VisionItem instance
     """
 
+    full_target_match: bool
     match: float
     film: VisionItem
 
@@ -81,13 +85,14 @@ def _search(search_str, **kwargs) -> dict:
     # search words independently
     search_regex = make_search_regex(search_str)
 
-    # make list of VisionItems
+    # make list of VisionSeries and VisionItems
+    results = _search_vision_series(
+        results, search_str, search_regex, genre_filters, **filter_kwargs
+    )
+
     results = _search_vision_items(
         results, search_str, search_regex, genre_filters, **filter_kwargs
     )
-    # print("\nvision item results")
-    # pprint(results)
-    # print([result for result in results if "godfather" in result.film.title.lower()])
 
     if search_str:
         # only search people and keywords if given a search string
@@ -98,56 +103,61 @@ def _search(search_str, **kwargs) -> dict:
                 results, search_str, search_regex, genre_filters, **filter_kwargs
             )
 
-    # print("\n+ people and keyword results")
-    # pprint(results)
-
-    # dict of parent: members for Results to remove
-    remove_results: dict[VisionSeries : list[Result]] = defaultdict(list)
-
-    for result in results:
-        if result.film.parent_series is not None and not is_single_item_in_series(result.film):
-            top_parent = get_top_level_parent(result.film)
-            remove_results[top_parent].append(result)
-
-    # print("\nremove results")
-    # pprint(remove_results)
-
-    for series_item, members in remove_results.items():
-        best_match = max(member.match for member in members)
-        results.append(Result(best_match, series_item))
-
-    all_remove_items = {item.film.pk for members in remove_results.values() for item in members}
-
-    # print("\nall remove items")
-    # pprint(all_remove_items)
-
-    # print("\nfilter")
-    # for result in results:
-    #     print(f"{result} filtered: {result.film.pk not in all_remove_items}")
-
-
-    results = [result for result in results if result.film.pk not in all_remove_items]
+    results = [
+        result
+        for result in results
+        if result.film.parent_series is None or result.film.media_type == MediaItem.SERIES
+    ]
 
     results = sorted(
         results,
-        key=lambda item: (item.match, item.user_rating, item.imdb_rating),
+        key=lambda item: (item.full_target_match, item.match, item.user_rating, item.imdb_rating),
         reverse=True,
     )
     results = [result.film for result in results]
-    
 
+    series_pks = [result.pk for result in results if result.media_type == MediaItem.SERIES]
+    results = [
+        result
+        for result in results
+        if result.parent_series is None or result.parent_series.pk not in series_pks
+    ]
 
-    # print("\nfinal results")
-    # for result in results:
-    #     print(result.pk, result)
-
-    # pprint(results)
-    # print([result for result in results if "godfather" in result.film.title.lower()])
+    results = [
+        cast_vision_item(result) if type(result) not in [VisionItem, VisionSeries] else result
+        for result in results
+    ]
 
     # args to be substituted into the templates
     context = {"film_list": results, "search_str": search_str}
 
     return context
+
+
+def _search_vision_series(
+    results: list[Result],
+    search_str: str,
+    search_regex: str,
+    genre_filters: GenreFilters,
+    **filter_kwargs,
+) -> list[Result]:
+    """
+    Update `results` list by searching titles of series.
+    """
+    # always search VisionItem by title
+    for film in VisionSeries.objects.filter(title__iregex=search_regex, **filter_kwargs):
+        if not _check_include_film(film, results, genre_filters):
+            continue
+        # check how closely matched titles were
+        if len(search_str) == 0:
+            m = 1
+            target_match = False
+        else:
+            target_match, m = get_match(search_str, film.title)
+        if m > 0:
+            results.append(Result(target_match, m, film))
+
+    return results
 
 
 def _search_vision_items(
@@ -158,7 +168,7 @@ def _search_vision_items(
     **filter_kwargs,
 ) -> list[Result]:
     """
-    Update `results` list by searching titles.
+    Update `results` list by searching titles of films.
     """
     # always search VisionItem by title
     for film in VisionItem.objects.filter(
@@ -169,13 +179,14 @@ def _search_vision_items(
         # check how closely matched titles were
         if len(search_str) == 0:
             m = 1
+            target_match = False
         else:
             possible = [film.title]
             if film.alt_title:
                 possible.append(film.alt_title)
-            m = get_match(search_str, possible)
+            target_match, m = get_match(search_str, possible)
         if m > 0:
-            results.append(Result(m, film))
+            results.append(Result(target_match, m, film))
 
     return results
 
@@ -197,17 +208,18 @@ def _search_people(
 
         if len(search_str) == 0:
             m = 1
+            target_match = False
         else:
             possible = [person.name]
             if person.alias:
                 possible.append(person.alias)
-            m = get_match(search_str, possible)
+            target_match, m = get_match(search_str, possible)
 
         if m > 0:
             # get person's films, applying filters
             for field in ["stars", "director"]:
                 results += [
-                    Result(m, film)
+                    Result(target_match, m, film)
                     for film in getattr(person, field).filter(**filter_kwargs)
                     if _check_include_film(film, results, genre_filters)
                 ]
@@ -228,12 +240,13 @@ def _search_keywords(
     for keyword in keywords:
         if len(search_str) == 0:
             m = 1
+            target_match = False
         else:
-            m = get_match(search_str, keyword.name)
+            target_match, m = get_match(search_str, keyword.name)
 
         if m > 0:
             results += [
-                Result(m, film)
+                Result(target_match, m, film)
                 for film in keyword.visionitem_set.filter(**filter_kwargs)
                 if _check_include_film(film, results, genre_filters)
             ]
