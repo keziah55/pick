@@ -239,7 +239,7 @@ class MediaInfoProcessor:
         best_match = None
 
         for movie in movies:
-            m = get_match(title, movie.get("title"))
+            full_target_match, m = get_match(title, movie.get("title"))
             if m < 0.5:
                 continue
 
@@ -248,8 +248,8 @@ class MediaInfoProcessor:
                 if movie.get("year") != year:
                     continue
 
-            if best_match is None or m > best_match[1]:
-                best_match = (movie, m)
+            if best_match is None or (m > best_match[1] and full_target_match):
+                best_match = (movie, m, full_target_match)
 
         if best_match is None:
             logger.error(f"Could not find match for {title} from movie list")
