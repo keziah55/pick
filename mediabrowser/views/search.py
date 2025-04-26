@@ -116,10 +116,11 @@ def _search(search_str, **kwargs) -> dict:
     results = cast_vision_items(results)
     results = filter_items_from_series(results)
 
-    # results = list(set(results))
+    # this is kinda nasty. would be better to figure out why there are duplicated series in results
+    deduplicated_results = list(dict.fromkeys(results))
 
     # args to be substituted into the templates
-    context = {"film_list": results, "search_str": search_str}
+    context = {"film_list": deduplicated_results, "search_str": search_str}
 
     return context
 
