@@ -125,7 +125,7 @@ def _search(search_str, **kwargs) -> dict:
 
     results = [
         cast_vision_item(result) if type(result) not in [VisionItem, VisionSeries] else result
-        for result in results
+        for result in set(results)
     ]
 
     # args to be substituted into the templates
