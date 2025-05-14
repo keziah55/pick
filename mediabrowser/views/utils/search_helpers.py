@@ -94,12 +94,15 @@ def set_search_filters(context, request=None) -> dict:
     genres = {}
     genre_text = ["\u2015", "AND", "OR", "NOT"]
     genre_lists = [context.get(f"genre-{key}", []) for key in ["and", "or", "not"]]
-    for g in Genre.objects.all():
+
+    sorted_genres = sorted([g.name for g in Genre.objects.all()])
+    
+    for genre_name in sorted_genres:# Genre.objects.all():
         value = 0  # neutral by default
         for i, genre_list in enumerate(genre_lists):
-            if g.name.lower() in genre_list:
+            if genre_name.lower() in genre_list:
                 value = i + 1  # value should be 1, 2 or 3
-        genres[g.name] = (str(value), genre_text[value])
+        genres[genre_name] = (str(value), genre_text[value])
     context["genres"] = genres
 
     if "all-genre-box-data" not in context and request is not None:
