@@ -24,7 +24,7 @@ __all__ = [
     "get_match",
     "make_search_regex",
     "cast_vision_item",
-    "cast_vision_items"
+    "cast_vision_items",
     "get_top_level_parent",
     "is_single_item_in_series",
     "get_media_item_by_pk",
