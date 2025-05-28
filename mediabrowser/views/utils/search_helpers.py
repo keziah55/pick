@@ -97,7 +97,7 @@ def set_search_filters(context, request=None) -> dict:
 
     sorted_genres = sorted([g.name for g in Genre.objects.all()])
     
-    for genre_name in sorted_genres:# Genre.objects.all():
+    for genre_name in sorted_genres:
         value = 0  # neutral by default
         for i, genre_list in enumerate(genre_lists):
             if genre_name.lower() in genre_list:
@@ -177,10 +177,10 @@ def get_match(
     full_target_match = any(target in guess for guess in guesses)
 
     target_lst = _get_words(target, remove=remove)
-    guesses = [_get_words(s, remove=remove) for s in guesses]
+    guesses_lst = [_get_words(s, remove=remove) for s in guesses]
     intersect = [_get_intersect_size(target_lst, guess) for guess in guesses]
 
-    all_guess_words = set([s for sublist in guesses for s in sublist])
+    all_guess_words = set([s for sublist in guesses_lst for s in sublist])
     total_num_words = len(set(target_lst) | all_guess_words)
 
     m = max(intersect) / total_num_words
@@ -188,7 +188,7 @@ def get_match(
     return full_target_match, m
 
 
-def _get_words(s, remove=None):
+def _get_words(s, remove:Optional[list[str]]=None) -> list[str]:
     """Return list of words in string, as lower case, with non-alphnumeric characters removed"""
     if remove is None:
         remove = []
