@@ -54,6 +54,11 @@ def get_filter_kwargs(**kwargs) -> tuple[dict, bool, GenreFilters]:
         elif physical:
             filter_kwargs["digital"] = False
 
+    if user_ratings := [_get_kwarg(kwargs, key) for key in kwargs if key.startswith("userrating")]:
+        filter_kwargs["user_rating__in"] = user_ratings
+
+    print(f"{filter_kwargs=}")
+
     search_keywords = kwargs.get("keyword", False)
 
     genre_and = make_set(kwargs.get("genre-and", None))
@@ -66,6 +71,10 @@ def get_filter_kwargs(**kwargs) -> tuple[dict, bool, GenreFilters]:
 
 
 def set_search_filters(context, request=None) -> dict:
+
+    print("====")
+    print(context)
+    print("----")
 
     # add min and max values for the sliders (not the selected min and max vals)
     if "year_range_min" not in context:
@@ -96,7 +105,7 @@ def set_search_filters(context, request=None) -> dict:
     genre_lists = [context.get(f"genre-{key}", []) for key in ["and", "or", "not"]]
 
     sorted_genres = sorted([g.name for g in Genre.objects.all()])
-    
+
     for genre_name in sorted_genres:
         value = 0  # neutral by default
         for i, genre_list in enumerate(genre_lists):
@@ -116,11 +125,14 @@ def set_search_filters(context, request=None) -> dict:
             genre_text[int(value)],
         )
 
+    print(context)
+    print("====")
+
     return context
 
 
 def get_context_from_request(request) -> dict:
-    """Try to get year and runtime min and max from `request`"""
+    """Try to get filter data from `request`"""
     context = {}
 
     # assigning to context dict in for loop with variable key names wasn't working
@@ -188,7 +200,7 @@ def get_match(
     return full_target_match, m
 
 
-def _get_words(s, remove:Optional[list[str]]=None) -> list[str]:
+def _get_words(s, remove: Optional[list[str]] = None) -> list[str]:
     """Return list of words in string, as lower case, with non-alphnumeric characters removed"""
     if remove is None:
         remove = []
@@ -240,6 +252,12 @@ def _get_search_kwarg_type_map():
         "colour": bool,
         "digital": bool,
         "physical": bool,
+        "userrating5": int,
+        "userrating4": int,
+        "userrating3": int,
+        "userrating2": int,
+        "userrating1": int,
+        "userrating0": int,
     }
     return type_map
 
@@ -265,4 +283,3 @@ def _get_range(name, model_class=VisionItem) -> dict:
     values = set(model_class.objects.all().values_list(name, flat=True))
     dct = {f"{name}_range_min": min(values), f"{name}_range_max": max(values)}
     return dct
-

@@ -135,8 +135,13 @@ def _search_vision_series(
     """
     Update `results` list by searching titles of series.
     """
-    # always search VisionItem by title
-    for film in VisionSeries.objects.filter(title__iregex=search_regex, **filter_kwargs):
+    fields = [field.name for field in VisionSeries._meta.fields]
+    series_filter_kwargs = {
+        key: value for key, value in filter_kwargs.items() if key.split("__")[0] in fields
+    }
+
+    # always search VisionSeries by title
+    for film in VisionSeries.objects.filter(title__iregex=search_regex, **series_filter_kwargs):
         if not _check_include_film(film, results, genre_filters):
             continue
         # check how closely matched titles were
