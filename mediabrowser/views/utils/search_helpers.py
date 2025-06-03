@@ -85,13 +85,11 @@ def set_search_filters(context, request=None) -> dict:
         context["runtime_max"] = context["runtime_range_max"]
 
     # colour/black and white and digital/physical: if unchecked, leave it. Otherwise, set checked
-    tmp_dct = {}
     names = ["keyword", "colour", "black_and_white", "digital", "physical"]
     names += [f"userrating{n}" for n in range(6)]
     for name in names:
         if context.get(name, False) is not False:
-            tmp_dct[f"{name}_checked"] = True  # assigning to context directly here didn't work
-    context.update(tmp_dct)
+            context[f"{name}_checked"] = True
 
     # have to manually get the background colour from style.css and pass it into the template
     # 0:neutral, 1:AND, 2:OR, 3:NOT
