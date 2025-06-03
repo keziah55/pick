@@ -57,8 +57,6 @@ def get_filter_kwargs(**kwargs) -> tuple[dict, bool, GenreFilters]:
     if user_ratings := [_get_kwarg(kwargs, key) for key in kwargs if key.startswith("userrating")]:
         filter_kwargs["user_rating__in"] = user_ratings
 
-    print(f"{filter_kwargs=}")
-
     search_keywords = kwargs.get("keyword", False)
 
     genre_and = make_set(kwargs.get("genre-and", None))
@@ -71,10 +69,6 @@ def get_filter_kwargs(**kwargs) -> tuple[dict, bool, GenreFilters]:
 
 
 def set_search_filters(context, request=None) -> dict:
-
-    print("====")
-    print(context)
-    print("----")
 
     # add min and max values for the sliders (not the selected min and max vals)
     if "year_range_min" not in context:
@@ -93,6 +87,7 @@ def set_search_filters(context, request=None) -> dict:
     # colour/black and white and digital/physical: if unchecked, leave it. Otherwise, set checked
     tmp_dct = {}
     names = ["keyword", "colour", "black_and_white", "digital", "physical"]
+    names += [f"userrating{n}" for n in range(6)]
     for name in names:
         if context.get(name, False) is not False:
             tmp_dct[f"{name}_checked"] = True  # assigning to context directly here didn't work
@@ -124,9 +119,6 @@ def set_search_filters(context, request=None) -> dict:
             request.GET.get("all-genre-box-data", value),
             genre_text[int(value)],
         )
-
-    print(context)
-    print("====")
 
     return context
 
