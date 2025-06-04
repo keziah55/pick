@@ -58,11 +58,12 @@ def search(request, search_str):
 
     search_results = _search(search_str, **context)
     context.update(search_results)
-    context = set_search_filters(context, request)
 
     context["filmlist_template"] = FILMLIST_TEMPLATE
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         template = FILMLIST_TEMPLATE
+    else:
+        context = set_search_filters(context, request)
 
     return render(request, template, context)
 

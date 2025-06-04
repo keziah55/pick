@@ -10,7 +10,8 @@
 
 {% block page_content %}
 
-<form action="{% url 'pick:index' %}" method="get">
+<form action="{% url 'pick:index' %}" method="get" id="search-filter">
+    {% csrf_token %}
 
     <!-- search bar -->
     <div align="center">

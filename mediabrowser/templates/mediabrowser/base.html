@@ -22,13 +22,16 @@
 
 <body>
     {% block page_content %}{% endblock %}
+
+    <!-- reload only film list on search -->
+    <script src="{% static 'mediabrowser/js/reload-film-list.js' %}"></script>
     
-    <!-- for year and runtime sliders -->
+    <!-- year and runtime sliders -->
     <script src="{% static 'mediabrowser/js/slider.js' %}"></script>
-    <!-- for tri-state genre boxes -->
+    <!-- tri-state genre boxes -->
     <script src="{% static 'mediabrowser/js/multistate.js' %}"></script>
     
-    <!-- for showing and hiding film description on hover -->
+    <!-- show and hide film description on hover -->
     <script src="{% static 'mediabrowser/js/hover-description.js' %}"></script>
     <!-- star rating bits -->
     <script src="{% static 'mediabrowser/js/star.js' %}"></script>

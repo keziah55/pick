@@ -21,7 +21,7 @@ $(document).on('submit', '#star-rating', function(e){
             console.log("success, updating div ", div_id);
             $(div_id).html( data );
         },
-        error: function(data){
+        error: function(error){
             console.log("error setting star rating for film_pk=", film_pk, ": ", error);
         },
     }) 
