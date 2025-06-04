@@ -179,10 +179,10 @@ def get_match(
     full_target_match = any(target in guess for guess in guesses)
 
     target_lst = _get_words(target, remove=remove)
-    guesses_lst = [_get_words(s, remove=remove) for s in guesses]
+    guesses = [_get_words(s, remove=remove) for s in guesses]
     intersect = [_get_intersect_size(target_lst, guess) for guess in guesses]
 
-    all_guess_words = set([s for sublist in guesses_lst for s in sublist])
+    all_guess_words = set([s for sublist in guesses for s in sublist])
     total_num_words = len(set(target_lst) | all_guess_words)
 
     m = max(intersect) / total_num_words
