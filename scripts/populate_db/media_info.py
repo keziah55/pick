@@ -4,8 +4,10 @@ from typing import NamedTuple, Optional
 
 import imdbinfo
 from imdbinfo.models import MovieBriefInfo, MovieDetail, SearchResult
+
 from .read_data_files import read_physical_media_csv, read_alias_csv
 from .person_info import make_personinfo, PersonInfo
+from .utils import imdb_id_to_str
 from mediabrowser.views.utils import get_match
 
 logger = logging.getLogger("populate_db")
@@ -73,11 +75,6 @@ class MediaInfoProcessor:
         self._aliases = read_alias_csv(alias_csv) if alias_csv is not None else {}
 
         self._media_types = ["movie", "short", "tvSeries", "tvSeriesEpisode", "tvMovie"]
-
-    @staticmethod
-    def imdb_id_to_str(imdb_id: int) -> str:
-        """Return zero-padded string from `imdb_id`."""
-        return f"{int(imdb_id):07d}"
 
     def get_media_info(
         self, patch: Optional[dict] = None, title: Optional[str] = None, item_type="film"
@@ -154,7 +151,7 @@ class MediaInfoProcessor:
                 return movie
 
         try:
-            movie: MovieDetail = imdbinfo.get_movie(self.imdb_id_to_str(media_id))
+            movie: MovieDetail = imdbinfo.get_movie(imdb_id_to_str(media_id))
         except Exception as err:
             logger.warning(f"cinemagoer.get_movie({media_id=}) raised error: {err}")
             return None
@@ -226,8 +223,9 @@ class MediaInfoProcessor:
 
         return movies
 
+    @staticmethod
     def _get_best_match(
-        self, title: str, movies: list[MovieBriefInfo], year=None
+        title: str, movies: list[MovieBriefInfo], year=None
     ) -> MovieBriefInfo:
         logger.info("Checking for best match...")
 

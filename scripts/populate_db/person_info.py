@@ -1,6 +1,7 @@
 from typing import NamedTuple, Optional, Union
 import imdbinfo
 from imdbinfo.models import CastMember, PersonDetail, Person as IMDbPerson
+from .utils import imdb_id_to_str
 
 
 class PersonInfo(NamedTuple):
@@ -55,6 +56,7 @@ def make_personinfo(
         id_str = person.id
         name = person.name
     elif _is_id_str(person):
+        person = imdb_id_to_str(person)  # get as 7-char str
         person = imdbinfo.get_name(person)
         id_str = person.id
         name = person.name

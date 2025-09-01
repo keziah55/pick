@@ -148,7 +148,7 @@ def test_get_from_imdb(title, expected_id):
     media_info_proc = MediaInfoProcessor()
 
     movie = media_info_proc._get_movie_from_imdb(title)
-    assert movie.getID() == expected_id
+    assert movie.id == expected_id
 
 
 def test_read_patch_csv(data_dir):
