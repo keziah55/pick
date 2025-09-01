@@ -1,9 +1,9 @@
 import logging
 import re
-import warnings
 from typing import NamedTuple, Optional
-from imdb import Cinemagoer
-from imdb.Movie import Movie
+
+import imdbinfo
+from imdbinfo.models import MovieBriefInfo, MovieDetail, SearchResult
 from .read_data_files import read_physical_media_csv, read_alias_csv
 from .person_info import make_personinfo, PersonInfo
 from mediabrowser.views.utils import get_match
@@ -67,14 +67,17 @@ class MediaInfoProcessor:
 
     def __init__(self, physical_media=None, alias_csv=None):
         self._movie_cache = {}
-        self._cinemagoer = Cinemagoer()
         self._physical_media = (
             read_physical_media_csv(physical_media) if physical_media is not None else {}
         )
         self._aliases = read_alias_csv(alias_csv) if alias_csv is not None else {}
 
-        self._media_types = ["movie", "tv movie", "tv series", "episode", "short"]
-        self._infoset = ["main", "keywords"]
+        self._media_types = ["movie", "short", "tvSeries", "tvSeriesEpisode", "tvMovie"]
+
+    @staticmethod
+    def imdb_id_to_str(imdb_id: int) -> str:
+        """Return zero-padded string from `imdb_id`."""
+        return f"{int(imdb_id):07d}"
 
     def get_media_info(
         self, patch: Optional[dict] = None, title: Optional[str] = None, item_type="film"
@@ -112,21 +115,15 @@ class MediaInfoProcessor:
         if movie is None:
             return None
 
-        if len(movie.infoset2keys) == 0:
-            # movie infoset have have been updated already when getting best match
-            # if so, don't need to update again
-            try:
-                self._cinemagoer.update(movie, self._infoset)
-            except Exception as err:
-                logger.warning(f"{title}; update: {err}")
-                return None
+        if type(movie) is MovieBriefInfo:
+            movie: MovieDetail = imdbinfo.get_movie(movie.id)
 
-        if (media_type := movie.get("kind")) not in self._media_types:
+        if (media_type := movie.kind) not in self._media_types:
             logger.warning(f"{title}: got movie {movie} of type {media_type}")
             return None
 
         if patch is not None and patch.get("alt_versions", None) is not None:
-            media_id = patch.get("media_id", movie.getID())
+            media_id = patch.get("media_id", movie.id)
             self._movie_cache[media_id] = movie
             logger.info(f"Caching movie with key {media_id}")
 
@@ -139,7 +136,7 @@ class MediaInfoProcessor:
             logger.info(f"Made MediaInfo object {info}")
         return info
 
-    def _get_movie_from_patch(self, patch) -> Optional[Movie]:
+    def _get_movie_from_patch(self, patch) -> Optional[MovieDetail]:
         """
         Get `Movie` from `patch` data.
 
@@ -157,7 +154,7 @@ class MediaInfoProcessor:
                 return movie
 
         try:
-            movie = self._cinemagoer.get_movie(media_id)
+            movie: MovieDetail = imdbinfo.get_movie(self.imdb_id_to_str(media_id))
         except Exception as err:
             logger.warning(f"cinemagoer.get_movie({media_id=}) raised error: {err}")
             return None
@@ -166,7 +163,7 @@ class MediaInfoProcessor:
 
         return movie
 
-    def _get_from_cache(self, media_id: str) -> Optional[Movie]:
+    def _get_from_cache(self, media_id: str) -> Optional[MovieDetail]:
         movie = self._movie_cache.get(media_id, None)
         if movie is None:
             logger.warning(f"No cached movie for id={media_id}")
@@ -174,7 +171,7 @@ class MediaInfoProcessor:
             logger.info(f"Got {movie} from cache with id={media_id}")
         return movie
 
-    def _get_movie_from_imdb(self, title) -> Optional[Movie]:
+    def _get_movie_from_imdb(self, title) -> Optional[MovieBriefInfo]:
         """Get `Movie` from IMDb by searching for title."""
         title, year = self._parse_title(title)
         movies = self._search_imdb_by_title(title)
@@ -199,11 +196,12 @@ class MediaInfoProcessor:
 
         return title, year
 
-    def _search_imdb_by_title(self, title) -> Optional[list[Movie]]:
+    def _search_imdb_by_title(self, title) -> Optional[list[MovieBriefInfo]]:
 
         logger.info(f"Search IMDb for {title=}")
         try:
-            movies = self._cinemagoer.search_movie(title)
+            results: SearchResult = imdbinfo.search_title(title)
+            movies: list[MovieBriefInfo] = results.titles
         except Exception as err:
             logger.warning(f"{title}; search_movie from title: {err}")
             return None
@@ -217,7 +215,7 @@ class MediaInfoProcessor:
         movies = [
             movie
             for movie in movies
-            if "cover url" in movie.data and movie.get("kind") in self._media_types
+            if movie.cover_url is not None and movie.kind in self._media_types
         ]
 
         if len(movies) == 0:
@@ -228,24 +226,20 @@ class MediaInfoProcessor:
 
         return movies
 
-    def _get_best_match(self, title: str, movies: list[Movie], year=None) -> Movie:
+    def _get_best_match(
+        self, title: str, movies: list[MovieBriefInfo], year=None
+    ) -> MovieBriefInfo:
         logger.info("Checking for best match...")
-
-        if year is not None:
-            # year is no longer returned in the default data
-            if len(movies) > 0 and (y := movies[0].get("year")) is not None:
-                warnings.warn(f"Year is in default movie data: {movies[0]} ({y})")
 
         best_match = None
 
         for movie in movies:
-            full_target_match, m = get_match(title, movie.get("title"))
+            full_target_match, m = get_match(title, movie.title)
             if m < 0.5:
                 continue
 
             if year is not None:
-                self._cinemagoer.update(movie, self._infoset)
-                if movie.get("year") != year:
+                if movie.year != year:
                     continue
 
             if best_match is None or (m > best_match[1] and full_target_match):
@@ -256,7 +250,7 @@ class MediaInfoProcessor:
             return None
         else:
             s = f"{best_match[0]}"
-            if (y := best_match[0].get("year")) is not None:
+            if (y := best_match[0].year) is not None:
                 s += f" ({y})"
             logger.info(f"Got best match {s} with score {best_match[1]:.3f}")
             movie = best_match[0]
@@ -268,16 +262,16 @@ class MediaInfoProcessor:
         """Get `patch_key` from `patch`, falling back to `imdb_key` from `movie`"""
         if patch_key is None:
             patch_key = imdb_key
-        value = patch.get(patch_key, movie.get(imdb_key, default))
+        value = patch.get(patch_key, getattr(movie, imdb_key, default))
         if value is None:
             # found instance where key was in movie, but it returned None
             value = default
         return value
 
     def _make_person_info(self, person):
-        return make_personinfo(person, self._cinemagoer, self._aliases)
+        return make_personinfo(person, self._aliases)
 
-    def _make_media_info(self, movie: Movie, patch=None) -> MediaInfo:
+    def _make_media_info(self, movie: MovieDetail, patch=None) -> MediaInfo:
         """
         Return named tuple of info about the film from the given `movie`.
 
@@ -298,24 +292,19 @@ class MediaInfoProcessor:
 
         title = self._get_patched(movie, patch, "title", default="")
 
-        alt_title_fields = ["original title", "localized title"]
-        alt_title = set(
-            [
-                self._get_patched(movie, patch, field, "alt_title", default=title)
-                for field in alt_title_fields
-            ]
-        )
-        if title in alt_title:
-            alt_title.remove(title)
-        alt_title = list(alt_title)
+        alt_title_patch = patch.get("alt_title", None)
+        local_title_imdb = movie.title_localized
+        title_akas_imdb = movie.title_akas
+        alt_title = set(title_akas_imdb) | {alt_title_patch, local_title_imdb}
+        alt_title = list(filter(lambda s: s is not None and s != title, list(alt_title)))
 
         language = self._get_patched(movie, patch, "languages", "language", default=[])
 
-        colour = self._get_patched(movie, patch, "color info", "colour", default=["Color"])
+        colour = self._get_patched(movie, patch, "colorations", "colour", default=["Color"])
         if not isinstance(colour, bool):
             colour = any("color" in item.lower() for item in colour)  # boolean
 
-        image_url = self._get_patched(movie, patch, "cover url", "image_url", default="")
+        image_url = self._get_patched(movie, patch, "cover_url", "image_url", default="")
         if "_V1_" in image_url:
             head, tail = image_url.split("_V1_")
             if tail:
@@ -328,38 +317,36 @@ class MediaInfoProcessor:
             genre = [s.strip() for s in genre.split(",") if s]
 
         # list of keywords
-        keywords = self._get_patched(movie, patch, "keywords", default=[])
+        keywords = self._get_patched(movie, patch, "storyline_keywords", default=[])
         if isinstance(keywords, str):
             keywords = [s.strip() for s in keywords.split(",") if s]
 
         # get release year
-        year = patch.get("year", int(movie.get("year", 0)))
+        year = patch.get("year", movie.year)
 
         # get runtime
-        runtime = patch.get(
-            "runtime", int(movie.get("runtimes", [0])[0])
-        )  # runtimes from imdb is list of strings, want single int
+        runtime = patch.get("runtime", movie.duration)
 
         # get list of actors and director(s)
         if "stars" in patch:
             stars = ",".split(patch["stars"])
         else:
-            stars = movie.get("cast", [])
+            stars = movie.categories["cast"]  # movie.stars is first 4 billed
         stars = [self._make_person_info(person) for person in stars]
 
         if "director" in patch:
             director = ",".split(patch["director"])
         else:
-            director = movie.get("director", [])
+            director = movie.directors
         director = [self._make_person_info(person) for person in director]
 
-        desc = patch.get("description", movie.get("plot", movie.get("plot outline", "")))
+        desc = patch.get("description", movie.plot)
         if isinstance(desc, list):
             desc = desc[0]
 
         alt_desc = patch.get("alt_description", "")
 
-        media_id = patch.get("media_id", movie.getID())
+        media_id = patch.get("media_id", movie.id)
 
         alt_versions = patch.get("alt_versions", [])
         # alt_versions = [fname for fname in alt_versions.split(",") if fname]

@@ -11,7 +11,6 @@ from ..populate_db.read_data_files import (
 )
 from ..populate_db.media_info import MediaInfoProcessor
 from ..populate_db.person_info import make_personinfo
-from imdb import Cinemagoer
 from mediabrowser.models import VisionItem, VisionSeries, Person
 
 
@@ -23,6 +22,7 @@ def test_combine_patch_films_list(
 ):
 
     combined_dct = make_combined_dict(films_txt, patch_csv)
+    from pprint import pprint; pprint(combined_dct)
     assert set(combined_dct.keys()) == set(expected_patch_filenames) | set(expected_films_filenames)
 
     for fname in expected_patch_filenames:
@@ -129,9 +129,7 @@ def test_populate_db(
 def test_alias(alias_csv, person):
     dct = read_alias_csv(alias_csv)
 
-    cinemagoer = Cinemagoer()
-
-    person_info = make_personinfo(person, cinemagoer, dct)
+    person_info = make_personinfo(person, dct)
     assert person_info.name == "Charles Chaplin"
     assert person_info.alias == "Charlie Chaplin"
     assert person_info.id == "0000122"

@@ -22,7 +22,7 @@ class PopulateDBVisionItemMixin(object):
 
         super().__init__(*args, **kwargs)
 
-        self._created_item_count = {"visionitem": 0, "genre": 0, "keywords": 0, "person": 0}
+        self._created_item_count = {"visionitem": 0, "genre": 0, "keyword": 0, "person": 0}
         self._created_visionitems = []
         self._imdb_time = 0
         self._db_time = 0

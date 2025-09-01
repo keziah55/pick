@@ -1,6 +1,6 @@
-from typing import NamedTuple, Optional
-from imdb.parser.http import IMDbHTTPAccessSystem as CinemagoerType  # used for type hint
-from imdb.Person import Person as IMDbPerson
+from typing import NamedTuple, Optional, Union
+import imdbinfo
+from imdbinfo.models import CastMember, PersonDetail, Person as IMDbPerson
 
 
 class PersonInfo(NamedTuple):
@@ -22,7 +22,7 @@ def _is_id_str(s: str) -> bool:
         return True
 
 
-def _name_to_id(name: str, cinemagoer: CinemagoerType) -> str:
+def _name_to_id(name: str) -> str:
     """
     Given `name` string, return IMDb ID string
 
@@ -33,30 +33,33 @@ def _name_to_id(name: str, cinemagoer: CinemagoerType) -> str:
     RuntimeError
         If searching for the person's name returned no values.
     """
+
     if not _is_id_str(name):
-        people = cinemagoer.search_person(name)
+        people = imdbinfo.search_title(name).names
         if len(people) == 0:
             raise RuntimeError(f"Could not find IMDb ID for person '{name}'")
-        name = people[0].getID()
+        name = people[0].id
     return name
 
 
-def make_personinfo(person, cinemagoer: CinemagoerType, aliases: dict[str:str]) -> PersonInfo:
+def make_personinfo(
+    person: Union[str, IMDbPerson, CastMember, PersonDetail], aliases: dict[str:str]
+) -> PersonInfo:
     """
     Create PersonInfo for given `person`.
 
-    Note that `person` can be an imdb.Person.Person instance, an ID string
+    Note that `person` can be any imdbinfo Person class, an ID string
     or a name string.
     """
-    if isinstance(person, IMDbPerson):
-        id_str = person.getID()
-        name = person["name"]
+    if isinstance(person, (IMDbPerson, CastMember, PersonDetail)):
+        id_str = person.id
+        name = person.name
     elif _is_id_str(person):
-        person = cinemagoer.get_person(person)
-        id_str = person.getID()
-        name = person["name"]
+        person = imdbinfo.get_name(person)
+        id_str = person.id
+        name = person.name
     else:
-        id_str = _name_to_id(person, cinemagoer)
+        id_str = _name_to_id(person)
         name = person
 
     if (alias := aliases.get(int(id_str), None)) is not None:
