@@ -224,9 +224,7 @@ class MediaInfoProcessor:
         return movies
 
     @staticmethod
-    def _get_best_match(
-        title: str, movies: list[MovieBriefInfo], year=None
-    ) -> MovieBriefInfo:
+    def _get_best_match(title: str, movies: list[MovieBriefInfo], year=None) -> MovieBriefInfo:
         logger.info("Checking for best match...")
 
         best_match = None
@@ -318,6 +316,7 @@ class MediaInfoProcessor:
         keywords = self._get_patched(movie, patch, "storyline_keywords", default=[])
         if isinstance(keywords, str):
             keywords = [s.strip() for s in keywords.split(",") if s]
+        # keywords = []
 
         # get release year
         year = patch.get("year", movie.year)

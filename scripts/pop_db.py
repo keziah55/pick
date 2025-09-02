@@ -37,6 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--physical-media", help="Path to physical media csv")
     parser.add_argument("-a", "--aliases", help="Path to aliases csv")
     parser.add_argument("-s", "--series", help="Path to series csv")
+    parser.add_argument("-d", "--descriptions", help="Path to csv file of descriptions")
     parser.add_argument(
         "-c", "--clear", help="Clear VisionItems and VisionSeries", action="store_true"
     )
@@ -54,6 +55,7 @@ if __name__ == "__main__":
         "physical_media": args.physical_media,
         "aliases": args.aliases,
         "series": args.series,
+        "descriptions": args.descriptions
     }
     for key, value in files.items():
         if value is not None:
@@ -82,7 +84,7 @@ if __name__ == "__main__":
         t0 = timestamp()
         writer.write(f"{t0}")
         writer.write("Populating items...")
-        pop_db.populate_items(files["films"], files["patch"])
+        pop_db.populate_items(files["films"], files["patch"], description_csv=files["descriptions"])
 
         if not args.quiet:
             indent = "  "

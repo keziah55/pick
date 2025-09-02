@@ -18,24 +18,43 @@ DATABASE = "db_test"
 
 
 def test_combine_patch_films_list(
-    films_txt, patch_csv, expected_patch_filenames, expected_films_filenames
+    films_txt,
+    patch_csv,
+    descriptions_csv,
+    expected_patch_filenames,
+    expected_films_filenames,
+    expected_alt_descriptions,
 ):
 
-    combined_dct = make_combined_dict(films_txt, patch_csv)
-    from pprint import pprint; pprint(combined_dct)
+    combined_dct = make_combined_dict(films_txt, patch_csv, descriptions_csv)
+
     assert set(combined_dct.keys()) == set(expected_patch_filenames) | set(expected_films_filenames)
 
     for fname in expected_patch_filenames:
         assert len(combined_dct[fname]) > 0
 
     for fname in expected_films_filenames:
-        assert combined_dct[fname] is None
+        if fname in expected_alt_descriptions:
+            continue
+        else:
+            assert combined_dct[fname] is None
+
+    for fname, dct in combined_dct.items():
+        if fname in expected_alt_descriptions:
+            assert "alt_description" in dct
+            assert "alt description" in dct["alt_description"]
+        elif fname in expected_patch_filenames:
+            assert "alt_description" not in dct
 
     patch_dct = make_combined_dict(None, patch_csv)
     assert set(patch_dct.keys()) == set(expected_patch_filenames)
 
     films_dct = make_combined_dict(films_txt, None)
-    assert films_dct == {fname: None for fname in expected_films_filenames}
+    for fname in expected_films_filenames:
+        if fname in expected_alt_descriptions:
+            continue
+        else:
+            assert films_dct[fname] is None
 
     assert make_combined_dict(None, None) == {}
 

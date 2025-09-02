@@ -1,9 +1,10 @@
 from pathlib import Path
 import warnings
 import time
-from typing import Any
+from typing import Any, Optional
 
 from ..read_data_files import item_patch_equal, make_combined_dict
+
 # from ..progress_bar import ProgressBar
 from ..person_info import PersonInfo
 from ..media_info import MediaInfo
@@ -230,7 +231,12 @@ class PopulateDBVisionItemMixin(object):
             logger.warning(f"Could not get media info for {title=} {patch=}")
         return ret
 
-    def populate_items(self, films_txt=None, patch_csv=None) -> int:
+    def populate_items(
+        self,
+        films_txt: Optional[Path] = None,
+        patch_csv: Optional[Path] = None,
+        description_csv: Optional[Path] = None,
+    ) -> int:
         """
         Add any new entries to database or update existing ones.
 
@@ -242,7 +248,7 @@ class PopulateDBVisionItemMixin(object):
         and a new record is created using the patch.
         If there is no item in the database with the given filename, it is created.
 
-        Either `films_txt` or `patch_csv` can be given or both. Passing no args
+        Either `films_txt` or `patch_csv` can be given or both. Passing neither
         raises a ValueError.
 
         Returns
@@ -253,7 +259,7 @@ class PopulateDBVisionItemMixin(object):
         if films_txt is None and patch_csv is None:
             raise ValueError("Please specify films file and/or patch file when calling `update`")
 
-        dct = make_combined_dict(films_txt, patch_csv)
+        dct = make_combined_dict(films_txt, patch_csv, description_csv)
 
         return self._populate_items(dct)
 

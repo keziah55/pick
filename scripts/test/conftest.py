@@ -34,6 +34,11 @@ def series_csv(data_dir):
 
 
 @pytest.fixture
+def descriptions_csv(data_dir):
+    return data_dir.joinpath("alt_descriptions.csv")
+
+
+@pytest.fixture
 def expected_patch_filenames():
     return [
         Path("Before_Midnight.mkv"),
@@ -66,6 +71,15 @@ def expected_films_filenames():
         Path("Drive.mkv"),
         Path("The Great Dictator.mkv"),
         Path("Alice in Wonderland (1999).mkv"),
+    ]
+
+@pytest.fixture
+def expected_alt_descriptions():
+    return [
+        Path("Drive.mkv"),
+        Path("spectre"),
+        Path("before the devil knows you're dead"),
+        Path("Lord of the Rings The Fellowship of the Rings.mkv"),
     ]
 
 

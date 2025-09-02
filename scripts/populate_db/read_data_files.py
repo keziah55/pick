@@ -173,15 +173,32 @@ def _csv_to_rows(
     return patch
 
 
-def make_combined_dict(films_txt=None, patch_csv=None) -> dict[Path, dict[str, Any]]:
+def make_combined_dict(
+    films_txt=None, patch_csv=None, description_csv=None
+) -> dict[Path, dict[str, Any]]:
     """Read `patch_csv` and add empty entries for any values in `films_txt` that are not in patch."""
 
     patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
+
     if films_txt is not None:
         files = read_films_file(films_txt)
         # films_dct = {film: {} for film in files if film not in patch}
         films_dct = {film: None for film in files if film not in patch}
         patch.update(films_dct)
+
+    if description_csv is not None:
+        descriptions = read_description_csv(description_csv)
+        for filename, desc in descriptions.items():
+            if filename not in patch:
+                logger.warning(
+                    f"Alt description given for {filename}, but not present in patch csv/films list."
+                )
+            else:
+                if patch[filename] is None:
+                    patch[filename] = {"alt_description": desc}
+                else:
+                    patch[filename]["alt_description"] = desc
+
     return patch
 
 
@@ -229,6 +246,7 @@ def _format_patch_value(value: str, name: str, model_class: type):
         `value` cast to appropriate type.
 
     """
+
     model_name = model_class.__name__
     if model_name not in _model_field_type_map:
         raise ValueError(
@@ -310,4 +328,14 @@ def read_series_csv(series_csv: Path) -> dict[Path, dict[str, Any]]:
         if "items" in data:
             dct[name]["items"] = [int(pk) for pk in data["items"]]
 
+    return dct
+
+
+def read_description_csv(description_csv: Path) -> dict[Path, str]:
+    """Return dict of descriptions, keyed by filename."""
+    _, *rows = list(filter(None, description_csv.read_text().split("\n")))
+    dct = {}
+    for row in rows:
+        filename, desc = row.split(_sep)
+        dct[Path(filename)] = desc
     return dct
