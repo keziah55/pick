@@ -20,13 +20,13 @@ DATABASE = "db_test"
 def test_combine_patch_films_list(
     films_txt,
     patch_csv,
-    descriptions_csv,
+    description_csv,
     expected_patch_filenames,
     expected_films_filenames,
     expected_alt_descriptions,
 ):
 
-    combined_dct = make_combined_dict(films_txt, patch_csv, descriptions_csv)
+    combined_dct = make_combined_dict(films_txt, patch_csv, description_csv)
 
     assert set(combined_dct.keys()) == set(expected_patch_filenames) | set(expected_films_filenames)
 
@@ -66,6 +66,7 @@ def test_populate_db(
     physical_media_csv,
     alias_csv,
     series_csv,
+    description_csv,
     expected_patch_filenames,
     expected_films_filenames,
     expected_imdb_ids,
@@ -91,7 +92,9 @@ def test_populate_db(
     pop_db = PopulateDatabase(
         physical_media=physical_media_csv, alias_csv=alias_csv, quiet=False, database=DATABASE
     )
-    n = pop_db.populate_items(films_txt=films_txt, patch_csv=patch_csv)
+    n = pop_db.populate_items(
+        films_txt=films_txt, patch_csv=patch_csv, description_csv=description_csv
+    )
 
     assert n == len(expected_films_filenames) + len(expected_patch_filenames)
 

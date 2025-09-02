@@ -34,7 +34,7 @@ def series_csv(data_dir):
 
 
 @pytest.fixture
-def descriptions_csv(data_dir):
+def description_csv(data_dir):
     return data_dir.joinpath("alt_descriptions.csv")
 
 
