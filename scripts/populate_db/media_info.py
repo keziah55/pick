@@ -316,7 +316,6 @@ class MediaInfoProcessor:
         keywords = self._get_patched(movie, patch, "storyline_keywords", default=[])
         if isinstance(keywords, str):
             keywords = [s.strip() for s in keywords.split(",") if s]
-        # keywords = []
 
         # get release year
         year = patch.get("year", movie.year)
