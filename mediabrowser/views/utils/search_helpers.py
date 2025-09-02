@@ -57,7 +57,7 @@ def get_filter_kwargs(**kwargs) -> tuple[dict, bool, GenreFilters]:
     if user_ratings := [_get_kwarg(kwargs, key) for key in kwargs if key.startswith("userrating")]:
         filter_kwargs["user_rating__in"] = user_ratings
 
-    search_keywords = kwargs.get("keyword", False)
+    search_keywords = kwargs.get("keyword", True)
 
     genre_and = make_set(kwargs.get("genre-and", None))
     genre_or = make_set(kwargs.get("genre-or", None))

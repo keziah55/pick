@@ -244,7 +244,7 @@ def _search_keywords(
         if m > 0:
             results += [
                 Result(target_match, m, film)
-                for film in keyword.visionitem_set.filter(**filter_kwargs)
+                for film in keyword.basevision_set.filter(**filter_kwargs)
                 if _check_include_film(film, results, genre_filters)
             ]
     return results
