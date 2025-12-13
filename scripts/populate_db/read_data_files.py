@@ -182,7 +182,6 @@ def make_combined_dict(
 
     if films_txt is not None:
         files = read_films_file(films_txt)
-        # films_dct = {film: {} for film in files if film not in patch}
         films_dct = {film: None for film in files if film not in patch}
         patch.update(films_dct)
 
