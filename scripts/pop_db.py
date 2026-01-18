@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-For creating and updating database entries for all films in a list of filenames.
-
-Either import `PopulateDatabase` class or run as script. In the latter case,
-see `populate_db.py -h` for options.
+Script for creating and updating database entries for all films in a list of filenames.
 """
 
 from pathlib import Path
@@ -55,7 +52,7 @@ if __name__ == "__main__":
         "physical_media": args.physical_media,
         "aliases": args.aliases,
         "series": args.series,
-        "descriptions": args.descriptions
+        "descriptions": args.descriptions,
     }
     for key, value in files.items():
         if value is not None:

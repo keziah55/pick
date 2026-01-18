@@ -9,7 +9,7 @@ click on the stars to rate it.
 
 ![Pick main view](screenshots/main_view.png)
 
-Filter films by year, runtime, black and while/colour, digital/physical
+Films can be filtered by year, runtime, black and while/colour, digital/physical
 availability and by user rating.
 
 ![Search filters](screenshots/search_filters.png)
@@ -38,11 +38,24 @@ ln -s .venv/lib/python3.12/site-packages/el_pagination/static/el-pagination/js/e
 
 ## Make DB
 
+To make the database:
 ```
 ./manage.py makemigrations mediabrowser
 ./manage.py migrate
-scripts/populate_db.py -f films.txt -p patch.csv
 ```
+
+Use `scripts/pop_db.py` to populate the database. The simplest input can be
+a list of filenames (for example, the output of `ls` piped into a file); use the
+`-f` arg to supply this. `Pick` searches IMDb for matching films.
+
+To override the automatically found IMDb IDs for any file, you can also supply a `patch.csv`. This also allows you to manually specify any other data fields.
+
+For example:
+```
+scripts/pop_db.py -f films.txt -p patch.csv
+```
+
+See `scripts/pop_db.py -h` for full usage.
 
 ## Test
 
