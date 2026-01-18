@@ -19,7 +19,7 @@ you to require or exclude genre(s).
 
 ![Genre filters](screenshots/genre_filters.png)
 
-Films can be grouped into series. Click through to see all the series members.
+Films can be grouped into series. You can then click through to see all the series members.
 
 ![Film series](screenshots/media_series.png)
 
