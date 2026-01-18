@@ -2,6 +2,26 @@
 
 Pick is a media browser, built using django.
 
+## Features
+
+Hover over a thumbnail to see a description of the film:
+
+![Pick main view](screenshots/main_view.png)
+
+Filter films by year, runtime, black and while/colour, digital/physical
+availability and by user rating:
+
+![Search filters](screenshots/search_filters.png)
+
+You can also filter by genre, using `AND`, `OR` and `NOT` filters. This allows
+you to require or exclude genre(s):
+
+![Genre filters](screenshots/genre_filters.png)
+
+Films can be grouped into series. Click through to see all the series members
+
+![Film series](screenshots/media_series.png)
+
 ## Install
 
 ```
