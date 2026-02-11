@@ -1,6 +1,7 @@
 import logging
 import re
 from typing import NamedTuple, Optional
+import traceback
 
 import imdbinfo
 from imdbinfo.models import MovieBriefInfo, MovieDetail, SearchResult
@@ -113,7 +114,16 @@ class MediaInfoProcessor:
             return None
 
         if type(movie) is MovieBriefInfo:
-            movie: MovieDetail = imdbinfo.get_movie(movie.id)
+            try:
+                movie: MovieDetail = imdbinfo.get_movie(movie.id)
+            except Exception as err:
+                logger.error(
+                    (
+                        f"imdbinfo.get_movie({movie.id}) failed\n"
+                        f"Original error: {traceback.format_exc()}"
+                    )
+                )
+                return None
 
         if (media_type := movie.kind) not in self._media_types:
             logger.warning(f"{title}: got movie {movie} of type {media_type}")
