@@ -1,7 +1,7 @@
 django ~= 5.2
 django-el-pagination~=4.1.2
 django-sortedm2m==4.0.0
-imdbinfo==0.5.1
+imdbinfo==0.7.0
 Pillow~=11.2.1
 pytz
 pytest

@@ -163,10 +163,10 @@ class MediaInfoProcessor:
         try:
             movie: MovieDetail = imdbinfo.get_movie(imdb_id_to_str(media_id))
         except Exception as err:
-            logger.warning(f"cinemagoer.get_movie({media_id=}) raised error: {err}")
+            logger.warning(f"imdbinfo.get_movie({media_id=}) raised error: {err}")
             return None
         else:
-            logger.info(f"Got {movie} by ID {media_id} from cinemagoer")
+            logger.info(f"Got {movie} by ID {media_id} from imdbinfo")
 
         return movie
 
@@ -277,15 +277,15 @@ class MediaInfoProcessor:
     def _make_person_info(self, person):
         return make_personinfo(person, self._aliases)
 
-    def _make_media_info(self, movie: MovieDetail, patch=None) -> MediaInfo:
+    def _make_media_info(self, movie: MovieDetail, patch: Optional[dict] = None) -> MediaInfo:
         """
         Return named tuple of info about the film from the given `movie`.
 
         Parameters
         ----------
-        movie : cinemagoer.Movie
+        movie
             Movie object
-        patch : dict, optional
+        patch
             Dict of values to use instead of those from `movie`
 
         Returns
