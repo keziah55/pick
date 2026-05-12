@@ -63,6 +63,10 @@ See `scripts/pop_db.py -h` for full usage.
 ./manage.py test mediabrowser -v 2
 ```
 
+```
+python -m pytest -v scripts/test/
+```
+
 ## Run on local network
 
 ```

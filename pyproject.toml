@@ -12,7 +12,7 @@ base = [
     "pytz",
 ]
 test = ["pytest", "pytest-cov", "pytest-django==4.10.0"]
-dev = ["flake8"]
+dev = ["flake8", "pylint-django"]
 all = [
     { include-group = "base" },
     { include-group = "test" },

@@ -1,6 +1,7 @@
-from ...models import VisionItem, Genre
 from typing import NamedTuple, Optional, Union
 import re
+
+from ...models import VisionItem, Genre
 
 
 class GenreFilters(NamedTuple):
@@ -170,6 +171,7 @@ def get_match(
     remove: Optional[list[str]] = ["the", "and", "a", "&"],
 ) -> tuple[bool, float]:
     """Compare guesses with target and return best score."""
+
     if isinstance(guesses, str):
         guesses = [guesses]
 
@@ -223,12 +225,12 @@ def make_set(item):
     """
     if item is None:
         return None
-    elif isinstance(item, set):
+    if isinstance(item, set):
         return item
-    elif isinstance(item, (list, tuple)):
+    if isinstance(item, (list, tuple)):
         return set(item)
-    else:
-        raise TypeError(f"Cannot cast type {type(item)} to set")
+    
+    raise TypeError(f"Cannot cast type {type(item)} to set")
 
 
 def _get_search_kwarg_type_map():

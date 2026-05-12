@@ -18,9 +18,9 @@ if __name__ == "__main__":
 
     django.setup()
 
-from mediabrowser.models import VisionItem, VisionSeries
 from populate_db import PopulateDatabase, StdoutWriter, HtmlWriter
 from populate_db.logger import timestamp
+from mediabrowser.models import VisionItem, VisionSeries
 
 
 if __name__ == "__main__":
