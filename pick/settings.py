@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-from .secret_settings import SECRET_KEY
+from .secret_settings import SECRET_KEY  # noqa F401
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -63,7 +63,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                'django.template.context_processors.request', ## For EL-pagination
+                "django.template.context_processors.request",  # For EL-pagination
             ],
         },
     },
@@ -123,8 +123,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR.joinpath('media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR.joinpath("media")
 
 
 # Default primary key field type
@@ -134,9 +134,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # Allow stdout from tests
-# https://stackoverflow.com/a/22777773 
-NOSE_ARGS = ['--nocapture',
-              '--nologcapture',]
+# https://stackoverflow.com/a/22777773
+NOSE_ARGS = [
+    "--nocapture",
+    "--nologcapture",
+]
 
 
 EL_PAGINATION_PER_PAGE = 20

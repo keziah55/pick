@@ -73,6 +73,7 @@ def expected_films_filenames():
         Path("Alice in Wonderland (1999).mkv"),
     ]
 
+
 @pytest.fixture
 def expected_alt_descriptions():
     return [

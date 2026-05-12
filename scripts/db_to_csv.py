@@ -53,7 +53,7 @@ def write_db_to_csv(csv_file: Path, csv_sep: str = "\t", line_sep: str = "\n"):
 
     rows = [csv_sep.join(fields)]
 
-    for item in VisionItem.objects.filter(title__icontains="before"): #.all():
+    for item in VisionItem.objects.filter(title__icontains="before"):  # .all():
         row = []
         for field in fields:
             value = getattr(item, field)

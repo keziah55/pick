@@ -1,0 +1,20 @@
+[project]
+name = "pick"
+version = "1.0"
+
+[dependency-groups]
+base = [
+    "django ~= 5.2",
+    "django-el-pagination~=4.1.2",
+    "django-sortedm2m==4.0.0",
+    "imdbinfo>=0.8.0",
+    "Pillow~=11.2.1",
+    "pytz",
+]
+test = ["pytest", "pytest-cov", "pytest-django>=4.10.0"]
+dev = ["flake8"]
+all = [
+    { include-group = "base" },
+    { include-group = "test" },
+    { include-group = "dev" },
+]

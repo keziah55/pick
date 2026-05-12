@@ -41,6 +41,7 @@ _ext = [".avi", ".m4v", ".mkv", ".mov", ".mp4", ".wmv", ".webm"]
 
 _sep = "\t"  # csv item separator
 _list_sep = ";"  # item list separator in csv field
+_patch_list_keys = ["alt_versions", "stars", "directors", "genre", "keyword", "alt_title"]
 
 
 def read_films_file(films_txt) -> list[Path]:
@@ -59,7 +60,7 @@ def read_patch_csv(patch_csv, key="filename") -> dict[Path, dict[str, Any]]:
         patch_csv,
         key,
         VisionItem,
-        list_keys=["alt_versions", "stars", "directors", "genre", "keyword"],
+        list_keys=_patch_list_keys,
     )
     for key, dct in patch.items():
         if "imdb_id" in dct:
@@ -176,7 +177,8 @@ def _csv_to_rows(
 def make_combined_dict(
     films_txt=None, patch_csv=None, description_csv=None
 ) -> dict[Path, dict[str, Any]]:
-    """Read `patch_csv` and add empty entries for any values in `films_txt` that are not in patch."""
+    """Read `patch_csv` and add empty entries for any values in `films_txt` that are not in
+    patch."""
 
     patch = read_patch_csv(patch_csv) if patch_csv is not None else {}
 
@@ -190,7 +192,8 @@ def make_combined_dict(
         for filename, desc in descriptions.items():
             if filename not in patch:
                 logger.warning(
-                    f"Alt description given for {filename}, but not present in patch csv/films list."
+                    f"Alt description given for {filename}, but not present in patch "
+                    "csv/films list."
                 )
             else:
                 if patch[filename] is None:
@@ -303,6 +306,13 @@ def item_patch_equal(item, patch) -> bool:
                 db_value = [item.filename for item in db_value]
             else:
                 db_value = [item.name for item in db_value]
+        elif key in _patch_list_keys:
+            db_value = db_value.strip('"').split(_list_sep)
+
+        if isinstance(db_value, list):
+            db_value = set(db_value)
+        if isinstance(value, list):
+            value = set(value)
 
         if db_value != value:
             return False

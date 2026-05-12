@@ -3,7 +3,6 @@ from ..populate_db.media_info import MediaInfoProcessor
 from ..populate_db.progress_bar import ProgressBar
 
 from pathlib import Path
-from pprint import pprint
 
 import pytest
 

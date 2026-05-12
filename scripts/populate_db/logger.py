@@ -16,7 +16,7 @@ def initialise_logging():
     ts = timestamp().strftime("%Y-%m-%d-%H:%M:%S")
     logger = logging.getLogger("populate_db")
 
-    log_dir = Path("logs")
+    log_dir = Path(__file__).parents[2].joinpath("logs")
     log_dir.mkdir(exist_ok=True, parents=True)
     log_file = str(log_dir.joinpath(f"populate_db-{ts}.log"))
 
@@ -31,7 +31,6 @@ def initialise_logging():
 
 
 def get_logger():
-    global _logging_initialised
     if not _logging_initialised:
         initialise_logging()
     return logging.getLogger("populate_db")

@@ -135,7 +135,7 @@ class PopulateDBVisionSeriesMixin(object):
 
         for item in items:
 
-            item = cast_vision_item(item)
+            item = cast_vision_item(item, database=self._database)
             derived_items.append(item)
 
             if isinstance(item, VisionSeries):

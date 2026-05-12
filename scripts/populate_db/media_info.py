@@ -6,10 +6,11 @@ import traceback
 import imdbinfo
 from imdbinfo.models import MovieBriefInfo, MovieDetail, SearchResult
 
+from mediabrowser.views.utils import get_match
 from .read_data_files import read_physical_media_csv, read_alias_csv
 from .person_info import make_personinfo, PersonInfo
 from .utils import imdb_id_to_str
-from mediabrowser.views.utils import get_match
+
 
 logger = logging.getLogger("populate_db")
 
@@ -56,10 +57,10 @@ class MediaInfo(NamedTuple):
         """
         value = self[key]
         if isinstance(value, list):
-            value = ",".join(value)
+            value = ";".join(value)
         elif isinstance(value, int):
             value = str(value)
-        if "," in value:
+        if ";" in value:
             value = f'"{value}"'
         return value
 
@@ -83,13 +84,14 @@ class MediaInfoProcessor:
         """
         Return `MediaInfo` object for the given patch or title.
 
-        If `patch` dict is given, that data will be used to get the IMDb movie. Otherwise, search for
-        `title` string.
+        If `patch` dict is given, that data will be used to get the IMDb movie. Otherwise, search
+        for `title` string.
 
         Parameters
         ----------
         patch
-            Dict with data to use when creating `MediaInfo`. Any fields not provided are found from IMDb.
+            Dict with data to use when creating `MediaInfo`. Any fields not provided are found from
+            IMDb.
         title
             If not providing `patch` dict, provide film title to search for,
         item_type
@@ -116,7 +118,7 @@ class MediaInfoProcessor:
         if type(movie) is MovieBriefInfo:
             try:
                 movie: MovieDetail = imdbinfo.get_movie(movie.id)
-            except Exception as err:
+            except Exception:
                 logger.error(
                     (
                         f"imdbinfo.get_movie({movie.id}) failed\n"
@@ -299,9 +301,14 @@ class MediaInfoProcessor:
         title = self._get_patched(movie, patch, "title", default="")
 
         alt_title_patch = patch.get("alt_title", None)
-        local_title_imdb = movie.title_localized
+        if not isinstance(alt_title_patch, list):
+            alt_title_patch = [alt_title_patch]
+        alt_title_patch.append(movie.title_localized)
+        # local_title_imdb = movie.title_localized
         title_akas_imdb = movie.title_akas
-        alt_title = set(title_akas_imdb) | {alt_title_patch, local_title_imdb}
+        alt_title = set(title_akas_imdb) | set(
+            alt_title_patch
+        )  # {alt_title_patch, local_title_imdb}
         alt_title = list(filter(lambda s: s is not None and s != title, list(alt_title)))
 
         language = self._get_patched(movie, patch, "languages", "language", default=[])

@@ -1,10 +1,11 @@
+import re
+
 from django.shortcuts import render
 from django.http import HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
-from ..models import VisionItem, VisionSeries, MediaItem
+from ..models import VisionItem, MediaItem
 from .utils import set_search_filters, get_filter_kwargs, get_context_from_request, cast_vision_item
 from .templates import INDEX_TEMPLATE, FILMLIST_TEMPLATE, FILM_TEMPLATE
-import re
 
 
 def set_user_rating(request):

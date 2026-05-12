@@ -98,10 +98,10 @@ def test_populate_db(
 
     assert n == len(expected_films_filenames) + len(expected_patch_filenames)
 
-    expected_created_items = {"visionitem": 24, "genre": 16, "person": 1507, "keywords": 0}
+    expected_created_items = {"visionitem": 24, "genre": 16, "person": 1509, "keyword": 96}
 
-    # for key, expected_count in expected_created_items.items():
-    #     assert pop_db._created_item_count[key] == expected_count
+    for key, expected_count in expected_created_items.items():
+        assert pop_db._created_item_count[key] == expected_count
 
     # check that info from physical media csv was applied correctly
     patch = read_patch_csv_orig(patch_csv)
@@ -182,7 +182,8 @@ def test_read_patch_csv(data_dir):
     ]
 
 
-# def test_read_series_csv(series_csv):
-#     data = read_series_csv(series_csv)
-#     print()
-#     print(data)
+@pytest.mark.skip(reason="not yet written")
+def test_read_series_csv(series_csv):
+    data = read_series_csv(series_csv)
+    print()
+    print(data)

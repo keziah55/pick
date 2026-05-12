@@ -314,6 +314,7 @@ class PopulateDBVisionItemMixin(object):
 
         if len(item) == 1:
             item = item[0]
+
             if info is None or item_patch_equal(item, info):
                 # item is already in DB with no patch data to apply
                 # or all patch fields match DB item
