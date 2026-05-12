@@ -28,12 +28,12 @@ Films can be grouped into series. You can then click through to see all the seri
 ```
 python -m venv .venv
 source .venv/bin/activate 
-python -m pip install -r requirements.txt
+python -m pip install --group all
 ```
 
 You may need to either copy or link `el-pagination.js` from the venv into `static`, for example:
 ```
-ln -s .venv/lib/python3.12/site-packages/el_pagination/static/el-pagination/js/el-pagination.js mediabrowser/static/mediabrowser/js/el-pagination.js
+ln -s .venv/lib/python3.13/site-packages/el_pagination/static/el-pagination/js/el-pagination.js mediabrowser/static/mediabrowser/js/el-pagination.js
 ```
 
 ## Make DB
